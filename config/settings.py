@@ -77,12 +77,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',  # اینجا باید 'mysql' باشه
-        'NAME': 'iro1',          # نام پایگاه داده‌ات رو وارد کن
-        'USER': 'root',             # نام کاربری MySQL رو وارد کن
-        'PASSWORD': 'parhams',     # رمز عبور MySQL رو وارد کن
-        'HOST': '127.0.0.1',                   # معمولاً این‌طور باشه
-        'PORT': '3306',                        # پورت پیش‌فرض MySQL
+        'ENGINE': 'django.db.backends.mysql',  
+        'NAME': 'iro1',         
+        'USER': 'root',             
+        'PASSWORD': 'parhams',     
+        'HOST': '127.0.0.1',                   
+        'PORT': '3306',                        
     }
 }
 

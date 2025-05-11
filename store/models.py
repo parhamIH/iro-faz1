@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
+from decimal import Decimal
+
 
 # Cfrom django.db import models
 
@@ -32,18 +34,55 @@ class Feature(models.Model):
 
     def __str__(self):
         return self.name
-# Create your models here.
+
+from decimal import Decimal
+
 class InstallmentPlan(models.Model):
     title = models.CharField(max_length=100)
-    months = models.PositiveIntegerField()
-    monthly_price = models.DecimalField(max_digits=12, decimal_places=2)
+
+    SELECT_MONTHS = [
+        (12, "سالانه"),
+        (18, "یک و نیم ساله"),
+        (24, "دو ساله"),
+        (36, "سه ساله")
+    ]
+
+    INTEREST_RATES = {
+        12: 16,
+        18: 34,
+        24: 34,
+        36: 43
+    }
+
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    months = models.PositiveIntegerField(choices=SELECT_MONTHS)
+    prepayment = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     discounts = models.ManyToManyField('Discount', related_name='installment_plans', blank=True)
-    
+
+    def get_interest_rate(self):
+        return self.INTEREST_RATES.get(self.months, 0)
+
+    def calculate_financing_amount(self):
+        base_price = self.product.base_price_cash + (self.product.base_price_cash * Decimal("0.05"))
+        remaining = base_price - self.prepayment
+        rate = self.get_interest_rate()
+        increase = remaining * Decimal(rate) / 100
+        return remaining + increase
+
+    def calculate_monthly_installment(self):
+        return self.calculate_financing_amount() / self.months
+
+    def total_payment(self):
+        return self.calculate_financing_amount()
+
+    def estimated_cash_price(self):
+        rate = self.get_interest_rate()
+        if rate == 0:
+            return self.total_payment()
+        return self.total_payment() / (1 + (rate * self.months / 100))
+
     def __str__(self):
-        return f"{self.title} - {self.months} ماهه ({self.monthly_price} تومان)"
-
-
-
+        return f"{self.title} - {self.months} ماهه - قسط: {self.calculate_monthly_installment():,.0f} تومان (سود: {self.get_interest_rate()}%)"
 
 class ProductFeatureValue(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='feature_values')

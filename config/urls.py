@@ -27,5 +27,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('store.urls')),  # فقط یک بار api/
+    path('store/', include('store.urls')),  # فقط یک بار api/
 ]

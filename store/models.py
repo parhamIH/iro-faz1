@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from decimal import Decimal
+from colorfield.fields import ColorField
 
 
 # Cfrom django.db import models
@@ -135,9 +136,19 @@ class Gallery(models.Model):
         return f"عکس برای {self.product.title}"
 
 class Color(models.Model):
-    name = models.CharField(max_length=50)
-    hex_code = models.CharField(max_length=7)
+    COLOR_PALETTE = [
+        ("#FFFFFF", "white"),
+        ("#000000", "black"),
+        ("#FF0000", "red"),
+        ("#008000", "green"),
+        ("#0000FF", "blue"),
+    ]
+    name = models.CharField(max_length=50, verbose_name= "نام رنگ")
+    hex_code = ColorField(samples=COLOR_PALETTE,max_length=7, verbose_name= "کد هگز رنگ",help_text=" مثال: #FFFFFF")
 
+    class Meta:
+        verbose_name = "رنگ"
+        verbose_name_plural = "رنگ ها"
+    
     def __str__(self):
         return self.name
-

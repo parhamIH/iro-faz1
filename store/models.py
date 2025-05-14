@@ -4,28 +4,81 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 from colorfield.fields import ColorField
+from django.utils.text import slugify
+import random
 
 
-# Cfrom django.db import models
+
+class Brand (models.Model): 
+    name = models.CharField(max_length=100) 
+    description = models.TextField(blank=True, null=True)
+    logo = models.ImageField(upload_to='brands/', blank=True, null=True)
+    slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name, allow_unicode=True)
+            counter = 1
+            while Brand.objects.filter(slug=self.slug).exists():
+                self.slug = f"{slugify(self.name, allow_unicode=True)}-{counter}"
+                counter += 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
 
 #need to add image to category
 class Category(models.Model):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
+    brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='categories')
+    slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name, allow_unicode=True)
+            counter = 1
+            while Category.objects.filter(slug=self.slug).exists():
+                self.slug = f"{slugify(self.name, allow_unicode=True)}-{counter}"
+                counter += 1
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.name
+        return self.name 
 
 class Product(models.Model):
     title = models.CharField(max_length=255)
+    slug = models.SlugField(
+        max_length=255,
+        unique=True,
+        allow_unicode=True,
+        blank=True,
+        null=True
+    )
     categories = models.ManyToManyField(Category, related_name='products')
     base_price_cash = models.DecimalField(max_digits=12, decimal_places=2)
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     installment_plans = models.ManyToManyField('InstallmentPlan', related_name='products', blank=True)
     discounts = models.ManyToManyField('Discount', related_name='products', blank=True)
+    brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='products')
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            # Create a simple slug from the title
+            base_slug = slugify(self.title, allow_unicode=True)
+            
+            # If slug exists, append a number
+            counter = 1
+            new_slug = base_slug
+            while Product.objects.filter(slug=new_slug).exists():
+                new_slug = f"{base_slug}-{counter}"
+                counter += 1
+            
+            self.slug = new_slug
+                
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title
@@ -38,7 +91,8 @@ class Feature(models.Model):
 
 from decimal import Decimal
 
-class InstallmentPlan(models.Model):
+
+class InstallmentPlan(models.Model): #need to delete ? ? ?
     title = models.CharField(max_length=100)
 
     SELECT_MONTHS = [
@@ -59,6 +113,7 @@ class InstallmentPlan(models.Model):
     months = models.PositiveIntegerField(choices=SELECT_MONTHS)
     prepayment = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     discounts = models.ManyToManyField('Discount', related_name='installment_plans', blank=True)
+
 
     def get_interest_rate(self):
         return self.INTEREST_RATES.get(self.months, 0)
@@ -128,12 +183,12 @@ class Discount(models.Model):
         return f"{self.name} - {self.percentage}%"
 class Gallery(models.Model):
     
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='gallery')
+    product = models.ForeignKey(ProductOption, on_delete=models.CASCADE, related_name='gallery')
     image = models.ImageField(upload_to='product_gallery/')
     alt_text = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
-        return f"عکس برای {self.product.title}"
+        return f"عکس برای {self.product.product.title}"
 
 class Color(models.Model):
     COLOR_PALETTE = [
@@ -148,7 +203,7 @@ class Color(models.Model):
 
     class Meta:
         verbose_name = "رنگ"
-        verbose_name_plural = "رنگ ها"
+        verbose_name_plural = "colors"
     
     def __str__(self):
         return self.name

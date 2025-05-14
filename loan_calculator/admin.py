@@ -1,10 +1,6 @@
 from django.contrib import admin
-from .models import Product, LoanCondition, PrePaymentInstallment
+from .models import  LoanCondition, PrePaymentInstallment
 
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'base_price')
-    search_fields = ('name',)
 
 class PrePaymentInstallmentInline(admin.TabularInline):
     model = PrePaymentInstallment

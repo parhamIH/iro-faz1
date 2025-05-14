@@ -2,17 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from decimal import Decimal, ROUND_CEILING
 from datetime import date, timedelta # برای محاسبه تاریخ پیش‌پرداخت‌ها
-
-class Product(models.Model):
-    name = models.CharField(max_length=255, verbose_name=_("نام محصول"))
-    base_price = models.DecimalField(max_digits=12, decimal_places=2, verbose_name=_("قیمت پایه"))
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = _("محصول")
-        verbose_name_plural = _("محصولات")
+from store.models import Product
 
 class LoanCondition(models.Model):
     class GuaranteeType(models.TextChoices):

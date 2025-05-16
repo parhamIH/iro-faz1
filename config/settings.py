@@ -79,7 +79,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 
-#mysql-configs
+
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  
@@ -88,10 +89,17 @@ DATABASES = {
         'PASSWORD': 'parhams',     
         'HOST': '127.0.0.1',                   
         'PORT': '3306',                        
+    },
+    'postgresql_db': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'iro1',
+        'USER': 'parham',
+        'PASSWORD': 'parhams',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
-
-
+DATABASE_ROUTERS = ['config.db_router.DBRouter']
 
 
 # Password validation

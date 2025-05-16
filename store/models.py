@@ -6,6 +6,7 @@ from decimal import Decimal
 from colorfield.fields import ColorField
 from django.utils.text import slugify
 import random
+from decimal import Decimal
 
 
 
@@ -61,7 +62,7 @@ class Product(models.Model):
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     installment_plans = models.ManyToManyField('InstallmentPlan', related_name='products', blank=True)
-    discounts = models.ManyToManyField('Discount', related_name='products', blank=True)
+    discounts = models.ManyToManyField('Discount', related_name='products', blank=True) # need to add discount to product and add discount to product option
     brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='products')
 
     def save(self, *args, **kwargs):
@@ -82,14 +83,33 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
-
 class Feature(models.Model):
-    name = models.CharField(max_length=100)
+    FEATURE_TYPES = [
+        ('technical', 'مشخصات فنی'),
+        ('physical', 'مشخصات فیزیکی'),
+        ('general', 'مشخصات عمومی'),
+    ]
+
+    name = models.CharField(max_length=100, verbose_name="نام ویژگی")
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, 
+                                 related_name='features', verbose_name="دسته‌بندی")
+    type = models.CharField(max_length=20, choices=FEATURE_TYPES, default='general', 
+                            verbose_name="نوع ویژگی")
+    unit = models.CharField(max_length=50, blank=True, null=True, verbose_name="واحد اندازه‌گیری")
+    is_main_feature = models.BooleanField(default=False, verbose_name="ویژگی اصلی")
+    display_order = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
+
+    class Meta:
+        unique_together = ['name', 'category']  # نام ویژگی در هر دسته منحصربه‌فرد باشد
+        ordering = ['display_order', 'name']
+        verbose_name = 'تعریف ویژگی'
+        verbose_name_plural = 'تعریف ویژگی‌ها'
 
     def __str__(self):
-        return self.name
-
-from decimal import Decimal
+        return f"{self.name} ({self.get_type_display()})"
 
 
 class InstallmentPlan(models.Model): #need to delete ? ? ?
@@ -140,23 +160,44 @@ class InstallmentPlan(models.Model): #need to delete ? ? ?
     def __str__(self):
         return f"{self.title} - {self.months} ماهه - قسط: {self.calculate_monthly_installment():,.0f} تومان (سود: {self.get_interest_rate()}%)"
 
-class ProductFeatureValue(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='feature_values')
-    feature = models.ForeignKey(Feature, on_delete=models.CASCADE)
-    value = models.CharField(max_length=100)
+class ProductFeature(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, 
+                                related_name='features', verbose_name="محصول")
+    feature = models.ForeignKey(Feature, on_delete=models.CASCADE, 
+                                verbose_name="ویژگی")
+    value = models.CharField(max_length=255, verbose_name="مقدار ویژگی")
+    value_numeric = models.DecimalField(max_digits=10, decimal_places=2, 
+                                        null=True, blank=True, verbose_name="مقدار عددی")
+
+    class Meta:
+        unique_together = ['product', 'feature']  # یک ویژگی برای هر محصول تنها یکبار باشد
+        ordering = ['feature__display_order']
+        verbose_name = 'ویژگی محصول'
+        verbose_name_plural = 'ویژگی‌های محصول'
+
+    def clean(self):
+        from decimal import Decimal, DecimalException
+        # اگر ویژگی دارای واحد تعریف شده است، تلاش می‌کنیم مقدار عددی استخراج شود
+        if self.feature.unit and self.value_numeric is None:
+            try:
+                self.value_numeric = Decimal(self.value.split()[0])
+            except (ValueError, IndexError, DecimalException):
+                raise ValidationError({'value': 'برای ویژگی‌های دارای واحد، مقدار باید عددی باشد.'})
 
     def __str__(self):
-        return f"{self.product.title} - {self.feature.name}: {self.value}"
+        if self.feature.unit:
+            return f"{self.product.name} - {self.feature.name}: {self.value} {self.feature.unit}"
+        return f"{self.product.name} - {self.feature.name}: {self.value}"
 
 class ProductOption(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options')
     feature = models.ForeignKey(Feature, on_delete=models.CASCADE)
     value = models.CharField(max_length=100)
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='options', blank=True, null=True)
-    price_change = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    option_price = models.PositiveIntegerField(help_text="قیمت به تومان برای محصول با این ویژگی")
 
     def __str__(self):
-        return f"{self.product.title} - {self.feature.name}: {self.value} (+{self.price_change})"
+        return f"{self.product.title} - {self.feature.name}: {self.value} (+{self.option_price})"
 
 
 class Discount(models.Model):

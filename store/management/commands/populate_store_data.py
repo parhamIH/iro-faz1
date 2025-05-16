@@ -5,23 +5,20 @@ import random
 
 from store.models import (
     Category, Product, Feature, InstallmentPlan,
-    ProductFeatureValue, ProductOption, Discount, Gallery, Color, Brand
+    ProductFeature, ProductOption, Discount, Gallery, Color, Brand
 )
-# اگر از Faker استفاده می‌کنید، آن را اینجا import کنید
-# from faker import Faker
-# fake = Faker('fa_IR') # برای داده‌های فارسی
 
 class Command(BaseCommand):
-    help = 'Populates the database with fake store data for the store app'
+    help = 'Populates the database with realistic store data'
 
     def handle(self, *args, **options):
         self.stdout.write('Deleting old data...')
         # ترتیب حذف مهم است به دلیل روابط ForeignKey
         Gallery.objects.all().delete()
         ProductOption.objects.all().delete()
-        ProductFeatureValue.objects.all().delete()
-        InstallmentPlan.objects.all().delete() # تخفیف‌ها از طریق این مدل هم مرتبط هستند
-        Product.objects.all().delete() # دسته‌بندی‌ها و تخفیف‌ها از طریق این مدل هم مرتبط هستند
+        ProductFeature.objects.all().delete()
+        InstallmentPlan.objects.all().delete()
+        Product.objects.all().delete()
         Discount.objects.all().delete()
         Feature.objects.all().delete()
         Color.objects.all().delete()
@@ -30,29 +27,37 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Old data deleted.'))
 
         self.stdout.write('Starting to populate data...')
-        # 1. Create Brands
-        brands_data = [
-            {"name": "سامسونگ", "description": "سامسونگ"},
-            {"name": "ایسوس", "description": "ایسوس"},
-            {"name": "دیور", "description": "دیور"},
-            {"name": "وسترن", "description": "وسترن"},
+        
+        # 1. Create Brands with proper categorization
+        digital_brands = [
+            {"name": "سامسونگ", "description": "برند معتبر در زمینه موبایل، لپ‌تاپ و لوازم دیجیتال"},
+            {"name": "اپل", "description": "تولید کننده محصولات با کیفیت دیجیتال"},
+            {"name": "ایسوس", "description": "متخصص در تولید لپ‌تاپ و قطعات کامپیوتر"},
+            {"name": "شیائومی", "description": "تولید کننده محصولات دیجیتال با قیمت مناسب"},
         ]
         
-        brands = [] 
-        for b_data in brands_data:
-            brand, _ = Brand.objects.get_or_create(**b_data)
+        home_brands = [
+            {"name": "ال جی", "description": "تولید کننده لوازم خانگی با کیفیت"},
+            {"name": "بوش", "description": "برند آلمانی لوازم خانگی"},
+            {"name": "اسنوا", "description": "تولید کننده ایرانی لوازم خانگی"},
+            {"name": "سامسونگ هوم", "description": "بخش لوازم خانگی سامسونگ"},
+        ]
+        
+        brands = []
+        for brand_data in digital_brands + home_brands:
+            brand, _ = Brand.objects.get_or_create(**brand_data)
             brands.append(brand)
         self.stdout.write(f'{len(brands)} brands created.')
-        
-        # 1. Create Colors
+
+        # 2. Create Colors
         colors_data = [
             {"name": "سفید", "hex_code": "#FFFFFF"},
             {"name": "مشکی", "hex_code": "#000000"},
-            {"name": "قرمز", "hex_code": "#FF0000"},
-            {"name": "آبی", "hex_code": "#0000FF"},
-            {"name": "سبز", "hex_code": "#008000"},
+            {"name": "نقره‌ای", "hex_code": "#C0C0C0"},
             {"name": "خاکستری", "hex_code": "#808080"},
-            {"name": "نقره ای", "hex_code": "#C0C0C0"},
+            {"name": "طلایی", "hex_code": "#FFD700"},
+            {"name": "آبی", "hex_code": "#0000FF"},
+            {"name": "قرمز", "hex_code": "#FF0000"},
         ]
         colors = []
         for c_data in colors_data:
@@ -60,152 +65,356 @@ class Command(BaseCommand):
             colors.append(color)
         self.stdout.write(f'{len(colors)} colors created.')
 
-        # 2. Create Categories
-        categories_data = [
-            {"name": "کالای دیجیتال", "description": "انواع کالاهای دیجیتال"},
-            {"name": "موبایل", "description": "انواع گوشی‌های هوشمند و ساده"},
-            {"name": "لپ‌تاپ", "description": "انواع لپ‌تاپ و نوت‌بوک"},
-            {"name": "لوازم جانبی کامپیوتر", "description": "کیبورد، ماوس، و غیره"},
-            {"name": "لوازم خانگی", "description": "انواع لوازم برقی و غیر برقی خانگی"},
-            {"name": "تلویزیون", "description": "انواع تلویزیون هوشمند و عادی"},
+        # 3. Create Categories with proper hierarchy
+        # دسته‌بندی کالای دیجیتال
+        digital = Category.objects.create(
+            name="کالای دیجیتال",
+            description="انواع محصولات دیجیتال شامل موبایل، لپ‌تاپ و لوازم جانبی"
+        )
+        
+        digital_cats = [
+            {"name": "موبایل", "description": "گوشی‌های هوشمند"},
+            {"name": "لپ‌تاپ", "description": "لپ‌تاپ و نوت‌بوک"},
+            {"name": "تبلت", "description": "تبلت و کتابخوان"},
+            {"name": "لوازم جانبی موبایل", "description": "قاب، محافظ صفحه و شارژر"},
         ]
+        
+        # دسته‌بندی لوازم خانگی
+        home = Category.objects.create(
+            name="لوازم خانگی",
+            description="انواع لوازم برقی خانگی"
+        )
+        
+        home_cats = [
+            {"name": "یخچال و فریزر", "description": "یخچال، فریزر و ساید بای ساید"},
+            {"name": "ماشین لباسشویی", "description": "ماشین لباسشویی اتوماتیک"},
+            {"name": "اجاق گاز", "description": "اجاق گاز فردار و رومیزی"},
+            {"name": "ماشین ظرفشویی", "description": "ماشین ظرفشویی مبله و توکار"},
+        ]
+
         categories = []
-        parent_digital = None
-        for i, cat_data in enumerate(categories_data):
-            if cat_data['name'] == "کالای دیجیتال":
-                category = Category.objects.create(**cat_data)
-                parent_digital = category
-            elif cat_data['name'] in ["موبایل", "لپ‌تاپ", "لوازم جانبی کامپیوتر"]:
-                category = Category.objects.create(parent=parent_digital, **cat_data)
-            else:
-                category = Category.objects.create(**cat_data)
+        # ایجاد زیر دسته‌های دیجیتال
+        for cat in digital_cats:
+            category = Category.objects.create(parent=digital, **cat)
             categories.append(category)
+            
+        # ایجاد زیر دسته‌های لوازم خانگی
+        for cat in home_cats:
+            category = Category.objects.create(parent=home, **cat)
+            categories.append(category)
+            
+        categories.extend([digital, home])
         self.stdout.write(f'{len(categories)} categories created.')
 
-        # 3. Create Features
-        features_data = ["پردازنده", "رم", "حافظه داخلی", "اندازه صفحه نمایش", "دوربین اصلی", "سیستم عامل", "رنگبندی"]
+        # 4. Create Features based on category
+        # ویژگی‌های مشترک
+        common_features = [
+            {
+                "name": "رنگ", 
+                "type": "physical",
+                "is_main_feature": True,
+                "display_order": 1
+            },
+        ]
+        
+        # ویژگی‌های موبایل
+        mobile_features = [
+            {
+                "name": "حافظه داخلی",
+                "type": "technical",
+                "unit": "گیگابایت",
+                "is_main_feature": True,
+                "display_order": 2
+            },
+            {
+                "name": "رم",
+                "type": "technical",
+                "unit": "گیگابایت",
+                "is_main_feature": True,
+                "display_order": 3
+            },
+            {
+                "name": "پردازنده",
+                "type": "technical",
+                "is_main_feature": True,
+                "display_order": 4
+            },
+            {
+                "name": "دوربین اصلی",
+                "type": "technical",
+                "unit": "مگاپیکسل",
+                "is_main_feature": True,
+                "display_order": 5
+            },
+        ]
+        
+        # ویژگی‌های لپ‌تاپ
+        laptop_features = [
+            {
+                "name": "پردازنده",
+                "type": "technical",
+                "is_main_feature": True,
+                "display_order": 2
+            },
+            {
+                "name": "حافظه RAM",
+                "type": "technical",
+                "unit": "گیگابایت",
+                "is_main_feature": True,
+                "display_order": 3
+            },
+            {
+                "name": "حافظه داخلی",
+                "type": "technical",
+                "unit": "گیگابایت",
+                "is_main_feature": True,
+                "display_order": 4
+            },
+            {
+                "name": "کارت گرافیک",
+                "type": "technical",
+                "is_main_feature": True,
+                "display_order": 5
+            },
+        ]
+        
+        # ویژگی‌های یخچال
+        refrigerator_features = [
+            {
+                "name": "حجم کل",
+                "type": "physical",
+                "unit": "لیتر",
+                "is_main_feature": True,
+                "display_order": 2
+            },
+            {
+                "name": "نوع یخچال",
+                "type": "general",
+                "is_main_feature": True,
+                "display_order": 3
+            },
+            {
+                "name": "برچسب انرژی",
+                "type": "technical",
+                "is_main_feature": True,
+                "display_order": 4
+            },
+        ]
+        
+        # ویژگی‌های ماشین لباسشویی
+        washing_machine_features = [
+            {
+                "name": "ظرفیت",
+                "type": "physical",
+                "unit": "کیلوگرم",
+                "is_main_feature": True,
+                "display_order": 2
+            },
+            {
+                "name": "نوع موتور",
+                "type": "technical",
+                "is_main_feature": True,
+                "display_order": 3
+            },
+            {
+                "name": "تعداد برنامه شستشو",
+                "type": "general",
+                "is_main_feature": True,
+                "display_order": 4
+            },
+            {
+                "name": "برچسب انرژی",
+                "type": "technical",
+                "is_main_feature": True,
+                "display_order": 5
+            },
+        ]
+
         features = []
-        for f_name in features_data:
-            feature, _ = Feature.objects.get_or_create(name=f_name)
+        mobile_cat = Category.objects.get(name="موبایل")
+        laptop_cat = Category.objects.get(name="لپ‌تاپ")
+        refrigerator_cat = Category.objects.get(name="یخچال و فریزر")
+        washing_cat = Category.objects.get(name="ماشین لباسشویی")
+
+        # ایجاد ویژگی‌ها برای هر دسته
+        for feature_data in common_features:
+            for category in [mobile_cat, laptop_cat, refrigerator_cat, washing_cat]:
+                feature_data = feature_data.copy()
+                feature, _ = Feature.objects.get_or_create(
+                    name=feature_data['name'],
+                    category=category,
+                    defaults=feature_data
+                )
+                features.append(feature)
+
+        # ویژگی‌های اختصاصی موبایل
+        for feature_data in mobile_features:
+            feature, _ = Feature.objects.get_or_create(
+                name=feature_data['name'],
+                category=mobile_cat,
+                defaults=feature_data
+            )
             features.append(feature)
+
+        # ویژگی‌های اختصاصی لپ‌تاپ
+        for feature_data in laptop_features:
+            feature, _ = Feature.objects.get_or_create(
+                name=feature_data['name'],
+                category=laptop_cat,
+                defaults=feature_data
+            )
+            features.append(feature)
+
+        # ویژگی‌های اختصاصی یخچال
+        for feature_data in refrigerator_features:
+            feature, _ = Feature.objects.get_or_create(
+                name=feature_data['name'],
+                category=refrigerator_cat,
+                defaults=feature_data
+            )
+            features.append(feature)
+
+        # ویژگی‌های اختصاصی ماشین لباسشویی
+        for feature_data in washing_machine_features:
+            feature, _ = Feature.objects.get_or_create(
+                name=feature_data['name'],
+                category=washing_cat,
+                defaults=feature_data
+            )
+            features.append(feature)
+
         self.stdout.write(f'{len(features)} features created.')
 
-        # 4. Create Discounts
-        discounts = []
-        for i in range(3):
-            discount = Discount.objects.create(
-                name=f"تخفیف ویژه {i+1}",
-                percentage=random.randint(5, 25),
-                start_date=timezone.now() - timezone.timedelta(days=random.randint(-5, 5)), # Some active, some not
-                end_date=timezone.now() + timezone.timedelta(days=random.randint(1, 30))
-            )
-            discounts.append(discount)
-        self.stdout.write(f'{len(discounts)} discounts created.')
-
-        # 5. Create Products
-        products = []
-        product_titles = [
-            "گوشی موبایل سامسونگ گلکسی A54", "لپ تاپ ۱۵ اینچی ایسوس مدل VivoBook R565EA",
-            "تلویزیون هوشمند ۴۳ اینچ اسنوا", "هارد اکسترنال وسترن دیجیتال ۲ ترابایت",
-            "کیبورد و ماوس بی‌سیم لاجیتک", "یخچال فریزر ساید بای ساید دوو"
+        # 5. Create Products with realistic data
+        products_data = [
+            {
+                "title": "گوشی موبایل سامسونگ مدل Galaxy S23 Ultra",
+                "base_price_cash": Decimal("45000000"),
+                "description": "پرچمدار سامسونگ با دوربین 200 مگاپیکسلی",
+                "category": mobile_cat,
+                "brand": Brand.objects.get(name="سامسونگ"),
+                "features": {
+                    "حافظه داخلی": "256",
+                    "رم": "12",
+                    "پردازنده": "Snapdragon 8 Gen 2",
+                    "دوربین اصلی": "200",
+                    "رنگ": "مشکی"
+                }
+            },
+            {
+                "title": "لپ تاپ ایسوس مدل ROG Strix G15",
+                "base_price_cash": Decimal("52000000"),
+                "description": "لپ تاپ گیمینگ با پردازنده قدرتمند",
+                "category": laptop_cat,
+                "brand": Brand.objects.get(name="ایسوس"),
+                "features": {
+                    "پردازنده": "AMD Ryzen 9 5900HX",
+                    "حافظه RAM": "32",
+                    "حافظه داخلی": "1000",
+                    "کارت گرافیک": "NVIDIA RTX 3070 8GB",
+                    "رنگ": "مشکی"
+                }
+            },
+            {
+                "title": "یخچال و فریزر ساید بای ساید ال جی",
+                "base_price_cash": Decimal("85000000"),
+                "description": "یخچال و فریزر ساید بای ساید با تکنولوژی اینورتر",
+                "category": refrigerator_cat,
+                "brand": Brand.objects.get(name="ال جی"),
+                "features": {
+                    "حجم کل": "700",
+                    "نوع یخچال": "ساید بای ساید",
+                    "برچسب انرژی": "A++",
+                    "رنگ": "نقره‌ای"
+                }
+            },
+            {
+                "title": "ماشین لباسشویی اسنوا مدل SWM-84518",
+                "base_price_cash": Decimal("32000000"),
+                "description": "ماشین لباسشویی 8 کیلویی اسنوا",
+                "category": washing_cat,
+                "brand": Brand.objects.get(name="اسنوا"),
+                "features": {
+                    "ظرفیت": "8",
+                    "نوع موتور": "دایرکت درایو",
+                    "تعداد برنامه شستشو": "16",
+                    "برچسب انرژی": "A+++",
+                    "رنگ": "سفید"
+                }
+            }
         ]
-        for i in range(len(product_titles)):
+
+        products = []
+        for product_data in products_data:
+            # ایجاد محصول
             product = Product.objects.create(
-                title=product_titles[i],
-                base_price_cash=Decimal(random.randrange(5000000, 50000000, 100000)),
-                description=f"توضیحات کامل برای {product_titles[i]}. این محصول دارای ویژگی‌های منحصر به فردی است.",
-                # image='path/to/your/placeholder_image.jpg' # در صورت نیاز
+                title=product_data['title'],
+                base_price_cash=product_data['base_price_cash'],
+                description=product_data['description'],
+                brand=product_data['brand']
             )
-            # Assign categories (randomly assign 1 or 2 categories)
-            product_cats = random.sample(categories, k=random.randint(1, min(2, len(categories))))
-            product.categories.set(product_cats)
+            product.categories.add(product_data['category'])
             
-            # Assign some discounts (optional)
-            if random.choice([True, False]):
-                 product.discounts.set(random.sample(discounts, k=random.randint(1, min(2,len(discounts)))))
+            # اضافه کردن ویژگی‌ها
+            features_data = product_data['features']
+            for feature_name, value in features_data.items():
+                feature = Feature.objects.get(name=feature_name, category=product_data['category'])
+                ProductFeature.objects.create(
+                    product=product,
+                    feature=feature,
+                    value=value
+                )
+            
+            # اضافه کردن گزینه‌های رنگ
+            color_feature = Feature.objects.get(name="رنگ", category=product_data['category'])
+            color_value = features_data.get("رنگ")
+            if color_value:
+                color = Color.objects.get(name=color_value)
+                ProductOption.objects.create(
+                    product=product,
+                    feature=color_feature,
+                    value=color_value,
+                    color=color,
+                    option_price=0  # قیمت پایه برای رنگ اصلی
+                )
+            
             products.append(product)
+
         self.stdout.write(f'{len(products)} products created.')
 
-        # 6. Create Installment Plans
-        installment_plans = []
-        for product_obj in products:
-            if not product_obj.categories.filter(name__in=["موبایل", "لپ‌تاپ", "تلویزیون", "یخچال فریزر ساید بای ساید دوو"]).exists():
-                continue # فقط برای برخی دسته‌بندی‌ها طرح اقساطی ایجاد کن
+        # 6. Create Discounts
+        discount_data = [
+            {
+                "name": "تخفیف ویژه تابستان",
+                "percentage": 15,
+                "start_date": timezone.now(),
+                "end_date": timezone.now() + timezone.timedelta(days=30)
+            },
+            {
+                "name": "فروش فوق العاده",
+                "percentage": 20,
+                "start_date": timezone.now(),
+                "end_date": timezone.now() + timezone.timedelta(days=15)
+            }
+        ]
+        
+        discounts = []
+        for discount_info in discount_data:
+            discount = Discount.objects.create(**discount_info)
+            discounts.append(discount)
+            
+        self.stdout.write(f'{len(discounts)} discounts created.')
 
-            for j in range(random.randint(1, 2)): # 1 or 2 plans per product
-                selected_months = random.choice(InstallmentPlan.SELECT_MONTHS)[0]
-                plan = InstallmentPlan.objects.create(
-                    title=f"طرح {selected_months} ماهه برای {product_obj.title[:20]}",
-                    product=product_obj,
-                    months=selected_months,
-                    prepayment=product_obj.base_price_cash * Decimal(random.choice(['0.1', '0.2', '0.25']))
-                )
-                # Assign some discounts to plan (optional)
-                if random.choice([True, False, False]): # Less likely
-                    plan.discounts.set(random.sample(discounts, k=random.randint(1,min(1,len(discounts)))))
-                installment_plans.append(plan)
-                product_obj.installment_plans.add(plan) # Add to product's m2m
-        self.stdout.write(f'{len(installment_plans)} installment plans created.')
-
-
-        # 7. Create ProductFeatureValues
-        product_feature_values = []
-        feature_value_samples = {
-            "پردازنده": ["Core i5", "Snapdragon 8 Gen 2", "Core i7", "Helio G99"],
-            "رم": ["8GB", "16GB", "12GB", "6GB"],
-            "حافظه داخلی": ["256GB SSD", "128GB", "512GB", "1TB HDD"],
-            "اندازه صفحه نمایش": ["6.5 اینچ", "15.6 اینچ", "43 اینچ", "27 اینچ"],
-            "دوربین اصلی": ["50MP", "12MP", "108MP", "64MP"],
-            "سیستم عامل": ["Android 13", "Windows 11", "WebOS", "بدون سیستم عامل"],
-            "رنگبندی": ["مشکی، سفید، آبی", "نقره‌ای، خاکستری", "فقط مشکی"]
-        }
-        for product_obj in products:
-            num_features_to_add = random.randint(2, min(5, len(features)))
-            added_features = []
-            for _ in range(num_features_to_add):
-                feature_obj = random.choice([f for f in features if f not in added_features])
-                added_features.append(feature_obj)
-                if feature_obj.name in feature_value_samples:
-                    value = random.choice(feature_value_samples[feature_obj.name])
-                    pfv = ProductFeatureValue.objects.create(
-                        product=product_obj,
-                        feature=feature_obj,
-                        value=value
+        # 7. Create InstallmentPlans for expensive products
+        for product in products:
+            if product.base_price_cash > Decimal('30000000'):  # فقط برای محصولات گران‌تر از 30 میلیون
+                for months in [12, 24]:
+                    plan = InstallmentPlan.objects.create(
+                        title=f"طرح اقساطی {months} ماهه {product.title}",
+                        product=product,
+                        months=months,
+                        prepayment=product.base_price_cash * Decimal('0.20')  # 20% پیش پرداخت
                     )
-                    product_feature_values.append(pfv)
-        self.stdout.write(f'{len(product_feature_values)} product feature values created.')
+                    product.installment_plans.add(plan)
 
-        # 8. Create ProductOptions
-        product_options = []
-        for product_obj in products:
-            # Add color options if product has color feature
-            color_feature = Feature.objects.filter(name__icontains="رنگ").first()
-            if color_feature and ProductFeatureValue.objects.filter(product=product_obj, feature=color_feature).exists():
-                for _ in range(random.randint(1,3)): # 1 to 3 color options
-                    selected_color = random.choice(colors)
-                    # Check if this option already exists for this product and feature (color)
-                    existing_option = ProductOption.objects.filter(product=product_obj, feature=color_feature, color=selected_color).first()
-                    if not existing_option:
-                        po = ProductOption.objects.create(
-                            product=product_obj,
-                            feature=color_feature,
-                            value=selected_color.name, # Value can be color name
-                            color=selected_color,
-                            price_change=Decimal(random.randrange(-50000, 50000, 10000)) # +/- 500k Rials
-                        )
-                        product_options.append(po)
-        self.stdout.write(f'{len(product_options)} product options created.')
-
-        # 9. Create Gallery Items
-        gallery_items = []
-        for product_option in product_options:  # iterate over product options instead of products
-            for i in range(random.randint(1, 4)):  # 1 to 4 images per product option
-                # image='path/to/your/gallery_image_{i}.jpg' # در صورت نیاز
-                item = Gallery.objects.create(
-                    product=product_option,  # now correctly using ProductOption
-                    alt_text=f"نمای {i+1} از {product_option.product.title} - {product_option.value}"
-                )
-                gallery_items.append(item)
-        self.stdout.write(f'{len(gallery_items)} gallery items created.')
-
-        self.stdout.write(self.style.SUCCESS('Successfully populated store data!')) 
+        self.stdout.write(self.style.SUCCESS('Successfully populated store data with realistic information!')) 

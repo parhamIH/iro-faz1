@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, Category, ProductFeatureValue, ProductOption, InstallmentPlan, Discount, Brand
+from .models import Product, Category, ProductFeature, ProductOption, InstallmentPlan, Discount, Brand
 from django.utils import timezone
 
 class BrandSerializer(serializers.ModelSerializer):
@@ -21,7 +21,7 @@ class ProductFeatureValueSerializer(serializers.ModelSerializer):
     feature_name = serializers.CharField(source='feature.name', read_only=True)
     
     class Meta:
-        model = ProductFeatureValue
+        model = ProductFeature
         fields = ['id', 'feature', 'feature_name', 'value']
 
 class ProductOptionSerializer(serializers.ModelSerializer):
@@ -30,7 +30,7 @@ class ProductOptionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = ProductOption
-        fields = ['id', 'feature', 'feature_name', 'value', 'color', 'color_name', 'price_change']
+        fields = ['id', 'feature', 'feature_name', 'value', 'color', 'color_name', 'option_price']
 
 class InstallmentPlanSerializer(serializers.ModelSerializer):
     monthly_installment = serializers.DecimalField(

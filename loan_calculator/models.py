@@ -11,6 +11,7 @@ class LoanCondition(models.Model):
         # مقدار پیش‌فرض در جاوااسکریپت شما به نظر می‌رسد چک باشد
         DEFAULT = 'default', _('پیش‌فرض (چک)') 
 
+
     class ConditionTypeChoices(models.TextChoices):
         AUTOMOBILE = 'automobile', _('خودرو')
         GENERAL = 'general', _('عمومی')

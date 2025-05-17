@@ -7,13 +7,15 @@ from django.utils.translation import gettext_lazy as _
 
 # Import مدل‌های خودتان
 from .models import Product, LoanCondition, PrePaymentInstallment
-# Import سریالایزرهای خودتان (اگر نیاز به لیست کردن یا ایجاد از طریق API دارید)
-# from .serializers import ProductSerializer, LoanConditionSerializer
+from .serializers import LoanConditionSerializer
 
-class LoanCalculatorViewSet(viewsets.ViewSet):
+class LoanCalculatorViewSet(viewsets.ModelViewSet):
     """
     ViewSet برای محاسبات مربوط به وام و شرایط پرداخت.
+    این ViewSet امکانات CRUD کامل را فراهم می‌کند.
     """
+    serializer_class = LoanConditionSerializer
+    queryset = LoanCondition.objects.all()
 
     def _calculate_loan_repayment_details(self, loan_price_decimal, annual_interest_rate_percent_decimal, return_months_int):
         """

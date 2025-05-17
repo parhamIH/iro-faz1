@@ -35,6 +35,7 @@ class Category(models.Model):
     description = models.TextField(blank=True, null=True)
     brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='categories')
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
+    image = models.ImageField(upload_to='categories/', blank=True, null=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -140,6 +141,7 @@ class ProductFeature(models.Model):
             return f"{self.product.name} - {self.feature.name}: {self.value} {self.feature.unit}"
         return f"{self.product.name} - {self.feature.name}: {self.value}"
 
+#add  add provider for product-option foreignkey
 class ProductOption(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options')
     feature = models.ForeignKey(Feature, on_delete=models.CASCADE)

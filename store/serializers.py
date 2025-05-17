@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, Category, ProductFeature, ProductOption, Discount, Brand
+from .models import Product, Category, ProductFeature, ProductOption, Discount, Brand , Gallery
 from loan_calculator.models import LoanCondition, PrePaymentInstallment
 from django.utils import timezone
 
@@ -18,6 +18,12 @@ class LoanConditionSerializer(serializers.ModelSerializer):
                   "condition_months", "annual_interest_rate_percent", 
                   "initial_increase_percent", "single_prepayment_percent",
                     "secondary_increase_percent", "delivery_days", "prepayment_installments"]
+
+class GallerySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Gallery
+        fields = ['id', 'product', 'image', 'alt_text']
+
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
@@ -62,13 +68,13 @@ class ProductSerializer(serializers.ModelSerializer):
     brand = BrandSerializer(read_only=True)
     active_discounts = serializers.SerializerMethodField()
     loan_conditions = LoanConditionSerializer(many=True, read_only=True)
-    
+    gallery = GallerySerializer(many=True, read_only=True)
     class Meta:
         model = Product
         fields = [
             'id', 'title', 'slug', 'categories', 'base_price_cash', 'description',
             'image', 'brand', 'feature_values', 'options',
-            'discounts', 'active_discounts', 'loan_conditions'
+            'discounts', 'active_discounts', 'loan_conditions', 'gallery'
         ]
     
     def get_active_discounts(self, obj):

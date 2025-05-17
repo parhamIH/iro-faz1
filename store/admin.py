@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    Category, Product, Feature, InstallmentPlan,
+    Category, Product, Feature,
     ProductFeature, ProductOption, Discount, Gallery, Color, Brand
 )
 
@@ -25,7 +25,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = ('title', 'base_price_cash', 'get_categories_display', 'brand')
     search_fields = ('title', 'categories__name', 'brand__name')
     list_filter = ('categories', 'brand')
-    filter_horizontal = ('categories', 'installment_plans', 'discounts')
+    filter_horizontal = ('categories', 'discounts')
     inlines = [ProductFeatureInline, ProductOptionInline]
     prepopulated_fields = {'slug': ('title',)}
 
@@ -54,20 +54,6 @@ class ProductOptionAdmin(admin.ModelAdmin):
     search_fields = ('product__title', 'feature__name', 'value', 'color__name')
     list_filter = ('feature', 'color', 'product__categories')
     autocomplete_fields = ['product', 'feature', 'color']
-
-@admin.register(InstallmentPlan)
-class InstallmentPlanAdmin(admin.ModelAdmin):
-    list_display = ('title', 'product', 'months', 'prepayment', 'get_interest_rate_display', 'calculate_monthly_installment_display')
-    search_fields = ('title', 'product__title')
-    list_filter = ('months', 'product__categories')
-
-    def get_interest_rate_display(self, obj):
-        return f"{obj.get_interest_rate()}%"
-    get_interest_rate_display.short_description = 'Interest Rate'
-
-    def calculate_monthly_installment_display(self, obj):
-        return f"{obj.calculate_monthly_installment():,.0f} تومان"
-    calculate_monthly_installment_display.short_description = 'Monthly Installment'
 
 @admin.register(Discount)
 class DiscountAdmin(admin.ModelAdmin):

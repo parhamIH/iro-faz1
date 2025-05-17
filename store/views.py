@@ -1,10 +1,11 @@
 from django.shortcuts import render
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Product, Category, InstallmentPlan, Discount, Brand
+from .models import Product, Category, Discount, Brand
+from loan_calculator.models import LoanCondition, PrePaymentInstallment
 from .serializers import (
-    ProductSerializer, CategorySerializer, InstallmentPlanSerializer,
-    DiscountSerializer, BrandSerializer
+    ProductSerializer, CategorySerializer,
+    DiscountSerializer, BrandSerializer, LoanConditionSerializer, PrePaymentInstallmentSerializer
 )
 from django.http import Http404
 
@@ -52,12 +53,6 @@ class CategoryViewSet(BaseModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'description']
 
-class InstallmentPlanViewSet(BaseModelViewSet):
-    queryset = InstallmentPlan.objects.all()
-    serializer_class = InstallmentPlanSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['months', 'product']
-
 class DiscountViewSet(BaseModelViewSet):
     queryset = Discount.objects.all()
     serializer_class = DiscountSerializer
@@ -70,3 +65,21 @@ class BrandViewSet(BaseModelViewSet):
     serializer_class = BrandSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'description']
+
+class LoanConditionViewSet(BaseModelViewSet):
+    queryset = LoanCondition.objects.all()
+    serializer_class = LoanConditionSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['condition_type', 'product']
+    search_fields = ['title', 'product__title']
+
+
+
+class PrePaymentInstallmentViewSet(BaseModelViewSet):
+    queryset = PrePaymentInstallment.objects.all()
+    serializer_class = PrePaymentInstallmentSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['loan_condition']
+    search_fields = ['loan_condition__title']
+
+

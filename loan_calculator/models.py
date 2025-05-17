@@ -8,12 +8,13 @@ class LoanCondition(models.Model):
     class GuaranteeType(models.TextChoices):
         PROMISSORY = 'promissory', _('سفته')
         CHECK = 'check', _('چک')
-        # مقدار پیش‌فرض در جاوااسکریپت شما به نظر می‌رسد چک باشد
+        # مقدار پیش‌فرض باشد
         DEFAULT = 'default', _('پیش‌فرض (چک)') 
 
 
     class ConditionTypeChoices(models.TextChoices):
         AUTOMOBILE = 'automobile', _('خودرو')
+        DIGITAL = 'digital', _('دیجیتال')
         GENERAL = 'general', _('عمومی')
         # سایر انواع شرایط را در صورت نیاز اضافه کنید
 

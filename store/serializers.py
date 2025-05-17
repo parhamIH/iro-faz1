@@ -1,7 +1,23 @@
 from rest_framework import serializers
-from .models import Product, Category, ProductFeature, ProductOption, InstallmentPlan, Discount, Brand
+from .models import Product, Category, ProductFeature, ProductOption, Discount, Brand
+from loan_calculator.models import LoanCondition, PrePaymentInstallment
 from django.utils import timezone
 
+
+class PrePaymentInstallmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrePaymentInstallment
+        fields = ["id", "percent_of_initial_increased_price", "days_offset_for_payment", "order", "due_date_from_today"]
+
+class LoanConditionSerializer(serializers.ModelSerializer):
+    prepayment_installments = PrePaymentInstallmentSerializer(many=True, read_only=True)
+    class Meta:
+        model = LoanCondition
+        fields = ["id", "title", "condition_type","product",
+                  "guarantee_type", "has_guarantor", 
+                  "condition_months", "annual_interest_rate_percent", 
+                  "initial_increase_percent", "single_prepayment_percent",
+                    "secondary_increase_percent", "delivery_days", "prepayment_installments"]
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
@@ -9,6 +25,7 @@ class BrandSerializer(serializers.ModelSerializer):
 
 class CategorySerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
+    brand = BrandSerializer(read_only=True)
     
     class Meta:
         model = Category
@@ -32,28 +49,6 @@ class ProductOptionSerializer(serializers.ModelSerializer):
         model = ProductOption
         fields = ['id', 'feature', 'feature_name', 'value', 'color', 'color_name', 'option_price']
 
-class InstallmentPlanSerializer(serializers.ModelSerializer):
-    monthly_installment = serializers.DecimalField(
-        read_only=True,
-        max_digits=12,
-        decimal_places=2
-    )
-    total_payment = serializers.DecimalField(
-        read_only=True,
-        max_digits=12,
-        decimal_places=2
-    )
-    
-    class Meta:
-        model = InstallmentPlan
-        fields = ['id', 'title', 'months', 'prepayment', 'monthly_installment', 'total_payment', 'discounts']
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data['monthly_installment'] = instance.calculate_monthly_installment()
-        data['total_payment'] = instance.total_payment()
-        return data
-
 class DiscountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Discount
@@ -63,17 +58,17 @@ class ProductSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True, read_only=True)
     feature_values = ProductFeatureValueSerializer(many=True, read_only=True)
     options = ProductOptionSerializer(many=True, read_only=True)
-    installment_plans = InstallmentPlanSerializer(many=True, read_only=True)
     discounts = DiscountSerializer(many=True, read_only=True)
     brand = BrandSerializer(read_only=True)
     active_discounts = serializers.SerializerMethodField()
+    loan_conditions = LoanConditionSerializer(many=True, read_only=True)
     
     class Meta:
         model = Product
         fields = [
             'id', 'title', 'slug', 'categories', 'base_price_cash', 'description',
-            'image', 'brand', 'feature_values', 'options', 'installment_plans',
-            'discounts', 'active_discounts'
+            'image', 'brand', 'feature_values', 'options',
+            'discounts', 'active_discounts', 'loan_conditions'
         ]
     
     def get_active_discounts(self, obj):

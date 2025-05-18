@@ -48,7 +48,7 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name 
-
+#delete discount from product and add it  to product-option
 class Product(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(
@@ -148,7 +148,7 @@ class ProductOption(models.Model):
     value = models.CharField(max_length=100)
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='options', blank=True, null=True)
     option_price = models.PositiveIntegerField(help_text="قیمت به تومان برای محصول با این ویژگی")
-
+    
     def __str__(self):
         return f"{self.product.title} - {self.feature.name}: {self.value} (+{self.option_price})"
 

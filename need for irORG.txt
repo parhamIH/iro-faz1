@@ -3,7 +3,15 @@ permission.py  , fav products ,  comments ,  logs & alerts    ,
 ################################-----apps
 loan calculator  { ?????  }
 
-user panel + kiff pool    , cart ,  moghayese , cart gust , 
+
+
+ cart , 
+user panel +
+ kiff pool    
+ moghayese ,
+ cart gust , 
+count link views (هر محصولی چند بار دیده شده)  IP client (search ) , 
+
 
 
 

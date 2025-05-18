@@ -5,8 +5,9 @@ from .models import Product, Category, Discount, Brand
 from loan_calculator.models import LoanCondition, PrePaymentInstallment
 from .serializers import (
     ProductSerializer, CategorySerializer,
-    DiscountSerializer, BrandSerializer, LoanConditionSerializer, PrePaymentInstallmentSerializer
+    DiscountSerializer, BrandSerializer
 )
+from loan_calculator.serializers import LoanConditionSerializer, PrePaymentInstallmentSerializer
 from django.http import Http404
 
 class BaseModelViewSet(viewsets.ModelViewSet):
@@ -72,8 +73,6 @@ class LoanConditionViewSet(BaseModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['condition_type', 'product']
     search_fields = ['title', 'product__title']
-
-
 
 class PrePaymentInstallmentViewSet(BaseModelViewSet):
     queryset = PrePaymentInstallment.objects.all()

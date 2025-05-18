@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'store',
     'loan_calculator',
     'django_filters',
+    'accounts',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [

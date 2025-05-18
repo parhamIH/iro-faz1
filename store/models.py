@@ -143,6 +143,7 @@ class ProductFeature(models.Model):
 
 #add  add provider for product-option foreignkey
 class ProductOption(models.Model):
+    
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options')
     feature = models.ForeignKey(Feature, on_delete=models.CASCADE)
     value = models.CharField(max_length=100)
@@ -150,7 +151,7 @@ class ProductOption(models.Model):
     option_price = models.PositiveIntegerField(help_text="قیمت به تومان برای محصول با این ویژگی")
     quantity = models.PositiveIntegerField(default=1)
     is_available = models.BooleanField(default=True)
-    
+
     def __str__(self):
         return f"{self.product.title} - {self.feature.name}: {self.value} (+{self.option_price})"
 

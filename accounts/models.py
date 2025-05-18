@@ -3,6 +3,20 @@ from django.db import models
 
 # مدل سفارشی کاربر
 class CustomUser(AbstractUser):
+    groups = models.ManyToManyField(
+        'auth.Group',
+        verbose_name='groups',
+        blank=True,
+        related_name='custom_user_set',
+        related_query_name='custom_user'
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        verbose_name='user permissions',
+        blank=True,
+        related_name='custom_user_set',
+        related_query_name='custom_user'
+    )
     phone = models.CharField(max_length=20)
     address = models.CharField(max_length=255)
     birth_date = models.DateField()

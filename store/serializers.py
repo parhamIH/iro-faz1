@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, Category, ProductFeature, ProductOption, Discount, Brand, Gallery
+from .models import Product, Category,  ProductOption, Discount, Brand, Gallery
 from loan_calculator.serializers import LoanConditionSerializer, PrePaymentInstallmentSerializer
 from django.utils import timezone
 from django.db.models import Q
@@ -26,20 +26,13 @@ class CategorySerializer(serializers.ModelSerializer):
     def get_children(self, obj):
         return CategorySerializer(obj.children.all(), many=True).data
 
-class ProductFeatureValueSerializer(serializers.ModelSerializer):
-    feature_name = serializers.CharField(source='feature.name', read_only=True)
-    
-    class Meta:
-        model = ProductFeature
-        fields = ['id', 'feature', 'feature_name', 'value']
-
 class ProductOptionSerializer(serializers.ModelSerializer):
     feature_name = serializers.CharField(source='feature.name', read_only=True)
     color_name = serializers.CharField(source='color.name', read_only=True)
     
     class Meta:
         model = ProductOption
-        fields = ['id', 'feature', 'feature_name', 'value', 'color', 'color_name', 'option_price']
+        fields = ['id', 'feature', 'feature_name', 'feature_value', 'color', 'color_name', 'option_price']
 
 class DiscountSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,7 +41,6 @@ class DiscountSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True, read_only=True)
-    feature_values = ProductFeatureValueSerializer(many=True, read_only=True)
     options = ProductOptionSerializer(many=True, read_only=True)
     discounts = DiscountSerializer(many=True, read_only=True)
     brand = BrandSerializer(read_only=True)
@@ -59,7 +51,7 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'title', 'slug', 'categories', 'base_price_cash', 'description',
-            'image', 'brand', 'feature_values', 'options',
+            'image', 'brand', 'options',
             'discounts', 'active_discounts', 'loan_conditions', 'gallery'
         ]
     

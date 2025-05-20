@@ -4,8 +4,8 @@ from decimal import Decimal
 import random
 
 from store.models import (
-    Category, Product, Feature, InstallmentPlan,
-    ProductFeature, ProductOption, Discount, Gallery, Color, Brand
+    Category, Product, Feature, 
+    ProductOption, Discount, Gallery, Color, Brand
 )
 
 class Command(BaseCommand):
@@ -16,8 +16,6 @@ class Command(BaseCommand):
         # ترتیب حذف مهم است به دلیل روابط ForeignKey
         Gallery.objects.all().delete()
         ProductOption.objects.all().delete()
-        ProductFeature.objects.all().delete()
-        InstallmentPlan.objects.all().delete()
         Product.objects.all().delete()
         Discount.objects.all().delete()
         Feature.objects.all().delete()
@@ -359,10 +357,11 @@ class Command(BaseCommand):
             features_data = product_data['features']
             for feature_name, value in features_data.items():
                 feature = Feature.objects.get(name=feature_name, category=product_data['category'])
-                ProductFeature.objects.create(
+                ProductOption.objects.create(
                     product=product,
                     feature=feature,
-                    value=value
+                    feature_value=value,
+                    option_price=0  # قیمت پایه برای ویژگی‌های اصلی
                 )
             
             # اضافه کردن گزینه‌های رنگ
@@ -373,7 +372,7 @@ class Command(BaseCommand):
                 ProductOption.objects.create(
                     product=product,
                     feature=color_feature,
-                    value=color_value,
+                    feature_value=color_value,
                     color=color,
                     option_price=0  # قیمت پایه برای رنگ اصلی
                 )
@@ -404,17 +403,5 @@ class Command(BaseCommand):
             discounts.append(discount)
             
         self.stdout.write(f'{len(discounts)} discounts created.')
-
-        # 7. Create InstallmentPlans for expensive products
-        for product in products:
-            if product.base_price_cash > Decimal('30000000'):  # فقط برای محصولات گران‌تر از 30 میلیون
-                for months in [12, 24]:
-                    plan = InstallmentPlan.objects.create(
-                        title=f"طرح اقساطی {months} ماهه {product.title}",
-                        product=product,
-                        months=months,
-                        prepayment=product.base_price_cash * Decimal('0.20')  # 20% پیش پرداخت
-                    )
-                    product.installment_plans.add(plan)
 
         self.stdout.write(self.style.SUCCESS('Successfully populated store data with realistic information!')) 

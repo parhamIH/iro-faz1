@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Category, Product, Feature,
-    ProductFeature, ProductOption, Discount, Gallery, Color, Brand
+ ProductOption, Discount, Gallery, Color, Brand
 )
 
 @admin.register(Category)
@@ -9,11 +9,6 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'parent', 'description')
     search_fields = ('name', 'parent__name')
     list_filter = ('parent',)
-
-class ProductFeatureInline(admin.TabularInline):
-    model = ProductFeature
-    extra = 1
-    autocomplete_fields = ['feature']
 
 class ProductOptionInline(admin.TabularInline):
     model = ProductOption
@@ -26,7 +21,7 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ('title', 'categories__name', 'brand__name')
     list_filter = ('categories', 'brand')
     filter_horizontal = ('categories', 'discounts')
-    inlines = [ProductFeatureInline, ProductOptionInline]
+    inlines = [ ProductOptionInline]
     prepopulated_fields = {'slug': ('title',)}
 
     def get_categories_display(self, obj):
@@ -41,17 +36,10 @@ class FeatureDefinitionAdmin(admin.ModelAdmin):
     ordering = ('category', 'display_order', 'name')
     list_editable = ('display_order', 'is_main_feature')
 
-@admin.register(ProductFeature)
-class ProductFeatureAdmin(admin.ModelAdmin):
-    list_display = ('product', 'feature', 'value', 'value_numeric')
-    search_fields = ('product__title', 'feature__name', 'value')
-    list_filter = ('feature__type', 'feature__category', 'product__categories')
-    autocomplete_fields = ['product', 'feature']
-
 @admin.register(ProductOption)
 class ProductOptionAdmin(admin.ModelAdmin):
-    list_display = ('product', 'feature', 'value', 'color', 'option_price')
-    search_fields = ('product__title', 'feature__name', 'value', 'color__name')
+    list_display = ('product', 'feature', 'feature_value', 'color', 'option_price')
+    search_fields = ('product__title', 'feature__name', 'feature_value', 'color__name')
     list_filter = ('feature', 'color', 'product__categories')
     autocomplete_fields = ['product', 'feature', 'color']
 

@@ -48,11 +48,6 @@ class ProductViewSet(BaseModelViewSet):
     ordering_fields = ['title', 'base_price_cash']
     ordering = ['title']
 
-    def retrieve(self, request, *args, **kwargs):
-        product = self.get_object()
-        product.views += 1
-        product.save()
-        return super().retrieve(request, *args, **kwargs)
 
 class CategoryViewSet(BaseModelViewSet):
     queryset = Category.objects.all()

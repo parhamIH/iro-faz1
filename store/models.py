@@ -59,11 +59,11 @@ class Product(models.Model):
         null=True
     )
     categories = models.ManyToManyField(Category, related_name='products')
-    base_price_cash = models.DecimalField(max_digits=12, decimal_places=2)
+    base_price_cash = models.DecimalField(max_digits=12, decimal_places=2) #delete able 
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
-    discounts = models.ManyToManyField('Discount', related_name='products', blank=True)
-    brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='products')
+    discounts = models.ManyToManyField('Discount', related_name='products', blank=True) #delte ab
+    brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='products') 
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -112,50 +112,28 @@ class Feature(models.Model):
         return f"{self.name} ({self.get_type_display()})"
 
 
-class ProductFeature(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, 
-                                related_name='features', verbose_name="محصول")
-    feature = models.ForeignKey(Feature, on_delete=models.CASCADE, 
-                                verbose_name="ویژگی")
-    value = models.CharField(max_length=255, verbose_name="مقدار ویژگی")
-    value_numeric = models.DecimalField(max_digits=10, decimal_places=2, 
-                                        null=True, blank=True, verbose_name="مقدار عددی")
-
-    class Meta:
-        unique_together = ['product', 'feature']  # یک ویژگی برای هر محصول تنها یکبار باشد
-        ordering = ['feature__display_order']
-        verbose_name = 'ویژگی محصول'
-        verbose_name_plural = 'ویژگی‌های محصول'
-
-    def clean(self):
-        from decimal import Decimal, DecimalException
-        # اگر ویژگی دارای واحد تعریف شده است، تلاش می‌کنیم مقدار عددی استخراج شود
-        if self.feature.unit and self.value_numeric is None:
-            try:
-                self.value_numeric = Decimal(self.value.split()[0])
-            except (ValueError, IndexError, DecimalException):
-                raise ValidationError({'value': 'برای ویژگی‌های دارای واحد، مقدار باید عددی باشد.'})
-
-    def __str__(self):
-        if self.feature.unit:
-            return f"{self.product.name} - {self.feature.name}: {self.value} {self.feature.unit}"
-        return f"{self.product.name} - {self.feature.name}: {self.value}"
-
-#add  add provider for product-option foreignkey
+#add  add provider for product-option foreignkey for faz 2 
 class ProductOption(models.Model):
-    
+
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options')
     feature = models.ForeignKey(Feature, on_delete=models.CASCADE)
-    value = models.CharField(max_length=100)
+    feature_value = models.CharField(max_length=100)# Use instead of ProductFeature Model
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='options', blank=True, null=True)
     option_price = models.PositiveIntegerField(help_text="قیمت به تومان برای محصول با این ویژگی")
     quantity = models.PositiveIntegerField(default=1)
     is_available = models.BooleanField(default=True)
+    discount= models.ForeignKey('Discount', verbose_name=("تخفیف"), on_delete=models.CASCADE, blank=True, null=True)
+
+    @property
+    def un_available(self):
+        if self.quantity <= 0:
+            return self.is_available == False
+            #add notfication for this attribute 
 
     def __str__(self):
-        return f"{self.product.title} - {self.feature.name}: {self.value} (+{self.option_price})"
+        return f"{self.product.title} - {self.feature.name}: {self.feature_value} (+{self.option_price})"
 
-
+#delete discount from product and add it  to product-option (price - discount  or price - percent discount )
 class Discount(models.Model):
     name = models.CharField(max_length=100)
     percentage = models.PositiveIntegerField(
@@ -195,7 +173,7 @@ class Color(models.Model):
         ("#008000", "green"),
         ("#0000FF", "blue"),
     ]
-    name = models.CharField(max_length=50, verbose_name= "نام رنگ")
+    name = models.CharField(max_length=50, verbose_name= "نام رنگ" , unique=True)
     hex_code = ColorField(samples=COLOR_PALETTE,max_length=7, verbose_name= "کد هگز رنگ",help_text=" مثال: #FFFFFF")
 
     class Meta:

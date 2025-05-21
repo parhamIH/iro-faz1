@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django_filters',
     'accounts',
     'drf_yasg',
+    'cart',
 ]
 
 MIDDLEWARE = [

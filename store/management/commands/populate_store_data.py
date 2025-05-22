@@ -5,7 +5,7 @@ import random
 
 from store.models import (
     Category, Product, Feature, 
-    ProductOption, Discount, Gallery, Color, Brand
+    ProductOption, Gallery, Color, Brand
 )
 
 class Command(BaseCommand):
@@ -17,7 +17,6 @@ class Command(BaseCommand):
         Gallery.objects.all().delete()
         ProductOption.objects.all().delete()
         Product.objects.all().delete()
-        Discount.objects.all().delete()
         Feature.objects.all().delete()
         Color.objects.all().delete()
         Category.objects.all().delete()
@@ -287,10 +286,10 @@ class Command(BaseCommand):
         products_data = [
             {
                 "title": "گوشی موبایل سامسونگ مدل Galaxy S23 Ultra",
-                "base_price_cash": Decimal("45000000"),
                 "description": "پرچمدار سامسونگ با دوربین 200 مگاپیکسلی",
                 "category": mobile_cat,
                 "brand": Brand.objects.get(name="سامسونگ"),
+                "base_option_price": 45000000,
                 "features": {
                     "حافظه داخلی": "256",
                     "رم": "12",
@@ -301,10 +300,10 @@ class Command(BaseCommand):
             },
             {
                 "title": "لپ تاپ ایسوس مدل ROG Strix G15",
-                "base_price_cash": Decimal("52000000"),
                 "description": "لپ تاپ گیمینگ با پردازنده قدرتمند",
                 "category": laptop_cat,
                 "brand": Brand.objects.get(name="ایسوس"),
+                "base_option_price": 52000000,
                 "features": {
                     "پردازنده": "AMD Ryzen 9 5900HX",
                     "حافظه RAM": "32",
@@ -315,10 +314,10 @@ class Command(BaseCommand):
             },
             {
                 "title": "یخچال و فریزر ساید بای ساید ال جی",
-                "base_price_cash": Decimal("85000000"),
                 "description": "یخچال و فریزر ساید بای ساید با تکنولوژی اینورتر",
                 "category": refrigerator_cat,
                 "brand": Brand.objects.get(name="ال جی"),
+                "base_option_price": 85000000,
                 "features": {
                     "حجم کل": "700",
                     "نوع یخچال": "ساید بای ساید",
@@ -328,10 +327,10 @@ class Command(BaseCommand):
             },
             {
                 "title": "ماشین لباسشویی اسنوا مدل SWM-84518",
-                "base_price_cash": Decimal("32000000"),
                 "description": "ماشین لباسشویی 8 کیلویی اسنوا",
                 "category": washing_cat,
                 "brand": Brand.objects.get(name="اسنوا"),
+                "base_option_price": 32000000,
                 "features": {
                     "ظرفیت": "8",
                     "نوع موتور": "دایرکت درایو",
@@ -347,7 +346,6 @@ class Command(BaseCommand):
             # ایجاد محصول
             product = Product.objects.create(
                 title=product_data['title'],
-                base_price_cash=product_data['base_price_cash'],
                 description=product_data['description'],
                 brand=product_data['brand']
             )
@@ -357,12 +355,14 @@ class Command(BaseCommand):
             features_data = product_data['features']
             for feature_name, value in features_data.items():
                 feature = Feature.objects.get(name=feature_name, category=product_data['category'])
-                ProductOption.objects.create(
-                    product=product,
-                    feature=feature,
-                    feature_value=value,
-                    option_price=0  # قیمت پایه برای ویژگی‌های اصلی
-                )
+                # اگر ویژگی رنگ است، آن را جداگانه اضافه می‌کنیم
+                if feature_name != "رنگ":
+                    ProductOption.objects.create(
+                        product=product,
+                        feature=feature,
+                        feature_value=value,
+                        option_price=product_data['base_option_price']  # قیمت پایه برای ویژگی اصلی
+                    )
             
             # اضافه کردن گزینه‌های رنگ
             color_feature = Feature.objects.get(name="رنگ", category=product_data['category'])
@@ -374,34 +374,11 @@ class Command(BaseCommand):
                     feature=color_feature,
                     feature_value=color_value,
                     color=color,
-                    option_price=0  # قیمت پایه برای رنگ اصلی
+                    option_price=product_data['base_option_price']  # قیمت پایه برای رنگ
                 )
             
             products.append(product)
 
         self.stdout.write(f'{len(products)} products created.')
-
-        # 6. Create Discounts
-        discount_data = [
-            {
-                "name": "تخفیف ویژه تابستان",
-                "percentage": 15,
-                "start_date": timezone.now(),
-                "end_date": timezone.now() + timezone.timedelta(days=30)
-            },
-            {
-                "name": "فروش فوق العاده",
-                "percentage": 20,
-                "start_date": timezone.now(),
-                "end_date": timezone.now() + timezone.timedelta(days=15)
-            }
-        ]
-        
-        discounts = []
-        for discount_info in discount_data:
-            discount = Discount.objects.create(**discount_info)
-            discounts.append(discount)
-            
-        self.stdout.write(f'{len(discounts)} discounts created.')
 
         self.stdout.write(self.style.SUCCESS('Successfully populated store data with realistic information!')) 

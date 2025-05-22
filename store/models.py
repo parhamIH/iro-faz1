@@ -51,19 +51,13 @@ class Category(models.Model):
 #delete discount from product and add it  to product-option
 class Product(models.Model):
     title = models.CharField(max_length=255)
-    slug = models.SlugField(
-        max_length=255,
-        unique=True,
-        allow_unicode=True,
-        blank=True,
-        null=True
-    )
+    slug = models.SlugField(max_length=255,unique=True,allow_unicode=True,blank=True,null=True)
     categories = models.ManyToManyField(Category, related_name='products')
-    base_price_cash = models.DecimalField(max_digits=12, decimal_places=2) #delete able 
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
-    discounts = models.ManyToManyField('Discount', related_name='products', blank=True) #delte ab
     brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='products') 
+    is_active = models.BooleanField(default=True)
+
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -114,49 +108,73 @@ class Feature(models.Model):
 
 #add  add provider for product-option foreignkey for faz 2 
 class ProductOption(models.Model):
-
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options')
     feature = models.ForeignKey(Feature, on_delete=models.CASCADE)
-    feature_value = models.CharField(max_length=100)# Use instead of ProductFeature Model
+    feature_value = models.CharField(max_length=100)  # Use instead of ProductFeature Model
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='options', blank=True, null=True)
     option_price = models.PositiveIntegerField(help_text="قیمت به تومان برای محصول با این ویژگی")
     quantity = models.PositiveIntegerField(default=1)
-    is_available = models.BooleanField(default=True)
-    discount= models.ForeignKey('Discount', verbose_name=("تخفیف"), on_delete=models.CASCADE, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
 
-    @property
-    def un_available(self):
-        if self.quantity <= 0:
-            return self.is_available == False
-            #add notfication for this attribute 
-
-    def __str__(self):
-        return f"{self.product.title} - {self.feature.name}: {self.feature_value} (+{self.option_price})"
-
-#delete discount from product and add it  to product-option (price - discount  or price - percent discount )
-class Discount(models.Model):
-    name = models.CharField(max_length=100)
-    percentage = models.PositiveIntegerField(
+    # Discount fields
+    is_active_discount = models.BooleanField(default=False)
+    discount = models.PositiveIntegerField(
         help_text="درصد تخفیف",
-        validators=[MinValueValidator(0), MaxValueValidator(100)]
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        blank=True,
+        null=True
     )
-    start_date = models.DateTimeField(
-        validators=[MinValueValidator(timezone.now)] 
-    )
-    end_date = models.DateTimeField()
+    discount_start_date = models.DateTimeField(null=True, blank=True)
+    discount_end_date = models.DateTimeField(null=True, blank=True)
 
     def clean(self):
         super().clean()
-        if self.start_date and self.end_date and self.end_date <= self.start_date:
-            raise ValidationError({'end_date': "تاریخ پایان باید بعد از تاریخ شروع باشد."})
+        if self.is_active_discount and self.discount_start_date and self.discount_end_date:
+            if self.discount_end_date <= self.discount_start_date:
+                raise ValidationError({'discount_end_date': "تاریخ پایان تخفیف باید بعد از تاریخ شروع باشد."})
 
     @property
-    def is_active(self):
-        return self.start_date <= timezone.now() <= self.end_date
+    def is_discount_active(self):
+        """Check if the discount is currently active"""
+        if not self.is_active_discount or not self.discount:
+            return False
+        now = timezone.now()
+        if self.discount_start_date and self.discount_end_date:
+            return self.discount_start_date <= now <= self.discount_end_date
+        return True
+
+    def get_discount_amount(self):
+        """Calculate the discount amount in Toman"""
+        if not self.is_discount_active:
+            return 0
+        return int(self.option_price * (self.discount / 100))
+
+    def get_final_price(self):
+        """Get the final price after applying discount"""
+        if not self.is_discount_active:
+            return self.option_price
+        return self.option_price - self.get_discount_amount()
+
+    def set_discount_by_amount(self, discount_amount):
+        """Set discount percentage based on a specific amount in Toman"""
+        if discount_amount >= self.option_price:
+            raise ValidationError("مبلغ تخفیف نمی‌تواند بیشتر یا مساوی قیمت محصول باشد.")
+        self.discount = int((discount_amount / self.option_price) * 100)
+        self.is_active_discount = True
+
+    def set_discount_by_percentage(self, percentage):
+        """Set discount by percentage (0-100)"""
+        if not 0 <= percentage <= 100:
+            raise ValidationError("درصد تخفیف باید بین 0 تا 100 باشد.")
+        self.discount = percentage
+        self.is_active_discount = True
 
     def __str__(self):
-        return f"{self.name} - {self.percentage}%"
-    
+        base_str = f"{self.product.title} - {self.feature.name}: {self.feature_value} (+{self.option_price})"
+        if self.is_discount_active:
+            return f"{base_str} (تخفیف: {self.discount}%)"
+        return base_str
+
 class Gallery(models.Model):
     
     product = models.ForeignKey(ProductOption, on_delete=models.CASCADE, related_name='gallery')

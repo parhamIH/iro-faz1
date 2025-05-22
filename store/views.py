@@ -1,11 +1,11 @@
 from django.shortcuts import render
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Product, Category, Discount, Brand
+from .models import Product, Category, Brand
 from loan_calculator.models import LoanCondition, PrePaymentInstallment
 from .serializers import (
     ProductSerializer, CategorySerializer,
-    DiscountSerializer, BrandSerializer
+    BrandSerializer
 )
 from loan_calculator.serializers import LoanConditionSerializer, PrePaymentInstallmentSerializer
 from django.http import Http404
@@ -45,7 +45,7 @@ class ProductViewSet(BaseModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['categories', 'brand']
     search_fields = ['title', 'description', 'brand__name', 'categories__name']
-    ordering_fields = ['title', 'base_price_cash']
+    ordering_fields = ['title']
     ordering = ['title']
 
 
@@ -54,13 +54,6 @@ class CategoryViewSet(BaseModelViewSet):
     serializer_class = CategorySerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'description']
-
-class DiscountViewSet(BaseModelViewSet):
-    queryset = Discount.objects.all()
-    serializer_class = DiscountSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['percentage']
-    search_fields = ['name']
 
 class BrandViewSet(BaseModelViewSet):
     queryset = Brand.objects.all()

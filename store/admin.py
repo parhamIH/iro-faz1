@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Category, Product, Feature,
- ProductOption, Discount, Gallery, Color, Brand
+    ProductOption, Gallery, Color, Brand
 )
 
 @admin.register(Category)
@@ -17,11 +17,11 @@ class ProductOptionInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('title', 'base_price_cash', 'get_categories_display', 'brand')
+    list_display = ('title', 'get_categories_display', 'brand')
     search_fields = ('title', 'categories__name', 'brand__name')
     list_filter = ('categories', 'brand')
-    filter_horizontal = ('categories', 'discounts')
-    inlines = [ ProductOptionInline]
+    filter_horizontal = ('categories',)
+    inlines = [ProductOptionInline]
     prepopulated_fields = {'slug': ('title',)}
 
     def get_categories_display(self, obj):
@@ -38,16 +38,10 @@ class FeatureDefinitionAdmin(admin.ModelAdmin):
 
 @admin.register(ProductOption)
 class ProductOptionAdmin(admin.ModelAdmin):
-    list_display = ('product', 'feature', 'feature_value', 'color', 'option_price')
+    list_display = ('product', 'feature', 'feature_value', 'color', 'option_price', 'is_active_discount', 'discount')
     search_fields = ('product__title', 'feature__name', 'feature_value', 'color__name')
-    list_filter = ('feature', 'color', 'product__categories')
+    list_filter = ('feature', 'color', 'product__categories', 'is_active_discount')
     autocomplete_fields = ['product', 'feature', 'color']
-
-@admin.register(Discount)
-class DiscountAdmin(admin.ModelAdmin):
-    list_display = ('name', 'percentage', 'start_date', 'end_date', 'is_active')
-    search_fields = ('name',)
-    list_filter = ('start_date', 'end_date')
 
 @admin.register(Gallery)
 class GalleryAdmin(admin.ModelAdmin):

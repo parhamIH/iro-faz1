@@ -1,11 +1,12 @@
 from django.shortcuts import render
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Product, Category, Brand
+from .models import Product, Category, Brand, Feature, ProductOption, Color, Gallery
 from loan_calculator.models import LoanCondition, PrePaymentInstallment
 from .serializers import (
-    ProductSerializer, CategorySerializer,
-    BrandSerializer
+    ProductSerializer, CategorySerializer, BrandSerializer,
+    FeatureSerializer, ProductOptionSerializer, ColorSerializer,
+    GallerySerializer
 )
 from loan_calculator.serializers import LoanConditionSerializer, PrePaymentInstallmentSerializer
 from django.http import Http404
@@ -43,11 +44,10 @@ class ProductViewSet(BaseModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['categories', 'brand']
+    filterset_fields = ['categories', 'brand', 'is_active']
     search_fields = ['title', 'description', 'brand__name', 'categories__name']
     ordering_fields = ['title']
     ordering = ['title']
-
 
 class CategoryViewSet(BaseModelViewSet):
     queryset = Category.objects.all()
@@ -60,6 +60,32 @@ class BrandViewSet(BaseModelViewSet):
     serializer_class = BrandSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'description']
+
+class FeatureViewSet(BaseModelViewSet):
+    queryset = Feature.objects.all()
+    serializer_class = FeatureSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['category', 'is_main_feature']
+    search_fields = ['name', 'value']
+
+class ProductOptionViewSet(BaseModelViewSet):
+    queryset = ProductOption.objects.all()
+    serializer_class = ProductOptionSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['product', 'color', 'is_active', 'is_active_discount']
+    search_fields = ['product__title']
+
+class ColorViewSet(BaseModelViewSet):
+    queryset = Color.objects.all()
+    serializer_class = ColorSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name', 'hex_code']
+
+class GalleryViewSet(BaseModelViewSet):
+    queryset = Gallery.objects.all()
+    serializer_class = GallerySerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['product']
 
 class LoanConditionViewSet(BaseModelViewSet):
     queryset = LoanCondition.objects.all()

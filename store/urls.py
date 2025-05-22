@@ -1,9 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    ProductViewSet, CategoryViewSet,
-    BrandViewSet, LoanConditionViewSet,
-    PrePaymentInstallmentViewSet
+    ProductViewSet, CategoryViewSet, BrandViewSet,
+    FeatureViewSet, ProductOptionViewSet, ColorViewSet,
+    GalleryViewSet
 )
 # لیست همه محصولات: http://localhost:8000/api/products/
 # یک محصول خاص: http://localhost:8000/api/products/[slug-محصول]/
@@ -15,8 +15,10 @@ router = DefaultRouter()
 router.register('products', ProductViewSet)
 router.register('categories', CategoryViewSet)
 router.register('brands', BrandViewSet)
-router.register('loan-conditions', LoanConditionViewSet)
-router.register('prepayment-installments', PrePaymentInstallmentViewSet)
+router.register('features', FeatureViewSet)
+router.register('options', ProductOptionViewSet)
+router.register('colors', ColorViewSet)
+router.register('gallery', GalleryViewSet)
 
 # الگوهای URL
 urlpatterns = [

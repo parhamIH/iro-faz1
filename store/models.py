@@ -53,6 +53,7 @@ class Product(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255,unique=True,allow_unicode=True,blank=True,null=True)
     categories = models.ManyToManyField(Category, related_name='products')
+    feature = models.ManyToManyField("Feature", verbose_name=("ویژگی ها"))
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='products') 
@@ -78,39 +79,24 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 class Feature(models.Model):
-    FEATURE_TYPES = [
-        ('technical', 'مشخصات فنی'),
-        ('physical', 'مشخصات فیزیکی'),
-        ('general', 'مشخصات عمومی'),
-    ]
-
-    name = models.CharField(max_length=100, verbose_name="نام ویژگی")
+    name = models.CharField(max_length=255, verbose_name='نام ویژگی')
+    value = models.CharField(max_length=255, verbose_name='مقدار ویژگی')
+    is_main_feature = models.BooleanField(default=False, verbose_name='ویژگی اصلی')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, 
-                                 related_name='features', verbose_name="دسته‌بندی")
-    type = models.CharField(max_length=20, choices=FEATURE_TYPES, default='general', 
-                            verbose_name="نوع ویژگی")
-    unit = models.CharField(max_length=50, blank=True, null=True, verbose_name="واحد اندازه‌گیری")
-    is_main_feature = models.BooleanField(default=False, verbose_name="ویژگی اصلی")
-    display_order = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
-
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="تاریخ بروزرسانی")
-
-    class Meta:
-        unique_together = ['name', 'category']  # نام ویژگی در هر دسته منحصربه‌فرد باشد
-        ordering = ['display_order', 'name']
-        verbose_name = 'تعریف ویژگی'
-        verbose_name_plural = 'تعریف ویژگی‌ها'
+                               related_name='features', verbose_name='دسته‌بندی')
 
     def __str__(self):
-        return f"{self.name} ({self.get_type_display()})"
+        try:
+            category_name = self.category.name
+        except:
+            category_name = "دسته‌بندی تعریف‌نشده"
+        status = 'ویژگی اصلی' if self.is_main_feature else 'ویژگی عمومی'
+        return f"{category_name} | {self.name} = {self.value} ({status})"
 
 
 #add  add provider for product-option foreignkey for faz 2 
 class ProductOption(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options')
-    feature = models.ForeignKey(Feature, on_delete=models.CASCADE)
-    feature_value = models.CharField(max_length=100)  # Use instead of ProductFeature Model
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='options', blank=True, null=True)
     option_price = models.PositiveIntegerField(help_text="قیمت به تومان برای محصول با این ویژگی")
     quantity = models.PositiveIntegerField(default=1)
@@ -176,13 +162,12 @@ class ProductOption(models.Model):
         return base_str
 
 class Gallery(models.Model):
-    
     product = models.ForeignKey(ProductOption, on_delete=models.CASCADE, related_name='gallery')
     image = models.ImageField(upload_to='product_gallery/')
     alt_text = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
-        return f"عکس برای {self.product.product.title}"
+        return f"عکس برای {self.product.product.title} - {self.product.color.name if self.product.color else 'بدون رنگ'}"
 
 class Color(models.Model):
     COLOR_PALETTE = [

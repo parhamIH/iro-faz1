@@ -156,6 +156,7 @@ class Discount(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.percentage}%"
+    
 class Gallery(models.Model):
     
     product = models.ForeignKey(ProductOption, on_delete=models.CASCADE, related_name='gallery')

@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 import uuid
-from accounts.models import ClientProfile
+from django.contrib.auth.models import User
 from store.models import ProductOption
 from model_utils import FieldTracker
 # Create your models here.
@@ -15,13 +15,13 @@ class Cart(models.Model):
         ('لغو شده', 'لغو شده'),
     ]
 
-    user = models.ForeignKey(ClientProfile, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     is_paid = models.BooleanField(default=False)
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.user.user.username} - {self.created_date}"
+        return f"{self.user.username} - {self.created_date}"
     
     def total_price(self):
         """محاسبه مجموع قیمت همه آیتم‌های سبد خرید"""
@@ -94,9 +94,8 @@ class Order(models.Model):
         ('لغو شده', 'لغو شده'),
     ]
     
-    user = models.ForeignKey(ClientProfile, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     cart = models.OneToOneField(Cart, on_delete=models.PROTECT)
-    address = models.ForeignKey('accounts.Address', on_delete=models.PROTECT)
     
     order_number = models.CharField(max_length=100, unique=True, editable=False, default=uuid.uuid4)
     order_date = models.DateTimeField(auto_now_add=True)

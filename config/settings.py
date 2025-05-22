@@ -39,12 +39,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'colorfield', 
+    'django_filters',
+    'drf_yasg',
+    #####apps####
+    'cart',
     'store',
     'loan_calculator',
-    'django_filters',
     'accounts',
-    'drf_yasg',
-    'cart',
 ]
 
 MIDDLEWARE = [

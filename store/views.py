@@ -1,12 +1,15 @@
 from django.shortcuts import render
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Product, Category, Brand, Feature, ProductOption, Color, Gallery
+from .models import (
+    Product, Category, Brand, Feature, ProductOption, 
+    Color, Gallery, Specification, ProductSpecification
+)
 from loan_calculator.models import LoanCondition, PrePaymentInstallment
 from .serializers import (
     ProductSerializer, CategorySerializer, BrandSerializer,
     FeatureSerializer, ProductOptionSerializer, ColorSerializer,
-    GallerySerializer
+    GallerySerializer, SpecificationSerializer, ProductSpecificationSerializer
 )
 from loan_calculator.serializers import LoanConditionSerializer, PrePaymentInstallmentSerializer
 from django.http import Http404
@@ -100,5 +103,19 @@ class PrePaymentInstallmentViewSet(BaseModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['loan_condition']
     search_fields = ['loan_condition__title']
+
+class SpecificationViewSet(BaseModelViewSet):
+    queryset = Specification.objects.all()
+    serializer_class = SpecificationSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['category', 'data_type']
+    search_fields = ['name', 'slug']
+
+class ProductSpecificationViewSet(BaseModelViewSet):
+    queryset = ProductSpecification.objects.all()
+    serializer_class = ProductSpecificationSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['product', 'specification']
+    search_fields = ['specification__name', 'product__title']
 
 

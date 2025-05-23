@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from .models import Product, Category, ProductOption, Brand, Gallery, Feature, Color
+from .models import (
+    Product, Category, ProductOption, Brand, Gallery, 
+    Feature, Color, Specification, ProductSpecification
+)
 from loan_calculator.serializers import LoanConditionSerializer
 from django.utils import timezone
 from django.db.models import Q
@@ -28,14 +31,34 @@ class FeatureSerializer(serializers.ModelSerializer):
         model = Feature
         fields = ['id', 'name', 'value', 'is_main_feature', 'category']
 
+class SpecificationSerializer(serializers.ModelSerializer):
+    data_type_display = serializers.CharField(source='get_data_type_display', read_only=True)
+    
+    class Meta:
+        model = Specification
+        fields = ['id', 'category', 'name', 'slug', 'data_type', 'data_type_display', 'unit']
+
+class ProductSpecificationSerializer(serializers.ModelSerializer):
+    specification = SpecificationSerializer(read_only=True)
+    value = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ProductSpecification
+        fields = ['id', 'product', 'specification', 'value']
+    
+    def get_value(self, obj):
+        return obj.value()
+
 class CategorySerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
     brand = BrandSerializer(read_only=True)
     features = FeatureSerializer(many=True, read_only=True)
+    spec_definitions = SpecificationSerializer(many=True, read_only=True)
     
     class Meta:
         model = Category
-        fields = ['id', 'name', 'description', 'parent', 'children', 'brand', 'features', 'slug', 'image']
+        fields = ['id', 'name', 'description', 'parent', 'children', 'brand', 
+                 'features', 'spec_definitions', 'slug', 'image']
     
     def get_children(self, obj):
         return CategorySerializer(obj.children.all(), many=True).data
@@ -63,11 +86,12 @@ class ProductSerializer(serializers.ModelSerializer):
     features = FeatureSerializer(many=True, read_only=True)
     options = ProductOptionSerializer(many=True, read_only=True)
     loan_conditions = LoanConditionSerializer(many=True, read_only=True)
+    spec_values = ProductSpecificationSerializer(many=True, read_only=True)
     
     class Meta:
         model = Product
         fields = [
             'id', 'title', 'slug', 'categories', 'description',
             'image', 'brand', 'features', 'options', 'loan_conditions', 
-            'is_active'
-        ]
+            'spec_values', 'is_active'
+        ] 

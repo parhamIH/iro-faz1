@@ -6,7 +6,8 @@ from datetime import timedelta
 
 from store.models import (
     Category, Product, Feature, 
-    ProductOption, Gallery, Color, Brand
+    ProductOption, Gallery, Color, Brand,
+    Specification, ProductSpecification
 )
 
 class Command(BaseCommand):
@@ -17,8 +18,10 @@ class Command(BaseCommand):
         # ترتیب حذف مهم است به دلیل روابط ForeignKey
         Gallery.objects.all().delete()
         ProductOption.objects.all().delete()
+        ProductSpecification.objects.all().delete()
         Product.objects.all().delete()
         Feature.objects.all().delete()
+        Specification.objects.all().delete()
         Color.objects.all().delete()
         Category.objects.all().delete()
         Brand.objects.all().delete()
@@ -197,6 +200,115 @@ class Command(BaseCommand):
 
         self.stdout.write(f'{len(features)} features created.')
 
+        # Add new section for creating specifications
+        self.stdout.write('Creating specifications...')
+        
+        # تعریف مشخصات موبایل
+        mobile_specs = [
+            {
+                "name": "حجم باتری",
+                "data_type": "int",
+                "unit": "mAh",
+            },
+            {
+                "name": "اندازه صفحه نمایش",
+                "data_type": "decimal",
+                "unit": "اینچ",
+            },
+            {
+                "name": "فناوری صفحه‌نمایش",
+                "data_type": "str",
+            },
+            {
+                "name": "دو سیم‌کارت",
+                "data_type": "bool",
+            },
+        ]
+
+        # تعریف مشخصات لپ‌تاپ
+        laptop_specs = [
+            {
+                "name": "سایز صفحه نمایش",
+                "data_type": "decimal",
+                "unit": "اینچ",
+            },
+            {
+                "name": "ظرفیت باتری",
+                "data_type": "int",
+                "unit": "Wh",
+            },
+            {
+                "name": "وزن",
+                "data_type": "decimal",
+                "unit": "کیلوگرم",
+            },
+            {
+                "name": "قابلیت لمسی",
+                "data_type": "bool",
+            },
+        ]
+
+        # تعریف مشخصات یخچال
+        refrigerator_specs = [
+            {
+                "name": "حجم یخچال",
+                "data_type": "int",
+                "unit": "لیتر",
+            },
+            {
+                "name": "حجم فریزر",
+                "data_type": "int",
+                "unit": "لیتر",
+            },
+            {
+                "name": "مصرف سالانه انرژی",
+                "data_type": "int",
+                "unit": "کیلووات ساعت",
+            },
+            {
+                "name": "قابلیت آبریز",
+                "data_type": "bool",
+            },
+        ]
+
+        # تعریف مشخصات ماشین لباسشویی
+        washing_specs = [
+            {
+                "name": "سرعت حداکثر چرخش",
+                "data_type": "int",
+                "unit": "دور بر دقیقه",
+            },
+            {
+                "name": "مصرف آب",
+                "data_type": "decimal",
+                "unit": "لیتر",
+            },
+            {
+                "name": "قابلیت اضافه کردن لباس حین شستشو",
+                "data_type": "bool",
+            },
+        ]
+
+        # ایجاد مشخصات برای هر دسته
+        specs_mapping = {
+            "موبایل": mobile_specs,
+            "لپ‌تاپ": laptop_specs,
+            "یخچال و فریزر": refrigerator_specs,
+            "ماشین لباسشویی": washing_specs,
+        }
+
+        specifications = []
+        for category_name, specs_list in specs_mapping.items():
+            category = Category.objects.get(name=category_name)
+            for spec_data in specs_list:
+                spec = Specification.objects.create(
+                    category=category,
+                    **spec_data
+                )
+                specifications.append(spec)
+
+        self.stdout.write(f'{len(specifications)} specifications created.')
+
         # 5. Create Products with realistic data
         products_data = [
             {
@@ -208,7 +320,13 @@ class Command(BaseCommand):
                 "colors": ["مشکی", "نقره‌ای", "طلایی"],
                 "base_price": 45000000,
                 "has_discount": True,
-                "discount_percentage": 10
+                "discount_percentage": 10,
+                "specifications": {
+                    "حجم باتری": {"int_value": 5000},
+                    "اندازه صفحه نمایش": {"decimal_value": 6.8},
+                    "فناوری صفحه‌نمایش": {"str_value": "Dynamic AMOLED 2X"},
+                    "دو سیم‌کارت": {"bool_value": True},
+                }
             },
             {
                 "title": "لپ تاپ ایسوس مدل ROG Strix G15",
@@ -218,7 +336,13 @@ class Command(BaseCommand):
                 "features": laptop_features,
                 "colors": ["مشکی", "خاکستری"],
                 "base_price": 52000000,
-                "has_discount": False
+                "has_discount": False,
+                "specifications": {
+                    "سایز صفحه نمایش": {"decimal_value": 15.6},
+                    "ظرفیت باتری": {"int_value": 90},
+                    "وزن": {"decimal_value": 2.3},
+                    "قابلیت لمسی": {"bool_value": False},
+                }
             },
             {
                 "title": "یخچال و فریزر ساید بای ساید ال جی",
@@ -229,7 +353,13 @@ class Command(BaseCommand):
                 "colors": ["نقره‌ای", "سفید"],
                 "base_price": 85000000,
                 "has_discount": True,
-                "discount_percentage": 15
+                "discount_percentage": 15,
+                "specifications": {
+                    "حجم یخچال": {"int_value": 380},
+                    "حجم فریزر": {"int_value": 220},
+                    "مصرف سالانه انرژی": {"int_value": 420},
+                    "قابلیت آبریز": {"bool_value": True},
+                }
             },
             {
                 "title": "ماشین لباسشویی اسنوا مدل SWM-84518",
@@ -240,7 +370,12 @@ class Command(BaseCommand):
                 "colors": ["سفید"],
                 "base_price": 32000000,
                 "has_discount": True,
-                "discount_percentage": 5
+                "discount_percentage": 5,
+                "specifications": {
+                    "سرعت حداکثر چرخش": {"int_value": 1400},
+                    "مصرف آب": {"decimal_value": 52.5},
+                    "قابلیت اضافه کردن لباس حین شستشو": {"bool_value": True},
+                }
             }
         ]
 
@@ -254,6 +389,19 @@ class Command(BaseCommand):
             )
             product.categories.add(product_data['category'])
             product.feature.set(Feature.objects.filter(category=product_data['category']))
+            
+            # اضافه کردن مشخصات محصول
+            if 'specifications' in product_data:
+                for spec_name, value_data in product_data['specifications'].items():
+                    spec = Specification.objects.get(
+                        category=product_data['category'],
+                        name=spec_name
+                    )
+                    ProductSpecification.objects.create(
+                        product=product,
+                        specification=spec,
+                        **value_data
+                    )
             
             # ایجاد گزینه‌های محصول برای هر رنگ
             for color_name in product_data['colors']:

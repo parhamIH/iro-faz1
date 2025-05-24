@@ -23,7 +23,6 @@ class BaseModelViewSet(viewsets.ModelViewSet):
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
         lookup = self.kwargs[lookup_url_kwarg]
         
-        # اول با ID تلاش می‌کنیم
         if lookup.isdigit():
             try:
                 obj = queryset.get(id=lookup)
@@ -32,7 +31,6 @@ class BaseModelViewSet(viewsets.ModelViewSet):
             except self.queryset.model.DoesNotExist:
                 pass
         
-        # اگر ID نبود یا پیدا نشد، با slug تلاش می‌کنیم
         if hasattr(self.queryset.model, 'slug'):
             try:
                 obj = queryset.get(slug=lookup)
@@ -45,7 +43,7 @@ class BaseModelViewSet(viewsets.ModelViewSet):
 
 class ProductViewSet(BaseModelViewSet):
     queryset = Product.objects.all()
-    serializer_class = ProductSerializer
+    serializer_class = ProductSerializer    
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['categories', 'brand', 'is_active']
     search_fields = ['title', 'description', 'brand__name', 'categories__name']

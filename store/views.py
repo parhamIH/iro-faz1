@@ -1,23 +1,23 @@
 from django.shortcuts import render
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, status
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import (
-    Product, Category, Brand, Feature, ProductOption, 
-    Color, Gallery, Specification, ProductSpecification
-)
+from .models import *
+from .serializers import *
+from .filters import *
 from loan_calculator.models import LoanCondition, PrePaymentInstallment
-from .serializers import (
-    ProductSerializer, CategorySerializer, BrandSerializer,
-    FeatureSerializer, ProductOptionSerializer, ColorSerializer,
-    GallerySerializer, SpecificationSerializer, ProductSpecificationSerializer
-)
 from loan_calculator.serializers import LoanConditionSerializer, PrePaymentInstallmentSerializer
-from django.http import Http404
+from django.http import Http404, JsonResponse
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 class BaseModelViewSet(viewsets.ModelViewSet):
-    """
-    پایه برای همه ViewSetها با پشتیبانی از ID و Slug
-    """
+    pagination_class = StandardResultsSetPagination
+    
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
@@ -40,21 +40,56 @@ class BaseModelViewSet(viewsets.ModelViewSet):
                 pass
         
         raise Http404
+    
+    def list(self, request, *args, **kwargs):
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                response = self.get_paginated_response(serializer.data)
+                response.data['status'] = 'success'
+                return response
+            
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({
+                'status': 'success',
+                'data': serializer.data
+            })
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 class ProductViewSet(BaseModelViewSet):
-    queryset = Product.objects.all()
+    queryset = Product.objects.prefetch_related(
+        'categories', 
+        'feature', 
+        'options', 
+        'spec_values',
+        'spec_values__specification'
+    ).select_related('brand').all()
     serializer_class = ProductSerializer    
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['categories', 'brand', 'is_active']
+    filterset_class = ProductFilter
     search_fields = ['title', 'description', 'brand__name', 'categories__name']
-    ordering_fields = ['title']
+    ordering_fields = ['title', 'options__option_price']
     ordering = ['title']
 
 class CategoryViewSet(BaseModelViewSet):
-    queryset = Category.objects.all()
+    queryset = Category.objects.prefetch_related(
+        'products', 
+        'features', 
+        'spec_definitions'
+    ).select_related('parent', 'brand').all()
     serializer_class = CategorySerializer
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = CategoryFilter
     search_fields = ['name', 'description']
+    ordering_fields = ['name']
+    ordering = ['name']
 
 class BrandViewSet(BaseModelViewSet):
     queryset = Brand.objects.all()
@@ -62,7 +97,7 @@ class BrandViewSet(BaseModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'description']
 
-class FeatureViewSet(BaseModelViewSet):
+class FeatureViewSet(BaseModelViewSet): # delete able 
     queryset = Feature.objects.all()
     serializer_class = FeatureSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
@@ -70,11 +105,20 @@ class FeatureViewSet(BaseModelViewSet):
     search_fields = ['name', 'value']
 
 class ProductOptionViewSet(BaseModelViewSet):
-    queryset = ProductOption.objects.all()
+    queryset = ProductOption.objects.select_related('product', 'color').all()
     serializer_class = ProductOptionSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['product', 'color', 'is_active', 'is_active_discount']
     search_fields = ['product__title']
+    ordering_fields = ['option_price', 'quantity']
+    ordering = ['-is_active', 'option_price']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == 'list':
+            # فقط محصولات فعال در لیست نمایش داده شوند
+            return queryset.filter(is_active=True)
+        return queryset
 
 class ColorViewSet(BaseModelViewSet):
     queryset = Color.objects.all()
@@ -103,11 +147,13 @@ class PrePaymentInstallmentViewSet(BaseModelViewSet):
     search_fields = ['loan_condition__title']
 
 class SpecificationViewSet(BaseModelViewSet):
-    queryset = Specification.objects.all()
+    queryset = Specification.objects.select_related('category').all()
     serializer_class = SpecificationSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['category', 'data_type']
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = SpecificationFilter
     search_fields = ['name', 'slug']
+    ordering_fields = ['name', 'data_type']
+    ordering = ['name']
 
 class ProductSpecificationViewSet(BaseModelViewSet):
     queryset = ProductSpecification.objects.all()
@@ -115,5 +161,28 @@ class ProductSpecificationViewSet(BaseModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['product', 'specification']
     search_fields = ['specification__name', 'product__title']
+
+def test_filters(request):
+    # تست فیلترهای دسته‌بندی
+    categories = Category.objects.all()
+    category_filter = CategoryFilter(request.GET, queryset=categories)
+    filtered_categories = category_filter.qs
+    
+    # تست فیلترهای محصول
+    products = Product.objects.all()
+    product_filter = ProductFilter(request.GET, queryset=products)
+    filtered_products = product_filter.qs
+    
+    # نمایش نتایج
+    result = {
+        'total_categories': categories.count(),
+        'filtered_categories': filtered_categories.count(),
+        'total_products': products.count(),
+        'filtered_products': filtered_products.count(),
+        'specifications_count': Specification.objects.count(),
+        'filter_params': dict(request.GET.items())
+    }
+    
+    return JsonResponse(result)
 
 

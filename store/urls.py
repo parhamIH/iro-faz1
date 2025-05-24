@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     ProductViewSet, CategoryViewSet, BrandViewSet,
     FeatureViewSet, ProductOptionViewSet, ColorViewSet,
-    GalleryViewSet
+    GalleryViewSet, test_filters
 )
 # لیست همه محصولات: http://localhost:8000/api/products/
 # یک محصول خاص: http://localhost:8000/api/products/[slug-محصول]/
@@ -24,4 +24,5 @@ router.register('gallery', GalleryViewSet)
 urlpatterns = [
     # اضافه کردن تمام مسیرهای روتر به برنامه
     path('', include(router.urls)),
+    path('test-filters/', test_filters, name='test_filters'),
 ]

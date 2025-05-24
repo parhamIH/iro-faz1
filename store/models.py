@@ -12,7 +12,7 @@ from decimal import Decimal
 
 class Brand (models.Model): 
     name = models.CharField(max_length=100) 
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)#delete able 
     logo = models.ImageField(upload_to='brands/', blank=True, null=True)
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
 
@@ -78,7 +78,7 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
-class Feature(models.Model):
+class Feature(models.Model):# delete able 
     name = models.CharField(max_length=255, verbose_name='نام ویژگی')
     value = models.CharField(max_length=255, verbose_name='مقدار ویژگی')
     is_main_feature = models.BooleanField(default=False, verbose_name='ویژگی اصلی')
@@ -237,7 +237,7 @@ class ProductOption(models.Model):
         self.is_active_discount = True
 
     def __str__(self):
-        base_str = f"{self.product.title} - {self.feature.name}: {self.feature_value} (+{self.option_price})"
+        base_str = f"{self.product.title} - (+{self.option_price})"
         if self.is_discount_active:
             return f"{base_str} (تخفیف: {self.discount}%)"
         return base_str

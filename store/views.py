@@ -9,13 +9,17 @@ from .filters import *
 from loan_calculator.models import LoanCondition, PrePaymentInstallment
 from loan_calculator.serializers import LoanConditionSerializer, PrePaymentInstallmentSerializer
 from django.http import Http404, JsonResponse
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import action
+from django.db.models import Count, Q
+from django.utils import timezone
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
 
-class BaseModelViewSet(viewsets.ModelViewSet):
+class BaseModelViewSet(ModelViewSet):
     pagination_class = StandardResultsSetPagination
     
     def get_object(self):
@@ -65,23 +69,17 @@ class BaseModelViewSet(viewsets.ModelViewSet):
 
 class ProductViewSet(BaseModelViewSet):
     queryset = Product.objects.prefetch_related(
-        'categories', 
-        'feature', 
-        'options', 
-        'spec_values',
+        'categories', 'brand', 'options',
+        'options__color', 'spec_values',
         'spec_values__specification'
-    ).select_related('brand').all()
-    serializer_class = ProductSerializer    
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    ).all()
+    serializer_class = ProductSerializer
     filterset_class = ProductFilter
-    search_fields = ['title', 'description', 'brand__name', 'categories__name']
-    ordering_fields = ['title', 'options__option_price']
-    ordering = ['title']
+    search_fields = ['title', 'description']
 
 class CategoryViewSet(BaseModelViewSet):
     queryset = Category.objects.prefetch_related(
         'products', 
-        'features', 
         'spec_definitions'
     ).select_related('parent', 'brand').all()
     serializer_class = CategorySerializer
@@ -96,13 +94,6 @@ class BrandViewSet(BaseModelViewSet):
     serializer_class = BrandSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'description']
-
-class FeatureViewSet(BaseModelViewSet): # delete able 
-    queryset = Feature.objects.all()
-    serializer_class = FeatureSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['category', 'is_main_feature']
-    search_fields = ['name', 'value']
 
 class ProductOptionViewSet(BaseModelViewSet):
     queryset = ProductOption.objects.select_related('product', 'color').all()

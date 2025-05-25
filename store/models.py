@@ -53,7 +53,7 @@ class Product(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255,unique=True,allow_unicode=True,blank=True,null=True)
     categories = models.ManyToManyField(Category, related_name='products')
-    feature = models.ManyToManyField("Feature", verbose_name=("ویژگی ها"))
+    specifications = models.ManyToManyField("Specification", through='ProductSpecification', verbose_name="مشخصات")
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='products') 
@@ -78,20 +78,6 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
-class Feature(models.Model):# delete able 
-    name = models.CharField(max_length=255, verbose_name='نام ویژگی')
-    value = models.CharField(max_length=255, verbose_name='مقدار ویژگی')
-    is_main_feature = models.BooleanField(default=False, verbose_name='ویژگی اصلی')
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, 
-                               related_name='features', verbose_name='دسته‌بندی')
-
-    def __str__(self):
-        try:
-            category_name = self.category.name
-        except:
-            category_name = "دسته‌بندی تعریف‌نشده"
-        status = 'ویژگی اصلی' if self.is_main_feature else 'ویژگی عمومی'
-        return f"{category_name} | {self.name} = {self.value} ({status})"
 
 class Specification(models.Model):
     DATA_TYPE_CHOICES = [

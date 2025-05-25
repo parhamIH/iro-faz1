@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import (
-    Category, Product, Feature,
+    Category, Product,
     ProductOption, Gallery, Color, Brand,
     Specification, ProductSpecification
 )
@@ -51,7 +51,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = ['title', 'get_categories', 'brand', 'get_specifications_count', 'is_active']
     search_fields = ['title', 'description', 'brand__name']
     list_filter = ['categories', 'brand', 'is_active']
-    filter_horizontal = ['categories', 'feature']
+    filter_horizontal = ['categories']
     prepopulated_fields = {'slug': ('title',)}
     inlines = [ProductSpecificationInline, ProductOptionInline]
     list_editable = ['is_active']
@@ -64,27 +64,14 @@ class ProductAdmin(admin.ModelAdmin):
         return obj.spec_values.count()
     get_specifications_count.short_description = 'تعداد مشخصات'
 
-@admin.register(Feature)
-class FeatureAdmin(admin.ModelAdmin):
-    list_display = ['name', 'value', 'category', 'is_main_feature']
-    list_filter = ['category', 'is_main_feature']
-    search_fields = ['name', 'value', 'category__name']
-    list_editable = ['is_main_feature']
-    autocomplete_fields = ['category']
-
 @admin.register(ProductOption)
 class ProductOptionAdmin(admin.ModelAdmin):
-    list_display = ['product', 'get_feature_info', 'color', 'option_price', 'is_active_discount', 'discount', 'quantity']
+    list_display = ['product', 'color', 'option_price', 'is_active_discount', 'discount', 'quantity']
     search_fields = ['product__title', 'color__name']
     list_filter = ['is_active', 'is_active_discount', 'color']
     autocomplete_fields = ['product', 'color']
     inlines = [GalleryInline]
     list_editable = ['is_active_discount', 'discount', 'quantity']
-
-    def get_feature_info(self, obj):
-        features = obj.product.feature.all()
-        return ", ".join([f"{f.name}: {f.value}" for f in features])
-    get_feature_info.short_description = 'ویژگی‌ها'
 
 @admin.register(Gallery)
 class GalleryAdmin(admin.ModelAdmin):

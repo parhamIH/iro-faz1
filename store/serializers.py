@@ -1,11 +1,11 @@
 from rest_framework import serializers
 from .models import (
     Product, Category, ProductOption, Brand, Gallery, 
-    Feature, Color, Specification, ProductSpecification
+    Specification, ProductSpecification , Color
 )
 from loan_calculator.serializers import LoanConditionSerializer
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, Avg
 
 
 class GallerySerializer(serializers.ModelSerializer):
@@ -25,11 +25,6 @@ class ColorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Color
         fields = ['id', 'name', 'hex_code']
-
-class FeatureSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Feature
-        fields = ['id', 'name', 'value', 'is_main_feature', 'category']
 
 class SpecificationSerializer(serializers.ModelSerializer):
     data_type_display = serializers.CharField(source='get_data_type_display', read_only=True)
@@ -52,46 +47,44 @@ class ProductSpecificationSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
     brand = BrandSerializer(read_only=True)
-    features = FeatureSerializer(many=True, read_only=True)
     spec_definitions = SpecificationSerializer(many=True, read_only=True)
     
     class Meta:
         model = Category
         fields = ['id', 'name', 'description', 'parent', 'children', 'brand', 
-                 'features', 'spec_definitions', 'slug', 'image']
+                 'spec_definitions', 'slug', 'image']
     
     def get_children(self, obj):
         return CategorySerializer(obj.children.all(), many=True).data
 
 class ProductOptionSerializer(serializers.ModelSerializer):
-    color = ColorSerializer(read_only=True)
+    color = serializers.StringRelatedField()
     final_price = serializers.SerializerMethodField()
-    features = serializers.SerializerMethodField()
-    gallery = GallerySerializer(many=True, read_only=True)
+    gallery = serializers.SerializerMethodField()
     
     class Meta:
         model = ProductOption
-        fields = ['id', 'color', 'option_price', 'quantity', 'is_active', 
-                 'is_active_discount', 'discount', 'features', 'final_price', 'gallery']
+        fields = ['id', 'color', 'option_price', 'quantity', 'is_active',
+                'is_active_discount', 'discount', 'final_price', 'gallery']
 
     def get_final_price(self, obj):
         return obj.get_final_price()
-        
-    def get_features(self, obj):
-        return FeatureSerializer(obj.product.feature.all(), many=True).data
+
+    def get_gallery(self, obj):
+        return [{'id': img.id, 'image': img.image.url if img.image else None, 'alt_text': img.alt_text} 
+                for img in obj.gallery.all()]
 
 class ProductSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True, read_only=True)
-    brand = BrandSerializer(read_only=True)
-    features = FeatureSerializer(many=True, read_only=True)
+    brand = serializers.StringRelatedField()
     options = ProductOptionSerializer(many=True, read_only=True)
-    loan_conditions = LoanConditionSerializer(many=True, read_only=True)
     spec_values = ProductSpecificationSerializer(many=True, read_only=True)
+    loan_conditions = LoanConditionSerializer(many=True, read_only=True)
     
     class Meta:
         model = Product
         fields = [
             'id', 'title', 'slug', 'categories', 'description',
-            'image', 'brand', 'features', 'options', 'loan_conditions', 
-            'spec_values', 'is_active'
+            'image', 'brand', 'options', 'spec_values', 'loan_conditions',
+            'is_active'
         ] 

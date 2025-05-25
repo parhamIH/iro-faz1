@@ -1,6 +1,6 @@
 from django_filters import FilterSet, RangeFilter, CharFilter, BooleanFilter, ChoiceFilter, NumberFilter, ModelMultipleChoiceFilter
 from django.db.models import Q
-from .models import Category, Product, Brand, Color, Specification
+from .models import Category, Product, Brand, Color, Specification, Tag
 
 class SpecificationFilter(FilterSet):
     """
@@ -27,6 +27,14 @@ class ProductFilter(FilterSet):
     in_stock = BooleanFilter(method='filter_in_stock', label='موجودی')
     price_range = RangeFilter(field_name='options__option_price', label='محدوده قیمت')
     has_discount = BooleanFilter(method='filter_has_discount', label='دارای تخفیف')
+    tags = ModelMultipleChoiceFilter(
+        field_name='tags',
+        queryset=Tag.objects.all(),
+        label='تگ‌ها',
+        help_text='تگ‌هایی که با این محصول مرتبط هستند',
+        method='filter_tags'
+    )
+
 
     brands = ModelMultipleChoiceFilter(
         field_name='brand',
@@ -47,6 +55,15 @@ class ProductFilter(FilterSet):
 
     specification = CharFilter(method='filter_specification', label='مشخصات فنی')
     
+
+
+    def filter_tags(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(tags__name__in=value).distinct()
+
+
+
     def filter_search(self, queryset, name, value):
         if not value:
             return queryset
@@ -123,6 +140,7 @@ class ProductFilter(FilterSet):
         model = Product
         fields = ['is_active']
 
+
 class CategoryFilter(FilterSet):
     search = CharFilter(method='filter_search', label='جستجو')
     has_products = BooleanFilter(method='filter_has_products', label='دارای محصول')
@@ -157,3 +175,5 @@ class CategoryFilter(FilterSet):
             'brand': ['exact'],
             'spec_definitions': ['exact', 'in'],
         }
+
+

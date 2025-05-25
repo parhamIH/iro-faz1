@@ -69,22 +69,24 @@ class BaseModelViewSet(ModelViewSet):
 
 class ProductViewSet(BaseModelViewSet):
     queryset = Product.objects.prefetch_related(
+        'tags',
         'categories', 'brand', 'options',
         'options__color', 'spec_values',
         'spec_values__specification'
     ).all()
     serializer_class = ProductSerializer
-    filterset_class = ProductFilter
+    filterset_class = ProductFilter 
     search_fields = ['title', 'description']
 
 class CategoryViewSet(BaseModelViewSet):
     queryset = Category.objects.prefetch_related(
+    
         'products', 
         'spec_definitions'
     ).select_related('parent', 'brand').all()
     serializer_class = CategorySerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_class = CategoryFilter
+    filterset_class = CategoryFilter 
     search_fields = ['name', 'description']
     ordering_fields = ['name']
     ordering = ['name']
@@ -153,27 +155,5 @@ class ProductSpecificationViewSet(BaseModelViewSet):
     filterset_fields = ['product', 'specification']
     search_fields = ['specification__name', 'product__title']
 
-def test_filters(request):
-    # تست فیلترهای دسته‌بندی
-    categories = Category.objects.all()
-    category_filter = CategoryFilter(request.GET, queryset=categories)
-    filtered_categories = category_filter.qs
-    
-    # تست فیلترهای محصول
-    products = Product.objects.all()
-    product_filter = ProductFilter(request.GET, queryset=products)
-    filtered_products = product_filter.qs
-    
-    # نمایش نتایج
-    result = {
-        'total_categories': categories.count(),
-        'filtered_categories': filtered_categories.count(),
-        'total_products': products.count(),
-        'filtered_products': filtered_products.count(),
-        'specifications_count': Specification.objects.count(),
-        'filter_params': dict(request.GET.items())
-    }
-    
-    return JsonResponse(result)
 
 

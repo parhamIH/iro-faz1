@@ -8,7 +8,15 @@ from django.utils.text import slugify
 import random
 from decimal import Decimal
 
-#  tag , garanti ✅ ,  biime ( faz 2???)  , provider produduct option  (faz 2 ???) , 
+#   garanti ✅ ,  biime ( faz 2???)  , provider produduct option  (faz 2 ???) , 
+
+class Tag (models.Model):
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
 
 class Brand (models.Model): 
     name = models.CharField(max_length=100) 
@@ -53,13 +61,16 @@ class Category(models.Model):
 class Product(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255,unique=True,allow_unicode=True,blank=True,null=True)
+
     categories = models.ManyToManyField(Category, related_name='products')
     specifications = models.ManyToManyField("Specification", through='ProductSpecification', verbose_name="مشخصات")
+    tags = models.ManyToManyField(Tag, related_name='products')
+
+    brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='products') 
+    
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
-    brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='products') 
     is_active = models.BooleanField(default=True)
-
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -93,6 +104,7 @@ class Specification(models.Model):  # add icon field  and is main field
     slug = models.SlugField(max_length=120, unique=True, allow_unicode=True, blank=True)
     data_type = models.CharField(max_length=20, choices=DATA_TYPE_CHOICES, verbose_name='نوع داده')
     unit = models.CharField(max_length=30, blank=True, null=True, verbose_name='واحد')
+    is_main = models.BooleanField(default=False, verbose_name='مشخصه اصلی' , help_text='مشخصه اصلی برای محصولات است')
 
     def save(self, *args, **kwargs):
         if not self.slug:

@@ -62,7 +62,7 @@ class ProductOptionSerializer(serializers.ModelSerializer):
     color = serializers.StringRelatedField()
     final_price = serializers.SerializerMethodField()
     gallery = serializers.SerializerMethodField()
-    
+    tags = serializers.SerializerMethodField()
     class Meta:
         model = ProductOption
         fields = ['id', 'color', 'option_price', 'quantity', 'is_active',
@@ -75,24 +75,36 @@ class ProductOptionSerializer(serializers.ModelSerializer):
         return [{'id': img.id, 'image': img.image.url if img.image else None, 'alt_text': img.alt_text} 
                 for img in obj.gallery.all()]
 
+    def get_tags(self, obj):
+        return TagSerializer(obj.tags.all(), many=True).data
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['id', 'name', 'slug']
+
+
+
+
+
+
+
+
 class ProductSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True, read_only=True)
     brand = serializers.StringRelatedField()
     options = ProductOptionSerializer(many=True, read_only=True)
     spec_values = ProductSpecificationSerializer(many=True, read_only=True)
     loan_conditions = LoanConditionSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True , read_only=True)
+    
     
     class Meta:
         model = Product
         fields = [
             'id', 'title', 'slug', 'categories', 'description',
             'image', 'brand', 'options', 'spec_values', 'loan_conditions',
-            'is_active'
+            'is_active', 'tags'
         ] 
         
-class TagSerializer(serializers.ModelSerializer):
-    products = ProductSerializer(many=True, read_only=True)
-    
-    class Meta:
-        model = Tag
-        fields = ['id', 'name', 'slug', 'products']

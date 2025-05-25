@@ -8,7 +8,7 @@ from django.utils.text import slugify
 import random
 from decimal import Decimal
 
-# garanti  ,  biime  , provider produduct option  , 
+#  tag , garanti ✅ ,  biime ( faz 2???)  , provider produduct option  (faz 2 ???) , 
 
 class Brand (models.Model): 
     name = models.CharField(max_length=100) 
@@ -28,7 +28,10 @@ class Brand (models.Model):
     def __str__(self):
         return self.name
 
-class Category(models.Model):
+ #class Category(MPTTModel): ,
+    # parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
+class Category(models.Model):  
+
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
@@ -77,7 +80,7 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
-class Specification(models.Model):  # add icon field 
+class Specification(models.Model):  # add icon field  and is main field 
     DATA_TYPE_CHOICES = [
         ('int', 'عدد صحیح'),
         ('decimal', 'عدد اعشاری'),
@@ -108,7 +111,7 @@ class Specification(models.Model):  # add icon field
         verbose_name_plural = 'مشخصات'
         unique_together = ['category', 'name']
 
-class ProductSpecification(models.Model):
+class ProductSpecification(models.Model): # is main field 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='spec_values', verbose_name='محصول')
     specification = models.ForeignKey(Specification, on_delete=models.CASCADE, related_name='values', verbose_name='مشخصه')
     int_value = models.IntegerField(blank=True, null=True, verbose_name='مقدار عددی')

@@ -62,7 +62,6 @@ class ProductOptionSerializer(serializers.ModelSerializer):
     color = serializers.StringRelatedField()
     final_price = serializers.SerializerMethodField()
     gallery = serializers.SerializerMethodField()
-    tags = serializers.SerializerMethodField()
     class Meta:
         model = ProductOption
         fields = ['id', 'color', 'option_price', 'quantity', 'is_active',
@@ -89,10 +88,10 @@ class TagSerializer(serializers.ModelSerializer):
 
 class WarrantySerializer(serializers.ModelSerializer):
     product_options = ProductOptionSerializer(many=True, read_only=True)
-    
+
     class Meta:
         model = Warranty
-        fields = ['id', 'name', 'duration_months', 'is_active', 'product_options']
+        fields = ['id', 'name',  'is_active', 'product_options']
 
 
 

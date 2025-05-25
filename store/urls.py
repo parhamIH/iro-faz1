@@ -20,6 +20,7 @@ router.register('colors', ColorViewSet)
 router.register('specifications', SpecificationViewSet)
 router.register('product-specifications', ProductSpecificationViewSet)
 router.register('warranties', WarrantyViewSet)
+
 # الگوهای URL
 urlpatterns = [
     # اضافه کردن تمام مسیرهای روتر به برنامه

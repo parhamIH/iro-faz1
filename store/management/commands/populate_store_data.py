@@ -4,7 +4,8 @@ from datetime import timedelta
 from store.models import (
     Brand, Category, Product,
     Color, ProductOption, Gallery,
-    Specification, ProductSpecification
+    Specification, ProductSpecification,
+    Tag, Warranty
 )
 import random
 from decimal import Decimal
@@ -22,6 +23,8 @@ class Command(BaseCommand):
         Brand.objects.all().delete()
         Color.objects.all().delete()
         Specification.objects.all().delete()
+        Tag.objects.all().delete()
+        Warranty.objects.all().delete()
 
         self.stdout.write('Starting to populate data...')
         
@@ -42,7 +45,7 @@ class Command(BaseCommand):
         
         brands = []
         for brand_data in digital_brands + home_brands:
-            brand, _ = Brand.objects.get_or_create(**brand_data)
+            brand = Brand.objects.create(**brand_data)
             brands.append(brand)
         self.stdout.write(f'{len(brands)} brands created.')
 
@@ -58,7 +61,7 @@ class Command(BaseCommand):
         ]
         colors = []
         for c_data in colors_data:
-            color, _ = Color.objects.get_or_create(hex_code=c_data['hex_code'], defaults=c_data)
+            color = Color.objects.create(**c_data)
             colors.append(color)
         self.stdout.write(f'{len(colors)} colors created.')
 
@@ -245,6 +248,58 @@ class Command(BaseCommand):
         # Create products with their specifications
         self.stdout.write('Creating products...')
         
+        # ایجاد تگ‌ها
+        self.stdout.write('Creating tags...')
+        tags_data = [
+            {"name": "پرفروش", "slug": "bestseller"},
+            {"name": "جدید", "slug": "new"},
+            {"name": "پیشنهاد ویژه", "slug": "special-offer"},
+            {"name": "محبوب", "slug": "popular"},
+            {"name": "اقتصادی", "slug": "economic"},
+            {"name": "لوکس", "slug": "luxury"},
+            {"name": "پرچمدار", "slug": "flagship"},
+        ]
+        tags = []
+        for tag_data in tags_data:
+            tag = Tag.objects.create(**tag_data)
+            tags.append(tag)
+        
+        # ایجاد گارانتی‌ها
+        self.stdout.write('Creating warranties...')
+        warranties_data = [
+            {
+                "name": "گارانتی طلایی",
+                "company": "شرکت گارانتی پارس",
+                "duration": 24,
+                "description": "گارانتی ویژه با پوشش کامل قطعات و خدمات",
+                "terms_conditions": "شامل تعویض رایگان قطعات معیوب و ارائه خدمات در محل",
+                "support_phone": "021-12345678",
+                "registration_required": True
+            },
+            {
+                "name": "گارانتی نقره‌ای",
+                "company": "گارانتی آسیا",
+                "duration": 18,
+                "description": "گارانتی استاندارد با پوشش قطعات اصلی",
+                "terms_conditions": "شامل تعویض قطعات اصلی و تعمیرات در مراکز مجاز",
+                "support_phone": "021-87654321",
+                "registration_required": True
+            },
+            {
+                "name": "گارانتی پایه",
+                "company": "گارانتی ایران",
+                "duration": 12,
+                "description": "گارانتی پایه محصولات",
+                "terms_conditions": "شامل تعمیرات اساسی و تعویض قطعات ضروری",
+                "support_phone": "021-11223344",
+                "registration_required": False
+            }
+        ]
+        warranties = []
+        for warranty_data in warranties_data:
+            warranty = Warranty.objects.create(**warranty_data)
+            warranties.append(warranty)
+
         products_data = [
             {
                 "title": "گوشی موبایل سامسونگ مدل Galaxy S23 Ultra",
@@ -255,13 +310,14 @@ class Command(BaseCommand):
                 "base_price": 45000000,
                 "has_discount": True,
                 "discount_percentage": 10,
+                "tags": ["پرچمدار", "جدید", "پرفروش"],
+                "warranty": Warranty.objects.get(name="گارانتی طلایی"),
                 "specifications": {
                     "battery": {"int_value": 5000},
                     "screen_size": {"decimal_value": Decimal("6.8")},
                     "screen_tech": {"str_value": "Dynamic AMOLED 2X"},
                     "dual_sim": {"bool_value": True},
                     "color": {"str_value": "Phantom Black"},
-                    "warranty": {"str_value": "18 ماه"}
                 }
             },
             {
@@ -272,13 +328,13 @@ class Command(BaseCommand):
                 "colors": ["مشکی", "خاکستری"],
                 "base_price": 52000000,
                 "has_discount": False,
+                "tags": ["لوکس", "پرفروش"],
+                "warranty": Warranty.objects.get(name="گارانتی نقره‌ای"),
                 "specifications": {
                     "screen_size": {"decimal_value": Decimal("15.6")},
                     "battery": {"int_value": 90},
                     "weight": {"decimal_value": Decimal("2.3")},
                     "touch_screen": {"bool_value": False},
-                    "color": {"str_value": "مشکی"},
-                    "warranty": {"str_value": "24 ماه"}
                 }
             },
             {
@@ -290,13 +346,14 @@ class Command(BaseCommand):
                 "base_price": 85000000,
                 "has_discount": True,
                 "discount_percentage": 15,
+                "tags": ["پرفروش"],
+                "warranty": Warranty.objects.get(name="گارانتی نقره‌ای"),
                 "specifications": {
                     "fridge_volume": {"int_value": 380},
                     "freezer_volume": {"int_value": 220},
                     "energy_usage": {"int_value": 420},
                     "water_dispenser": {"bool_value": True},
                     "color": {"str_value": "نقره‌ای"},
-                    "warranty": {"str_value": "24 ماه"}
                 }
             },
             {
@@ -308,12 +365,13 @@ class Command(BaseCommand):
                 "base_price": 32000000,
                 "has_discount": True,
                 "discount_percentage": 5,
+                "tags": ["پرفروش"],
+                "warranty": Warranty.objects.get(name="گارانتی پایه"),
                 "specifications": {
                     "spin_speed": {"int_value": 1400},
                     "water_usage": {"decimal_value": Decimal("52.5")},
                     "add_wash": {"bool_value": True},
                     "color": {"str_value": "سفید"},
-                    "warranty": {"str_value": "24 ماه"}
                 }
             }
         ]
@@ -324,9 +382,15 @@ class Command(BaseCommand):
             product = Product.objects.create(
                 title=product_data['title'],
                 description=product_data['description'],
-                brand=product_data['brand']
+                brand=product_data['brand'],
+                is_active=True
             )
             product.categories.add(product_data['category'])
+            
+            # اضافه کردن تگ‌ها
+            for tag_name in product_data.get('tags', []):
+                tag = Tag.objects.get(name=tag_name)
+                product.tags.add(tag)
             
             # Add specifications
             if 'specifications' in product_data:
@@ -350,7 +414,8 @@ class Command(BaseCommand):
                     color=color,
                     option_price=product_data['base_price'],
                     quantity=random.randint(5, 20),
-                    is_active=True
+                    is_active=True,
+                    warranty=product_data.get('warranty')
                 )
                 
                 # Apply discount if specified

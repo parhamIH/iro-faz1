@@ -1,11 +1,12 @@
 from rest_framework import serializers
 from .models import (
     Product, Category, ProductOption, Brand, Gallery, 
-    Specification, ProductSpecification , Color
+    Specification, ProductSpecification , Color , Tag
 )
 from loan_calculator.serializers import LoanConditionSerializer
 from django.utils import timezone
 from django.db.models import Q, Avg
+
 
 
 class GallerySerializer(serializers.ModelSerializer):
@@ -88,3 +89,10 @@ class ProductSerializer(serializers.ModelSerializer):
             'image', 'brand', 'options', 'spec_values', 'loan_conditions',
             'is_active'
         ] 
+        
+class TagSerializer(serializers.ModelSerializer):
+    products = ProductSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Tag
+        fields = ['id', 'name', 'slug', 'products']

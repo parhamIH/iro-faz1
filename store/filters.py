@@ -11,7 +11,12 @@ class SpecificationFilter(FilterSet):
     def filter_search(self, queryset, name, value):
         return queryset.filter(
             Q(name__icontains=value) |
-            Q(slug__icontains=value)
+            Q(slug__icontains=value) |
+            Q(unit__icontains=value) |
+            Q(category__name__icontains=value) |
+            Q(category__parent__name__icontains=value) |
+            Q(category__brand__name__icontains=value) |
+            Q(category__brand__parent__name__icontains=value)
         ).distinct()
     
     class Meta:
@@ -20,6 +25,9 @@ class SpecificationFilter(FilterSet):
             'category': ['exact'],
             'data_type': ['exact'],
             'name': ['exact', 'icontains'],
+            "is_main": ['exact'],
+            "slug": ['exact', 'icontains'],
+            "unit": ['exact', 'icontains'],
         }
 
 class ProductFilter(FilterSet):
@@ -34,7 +42,6 @@ class ProductFilter(FilterSet):
         help_text='تگ‌هایی که با این محصول مرتبط هستند',
         method='filter_tags'
     )
-
 
     brands = ModelMultipleChoiceFilter(
         field_name='brand',

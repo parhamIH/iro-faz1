@@ -1,10 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import (
-    Category, Product,
-    ProductOption, Gallery, Color, Brand,
-    Specification, ProductSpecification
-)
+from .models import *
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -150,3 +146,9 @@ class ProductSpecificationAdmin(admin.ModelAdmin):
     def get_data_type(self, obj):
         return obj.specification.get_data_type_display()
     get_data_type.short_description = 'نوع داده'
+
+@admin.register(Warranty)
+class WarrantyAdmin(admin.ModelAdmin):
+    list_display = ('name',  'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('name',)

@@ -8,7 +8,28 @@ from django.utils.text import slugify
 import random
 from decimal import Decimal
 
-#   garanti ✅ ,  biime ( faz 2???)  , provider produduct option  (faz 2 ???) , 
+#__________________________________________ ------models------ _______________________________________
+
+#__________________________________________ ------warranty------ _______________________________________
+
+class Warranty(models.Model):
+    name = models.CharField(max_length=100, verbose_name='نام گارانتی')
+    company = models.CharField(max_length=100, verbose_name='شرکت ارائه دهنده')
+    duration = models.PositiveIntegerField(verbose_name='مدت گارانتی (ماه)',help_text='مدت زمان گارانتی به ماه')
+    is_active = models.BooleanField(default=True,verbose_name='فعال')
+    description = models.TextField(blank=True,verbose_name='توضیحات')
+    terms_conditions = models.TextField(verbose_name='شرایط و ضوابط',blank=True)
+    support_phone = models.CharField(max_length=20,verbose_name='شماره تماس پشتیبانی',blank=True)
+    registration_required = models.BooleanField(default=False,verbose_name='نیاز به ثبت گارانتی',help_text='آیا نیاز به ثبت گارانتی پس از خرید است؟')
+    created_at = models.DateTimeField(auto_now_add=True,verbose_name='تاریخ ایجاد')
+    updated_at = models.DateTimeField(auto_now=True,verbose_name='تاریخ بروزرسانی')
+    class Meta:
+        verbose_name = 'گارانتی'
+        verbose_name_plural = 'گارانتی‌ها'
+        ordering = ['name']
+
+    def __str__(self):
+        return f" {self.company} - {self.name} - {self.duration} ماه"
 
 class Tag (models.Model):
     name = models.CharField(max_length=100)
@@ -17,7 +38,7 @@ class Tag (models.Model):
     def __str__(self):
         return self.name
 
-
+#__________________________________________ ------brand------ _______________________________________
 class Brand (models.Model): 
     name = models.CharField(max_length=100) 
     description = models.TextField(blank=True, null=True)#delete able 
@@ -38,6 +59,11 @@ class Brand (models.Model):
 
  #class Category(MPTTModel): ,
     # parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
+
+
+
+#__________________________________________ ------category------ _______________________________________
+
 class Category(models.Model):  
 
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
@@ -58,6 +84,9 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name 
+
+
+#__________________________________________ ------product------ _______________________________________
 class Product(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255,unique=True,allow_unicode=True,blank=True,null=True)
@@ -91,6 +120,7 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
+#__________________________________________ ------specification------ _______________________________________   
 class Specification(models.Model):  # add icon field  and is main field 
     DATA_TYPE_CHOICES = [
         ('int', 'عدد صحیح'),
@@ -123,6 +153,8 @@ class Specification(models.Model):  # add icon field  and is main field
         verbose_name_plural = 'مشخصات'
         unique_together = ['category', 'name']
 
+
+#__________________________________________ ------product specification------ _______________________________________
 class ProductSpecification(models.Model): # is main field 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='spec_values', verbose_name='محصول')
     specification = models.ForeignKey(Specification, on_delete=models.CASCADE, related_name='values', verbose_name='مشخصه')
@@ -175,13 +207,17 @@ class ProductSpecification(models.Model): # is main field
         unique_together = ['product', 'specification']
 
 #add  add provider for product-option foreignkey for faz 2 
+
+
+#__________________________________________ ------product option------ _______________________________________
 class ProductOption(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options')
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='options', blank=True, null=True)
     option_price = models.PositiveIntegerField(help_text="قیمت به تومان برای محصول با این ویژگی")
     quantity = models.PositiveIntegerField(default=1)
     is_active = models.BooleanField(default=True)
-
+    
+    warranty = models.ForeignKey(Warranty,on_delete=models.SET_NULL,null=True,blank=True,verbose_name='گارانتی',related_name='product_options')
     # Discount fields
     is_active_discount = models.BooleanField(default=False)
     discount = models.PositiveIntegerField(
@@ -249,6 +285,9 @@ class Gallery(models.Model):
     def __str__(self):
         return f"عکس برای {self.product.product.title} - {self.product.color.name if self.product.color else 'بدون رنگ'}"
 
+
+
+#__________________________________________ ------color------ _______________________________________
 class Color(models.Model):
     COLOR_PALETTE = [
         ("#FFFFFF", "white"),

@@ -157,3 +157,11 @@ class ProductSpecificationViewSet(BaseModelViewSet):
 
 
 
+class WarrantyViewSet(BaseModelViewSet):
+    queryset = Warranty.objects.all()
+    serializer_class = WarrantySerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['product_options']
+    search_fields = ['product_options__product__title']
+
+

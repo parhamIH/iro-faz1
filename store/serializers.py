@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Product, Category, ProductOption, Brand, Gallery, 
-    Specification, ProductSpecification , Color , Tag
+    Specification, ProductSpecification , Color , Tag , Warranty
 )
 from loan_calculator.serializers import LoanConditionSerializer
 from django.utils import timezone
@@ -87,7 +87,12 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 
-
+class WarrantySerializer(serializers.ModelSerializer):
+    product_options = ProductOptionSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Warranty
+        fields = ['id', 'name', 'duration_months', 'is_active', 'product_options']
 
 
 

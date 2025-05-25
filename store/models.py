@@ -8,7 +8,7 @@ from django.utils.text import slugify
 import random
 from decimal import Decimal
 
-
+# garanti  ,  biime  , provider produduct option  , 
 
 class Brand (models.Model): 
     name = models.CharField(max_length=100) 
@@ -28,7 +28,6 @@ class Brand (models.Model):
     def __str__(self):
         return self.name
 
-#need to add image to category
 class Category(models.Model):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     name = models.CharField(max_length=100)
@@ -48,7 +47,6 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name 
-#delete discount from product and add it  to product-option
 class Product(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255,unique=True,allow_unicode=True,blank=True,null=True)
@@ -79,7 +77,7 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
-class Specification(models.Model):
+class Specification(models.Model):  # add icon field 
     DATA_TYPE_CHOICES = [
         ('int', 'عدد صحیح'),
         ('decimal', 'عدد اعشاری'),

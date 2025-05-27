@@ -14,7 +14,7 @@ from decimal import Decimal
 
 class Warranty(models.Model):
     name = models.CharField(max_length=100, verbose_name='نام گارانتی')
-    company = models.CharField(max_length=100, verbose_name='شرکت ارائه دهنده')
+    company = models.CharField(max_length=100, verbose_name='شرکت ارائه دهنده',blank=True,null=True)
     duration = models.PositiveIntegerField(verbose_name='مدت گارانتی (ماه)',help_text='مدت زمان گارانتی به ماه')
     is_active = models.BooleanField(default=True,verbose_name='فعال')
     description = models.TextField(blank=True,verbose_name='توضیحات')
@@ -171,8 +171,8 @@ class ProductSpecification(models.Model): # is main field
             bool(self.str_value),
             bool(self.bool_value is not None)
         ]
-        if sum(filled_values) > 1:
-            raise ValidationError('فقط یک نوع مقدار می‌تواند پر شود')
+        # if sum(filled_values) > 1:
+        #     raise ValidationError('فقط یک نوع مقدار می‌تواند پر شود')
         
         # Validate value matches specification's data_type
         if self.specification.data_type == 'int' and self.int_value is None:
@@ -305,3 +305,46 @@ class Color(models.Model):
     
     def __str__(self):
         return self.name
+
+
+class ArticleCategory(models.Model):
+    name = models.CharField(max_length=100, verbose_name='نام دسته‌بندی')
+    slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name, allow_unicode=True)
+            counter = 1
+            while ArticleCategory.objects.filter(slug=self.slug).exists():
+                self.slug = f"{slugify(self.name, allow_unicode=True)}-{counter}"
+                counter += 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+class Article(models.Model):
+    title = models.CharField(max_length=255, verbose_name='عنوان')
+    slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
+    tags = models.ManyToManyField(Tag, blank=True, verbose_name='تگ‌ها')
+    content = models.TextField(verbose_name='محتوا')
+    image = models.ImageField(upload_to='articles/', blank=True, null=True, verbose_name='تصویر')
+    category = models.ForeignKey(ArticleCategory, on_delete=models.CASCADE, related_name='articles', verbose_name='دسته‌بندی')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='تاریخ ایجاد')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='تاریخ بروزرسانی')
+    is_published = models.BooleanField(default=True, verbose_name='منتشر شده')
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.title, allow_unicode=True)
+            counter = 1
+            new_slug = base_slug
+            while Article.objects.filter(slug=new_slug).exists():
+                new_slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = new_slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title

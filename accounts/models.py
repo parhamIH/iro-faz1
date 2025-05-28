@@ -185,7 +185,7 @@ class Provider(models.Model):
 
 
 
-class Fav_Product_List(models.Model):
+class FavProductList(models.Model):
 
     client = models.ForeignKey(CustomUser, verbose_name=" مشتری", on_delete=models.CASCADE)
     products=models.ManyToManyField(Product, verbose_name=("محصولات مورد علاقه"))
@@ -198,7 +198,7 @@ class Fav_Product_List(models.Model):
 
 
 
-class Offer_Code(models.Model):
+class OfferCode(models.Model):
     title = models.CharField( max_length=50)
 
     code = models.CharField(verbose_name="کد تخفیف" , max_length=50)

@@ -1,10 +1,14 @@
 from django.db import models
 from django.utils import timezone
 import uuid
-from django.contrib.auth.models import User
 from store.models import ProductOption
 from model_utils import FieldTracker
+from django.contrib.auth import get_user_model
 # Create your models here.
+
+
+
+User = get_user_model()
 
 class Cart(models.Model):
     STATUS_CHOICES = [

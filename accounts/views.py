@@ -17,6 +17,15 @@ from .serializers import ChangePasswordSerializer , ResetPasswordConfirmSerializ
 هر ویو با توجه به سطح دسترسی تعریف شده، قابل استفاده خواهد بود
 """
 
+class LoginView(APIView):
+    def post(self, request):
+        serializer = UserLoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            login(request, user)  # لاگین با session-based auth (اختیاری)
+            return Response({'message': 'ورود موفقیت‌آمیز بود.', 'user_id': user.id}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -60,12 +69,3 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-class LoginView(APIView):
-    def post(self, request):
-        serializer = UserLoginSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            login(request, user)  # لاگین با session-based auth (اختیاری)
-            return Response({'message': 'ورود موفقیت‌آمیز بود.', 'user_id': user.id}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

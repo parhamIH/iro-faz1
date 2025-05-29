@@ -26,7 +26,6 @@ var/
 db.sqlite3
 media/
 staticfiles/
-*settings.py
 # Virtual Environment
 venv/
 ENV/

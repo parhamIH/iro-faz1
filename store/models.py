@@ -6,7 +6,6 @@ from decimal import Decimal
 from colorfield.fields import ColorField
 from django.utils.text import slugify
 import random
-from decimal import Decimal
 
 #__________________________________________ ------models------ _______________________________________
 
@@ -57,12 +56,12 @@ class Brand (models.Model):
     def __str__(self):
         return self.name
 
- #class Category(MPTTModel): ,
-    # parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
-
 
 
 #__________________________________________ ------category------ _______________________________________
+
+ #class Category(MPTTModel): ,
+    # parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
 
 class Category(models.Model):  
 

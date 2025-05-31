@@ -199,11 +199,15 @@ class FavProductList(models.Model):
 
 
 class OfferCode(models.Model):
-    title = models.CharField( max_length=50)
 
+    title = models.CharField( max_length=50)
     code = models.CharField(verbose_name="کد تخفیف" , max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
     users = models.ManyToManyField(CustomUser, verbose_name="کاربر ") 
+    used=models.BooleanField(default=False)
+    class Meta:
+        verbose_name = "کد تخفیف"
+        verbose_name_plural = "کدهای تخفیف"
 
     def __str__(self):
         return f" title: {self.title}  \n offer-code : {self.code}  "

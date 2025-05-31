@@ -39,11 +39,32 @@ class ProviderAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ['client', 'client__phone_number', 'client__email', 'client__is_active', 'client__is_staff']
+    list_display = ['client', 'get_phone_number', 'get_email', 'get_is_active', 'get_is_staff']
     list_filter = ['client__is_active', 'client__is_staff']
     search_fields = ['client__full_name', 'client__phone_number', 'client__email']
     list_per_page = 20
 
+    def get_phone_number(self, obj):
+        return obj.client.phone_number
+    get_phone_number.short_description = 'شماره تلفن'
+    get_phone_number.admin_order_field = 'client__phone_number'
+
+    def get_email(self, obj):
+        return obj.client.email
+    get_email.short_description = 'ایمیل'
+    get_email.admin_order_field = 'client__email'
+
+    def get_is_active(self, obj):
+        return obj.client.is_active
+    get_is_active.short_description = 'فعال'
+    get_is_active.boolean = True
+    get_is_active.admin_order_field = 'client__is_active'
+
+    def get_is_staff(self, obj):
+        return obj.client.is_staff
+    get_is_staff.short_description = 'کارمند'
+    get_is_staff.boolean = True
+    get_is_staff.admin_order_field = 'client__is_staff'
 
 @admin.register(OfferCode)
 class OfferCodeAdmin(admin.ModelAdmin):

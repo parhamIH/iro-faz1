@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db import models
 from django.core.validators import RegexValidator , MinLengthValidator 
 from django.contrib.auth import get_user_model 
@@ -64,14 +64,62 @@ iran_phone_regex = RegexValidator(
 )
 
 
-class CustomUser(AbstractBaseUser,PermissionsMixin):
-    email = models.EmailField(unique=True)
+class CustomUserManager(BaseUserManager):
+    def create_user(self, username=None, email=None, phone_number=None, full_name=None, password=None, **extra_fields):
+        if not username and not email and not phone_number:
+            raise ValueError('حداقل یکی از فیلدهای username، ایمیل یا شماره تلفن الزامی است')
+        if not full_name:
+            raise ValueError('نام و نام خانوادگی الزامی است')
+
+        if email:
+            email = self.normalize_email(email)
+        
+        # اگر username خالی باشد، از phone_number یا email استفاده می‌کنیم
+        if not username:
+            username = phone_number or email
+
+        user = self.model(
+            username=username,
+            phone_number=phone_number,
+            email=email,
+            full_name=full_name,
+            **extra_fields
+        )
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username=None, email=None, phone_number=None, full_name=None, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault('is_verified', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self.create_user(username, email, phone_number, full_name, password, **extra_fields)
+
+    def get_by_natural_key(self, username):
+        try:
+            return self.get(username=username)
+        except self.model.DoesNotExist:
+            try:
+                return self.get(phone_number=username)
+            except self.model.DoesNotExist:
+                return self.get(email=username)
+
+class CustomUser(AbstractBaseUser, PermissionsMixin):
+    objects = CustomUserManager()
+    username = models.CharField(max_length=150, unique=True, blank=True, null=True)
+    email = models.EmailField(unique=True, blank=True, null=True)
     full_name = models.CharField(max_length=100)
     date_of_birth = models.DateField(blank=True, null=True)
     
-
     # phone number 
-    phone_number = models.CharField(max_length=13,validators=[iran_phone_regex],unique=True,blank=True,null=True,)
+    phone_number = models.CharField(max_length=13, validators=[iran_phone_regex], unique=True, blank=True, null=True)
     is_phone_verified = models.BooleanField(default=False, verbose_name="تأیید شماره تلفن")
     verification_code = models.CharField(max_length=6, null=True, blank=True, verbose_name="کد تأیید")
     verification_code_created_at = models.DateTimeField(null=True, blank=True, verbose_name="زمان ایجاد کد تأیید")
@@ -85,11 +133,26 @@ class CustomUser(AbstractBaseUser,PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
-    USERNAME_FIELD = 'phone_number'
-    REQUIRED_FIELDS = ['full_name']
+    USERNAME_FIELD = 'username'  # تغییر به username برای سازگاری با جنگو
+    REQUIRED_FIELDS = ['full_name']  # فقط نام و نام خانوادگی اجباری است
+
+    def get_username(self):
+        return self.username or self.phone_number or self.email
+
+    def clean(self):
+        super().clean()
+        if not self.username and not self.email and not self.phone_number:
+            raise ValidationError('حداقل یکی از فیلدهای username، ایمیل یا شماره تلفن الزامی است')
+
+    def save(self, *args, **kwargs):
+        if not self.username:
+            # اگر username خالی باشد، از phone_number یا email استفاده می‌کنیم
+            self.username = self.phone_number or self.email
+        self.clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.email
+        return self.get_username()
 
 
 class Address(models.Model): 

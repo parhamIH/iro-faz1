@@ -76,7 +76,8 @@ class ProductViewSet(BaseModelViewSet):
     ).all()
     serializer_class = ProductSerializer
     filterset_class = ProductFilter 
-    search_fields = ['title', 'description']
+    ordering_fields = ['options__option_price','options__quantity', "created_at" , "updated_at" , "is_active" , "options__is_active_discount"]
+    search_fields = ['title', 'description','options__color__name','options__option_price']
 
 class CategoryViewSet(BaseModelViewSet):
     queryset = Category.objects.prefetch_related(

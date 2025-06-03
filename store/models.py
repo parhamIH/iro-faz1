@@ -6,6 +6,7 @@ from decimal import Decimal
 from colorfield.fields import ColorField
 from django.utils.text import slugify
 import random
+from mptt.models import MPTTModel, TreeForeignKey
 
 #__________________________________________ ------models------ _______________________________________
 
@@ -63,14 +64,17 @@ class Brand (models.Model):
  #class Category(MPTTModel): ,
     # parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
 
-class Category(models.Model):  
+class Category(MPTTModel):
 
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
+    parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='categories')
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
     image = models.ImageField(upload_to='categories/', blank=True, null=True)
+
+
+    
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -83,6 +87,8 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name 
+    class  MPTTMeta:
+        order_insertion_by = ["parent",'name']
 
 
 #__________________________________________ ------product------ _______________________________________

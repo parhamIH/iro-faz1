@@ -1,10 +1,13 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import *
+from mptt.admin import DraggableMPTTAdmin
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'parent', 'description', 'get_specifications_count']
+class CategoryAdmin(DraggableMPTTAdmin):
+    mptt_indent_field = "name"
+    list_display = ('tree_actions', 'indented_title', 'parent', 'description', 'get_specifications_count')
+    list_display_links = ('indented_title',)
     search_fields = ['name', 'description']
     list_filter = ['parent']
     prepopulated_fields = {'slug': ('name',)}
@@ -12,7 +15,6 @@ class CategoryAdmin(admin.ModelAdmin):
     def get_specifications_count(self, obj):
         return obj.spec_definitions.count()
     get_specifications_count.short_description = 'تعداد مشخصات'
-
 class ProductOptionInline(admin.TabularInline):
     model = ProductOption
     extra = 1

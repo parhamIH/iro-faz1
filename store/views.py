@@ -6,8 +6,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import *
 from .serializers import *
 from .filters import *
-from loan_calculator.models import LoanCondition, PrePaymentInstallment
-from loan_calculator.serializers import LoanConditionSerializer, PrePaymentInstallmentSerializer
+# from loan_calculator.models import LoanCondition, PrePaymentInstallment
+# from loan_calculator.serializers import LoanConditionSerializer, PrePaymentInstallmentSerializer
 from django.http import Http404, JsonResponse
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -125,19 +125,19 @@ class GalleryViewSet(BaseModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['product']
 
-class LoanConditionViewSet(BaseModelViewSet):
-    queryset = LoanCondition.objects.all()
-    serializer_class = LoanConditionSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['condition_type', 'product']
-    search_fields = ['title', 'product__title']
+# class LoanConditionViewSet(BaseModelViewSet):
+#     queryset = LoanCondition.objects.all()
+#     serializer_class = LoanConditionSerializer
+#     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+#     filterset_fields = ['condition_type', 'product']
+#     search_fields = ['title', 'product__title']
 
-class PrePaymentInstallmentViewSet(BaseModelViewSet):
-    queryset = PrePaymentInstallment.objects.all()
-    serializer_class = PrePaymentInstallmentSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['loan_condition']
-    search_fields = ['loan_condition__title']
+# class PrePaymentInstallmentViewSet(BaseModelViewSet):
+#     queryset = PrePaymentInstallment.objects.all()
+#     serializer_class = PrePaymentInstallmentSerializer
+#     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+#     filterset_fields = ['loan_condition']
+#     search_fields = ['loan_condition__title']
 
 class SpecificationViewSet(BaseModelViewSet):
     queryset = Specification.objects.select_related('category').all()

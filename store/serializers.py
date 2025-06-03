@@ -3,7 +3,7 @@ from .models import (
     Product, Category, ProductOption, Brand, Gallery, 
     Specification, ProductSpecification , Color , Tag , Warranty, ArticleCategory, Article
 )
-from loan_calculator.serializers import LoanConditionSerializer
+
 from django.utils import timezone
 from django.db.models import Q, Avg
 
@@ -100,7 +100,7 @@ class ProductSerializer(serializers.ModelSerializer):
     brand = serializers.StringRelatedField()
     options = ProductOptionSerializer(many=True, read_only=True)
     spec_values = ProductSpecificationSerializer(many=True, read_only=True)
-    loan_conditions = LoanConditionSerializer(many=True, read_only=True)
+    # loan_conditions = LoanConditionSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True , read_only=True)
     
     

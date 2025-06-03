@@ -21,7 +21,7 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('store.urls')),
-    path('loan/', include('loan_calculator.urls')),    
+    path('installments/', include('installments.urls')), 
     path("account/",include("accounts.urls")),
     # Swagger URLs
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),

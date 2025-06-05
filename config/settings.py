@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "accounts",
 
     'installments',
+    'jdatetime',
 ]
 
 MIDDLEWARE = [

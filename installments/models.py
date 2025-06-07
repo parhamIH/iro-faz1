@@ -57,3 +57,31 @@ class InstallmentParameter(models.Model):
 
     def __str__(self):
         return f"{self.get_method_display()} - {self.repayment_period} ماه - {self.initial_increase_percent}% اولیه"
+from django.db import models
+from decimal import Decimal
+
+class CompanyInstallmentParameter(models.Model):
+    repayment_period = models.PositiveIntegerField(
+        default=12,
+        help_text="مدت بازپرداخت (ماه)"
+    )
+    monthly_interest_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=1.00,
+        help_text="سود ماهیانه (درصد)"
+    )
+    minimum_down_payment = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        help_text="حداقل مبلغ پیش‌پرداخت"
+    )
+    guarantee_method = models.CharField(
+        max_length=20,
+        default='check',
+        help_text="نوع ضمانت (مثلا چک، سفته و غیره)"
+    )
+
+    def __str__(self):
+        return f"شرایط شرکتی - {self.repayment_period} ماه - سود ماهیانه {self.monthly_interest_percent}%"

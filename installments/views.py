@@ -1,3 +1,4 @@
+from decimal import Decimal, ROUND_HALF_UP
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -91,3 +92,38 @@ class InstallmentCalculationAPIView(APIView):
             
 
         })
+def calculate_company_installment(product_price: Decimal, down_payment: Decimal, param) -> dict:
+    # اطمینان از Decimal بودن ورودی‌ها
+    product_price = Decimal(product_price)
+    down_payment = Decimal(down_payment)
+    monthly_interest_percent = Decimal(param.monthly_interest_percent)  # سود ماهیانه درصدی
+    repayment_period = int(param.repayment_period)  # مدت بازپرداخت (ماه)
+
+    # تبدیل درصد به عدد کسری
+    monthly_interest_rate = monthly_interest_percent / Decimal("100")
+
+    # سود کل: درصد ماهانه × مبلغ کالا × تعداد ماه
+    total_interest = product_price * monthly_interest_rate * repayment_period
+
+    # قیمت افزایش یافته کالا (اصل + سود کل)
+    increased_price = product_price + total_interest
+
+    # مبلغ باقی مانده پس از پیش پرداخت
+    remaining_price = increased_price - down_payment
+
+    # مبلغ هر قسط
+    monthly_payment = remaining_price / repayment_period if repayment_period > 0 else Decimal('0')
+
+    # گرد کردن اعداد به دو رقم اعشار
+    increased_price = increased_price.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    remaining_price = remaining_price.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    monthly_payment = monthly_payment.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    total_interest = total_interest.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    return {
+        "increased_price": increased_price,
+        "remaining_price": remaining_price,
+        "monthly_payment": monthly_payment,
+        "total_interest": total_interest,
+        "repayment_period": repayment_period,
+    }

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import InstallmentParameter
+from .models import InstallmentParameter, CompanyInstallmentParameter
 
 @admin.register(InstallmentParameter)
 class InstallmentParameterAdmin(admin.ModelAdmin):
@@ -12,4 +12,14 @@ class InstallmentParameterAdmin(admin.ModelAdmin):
         'post_down_payment_increase_percent',
         'bank_tax_interest_percent',
         'method',
+    )
+
+@admin.register(CompanyInstallmentParameter)
+class CompanyInstallmentParameterAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'repayment_period',
+        'monthly_interest_percent',
+        'minimum_down_payment',
+        'guarantee_method',
     )

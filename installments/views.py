@@ -8,6 +8,10 @@ from .utils import calculate_loan_payments
 from datetime import timedelta, date
 import jdatetime
 from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal
+from .models import CompanyInstallmentParameter
+from .serializers import CompanyInstallmentCalculationInputSerializer
+from .utils import calculate_company_installment, generate_company_checks
 
 
 def convert_to_persian_digits(text):
@@ -91,3 +95,33 @@ class InstallmentCalculationAPIView(APIView):
             
 
         })
+class CompanyInstallmentCalculationAPIView(APIView):
+    """
+    API برای محاسبه اقساط براساس شرایط فروش شرکتی
+    """
+
+    def post(self, request):
+        serializer = CompanyInstallmentCalculationInputSerializer(data=request.data)
+        if serializer.is_valid():
+            product_price = serializer.validated_data['product_price']
+            down_payment = serializer.validated_data['down_payment']
+            installment_param_id = serializer.validated_data['installment_param_id']
+
+            try:
+                param = CompanyInstallmentParameter.objects.get(pk=installment_param_id)
+            except CompanyInstallmentParameter.DoesNotExist:
+                return Response({'error': 'پارامتر اقساط شرکتی یافت نشد.'}, status=status.HTTP_404_NOT_FOUND)
+
+            result = calculate_company_installment(product_price, down_payment, param)
+            checks = generate_company_checks(result['monthly_payment'], result['repayment_period'])
+
+            return Response({
+                "increased_price": result['increased_price'],
+                "remaining_price": result['remaining_price'],
+                "monthly_payment": result['monthly_payment'],
+                "total_interest": result['total_interest'],
+                "repayment_period": result['repayment_period'],
+                "checks": checks,
+            })
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

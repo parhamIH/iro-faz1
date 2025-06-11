@@ -7,7 +7,7 @@ from colorfield.fields import ColorField
 from django.utils.text import slugify
 import random
 from mptt.models import MPTTModel, TreeForeignKey
-from accounts.models import Profile , Provider
+
 
 #__________________________________________ ------warranty------ _______________________________________
 
@@ -60,8 +60,6 @@ class Brand (models.Model):
 
 #__________________________________________ ------category------ _______________________________________
 
- #class Category(MPTTModel): ,
-    # parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
 
 class Category(MPTTModel):
 
@@ -214,7 +212,8 @@ class ProductSpecification(models.Model): # is main field
 
 #__________________________________________ ------product option------ _______________________________________
 class ProductOption(models.Model):
-    provider = models.ForeignKey(Provider , on_delete = models.DO_NOTHING , related_name= "تامین کننده " )
+    from accounts.models import  Provider
+    provider = models.ForeignKey(Provider , on_delete = models.DO_NOTHING , related_name= "product_option" , verbose_name="تامین کننده " )
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options')
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='options', blank=True, null=True)
     

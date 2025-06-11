@@ -4,7 +4,7 @@ from django.core.validators import RegexValidator , MinLengthValidator
 from django.contrib.auth import get_user_model 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from store.models import Product
+from store.models import Product 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 

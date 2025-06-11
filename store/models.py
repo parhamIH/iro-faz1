@@ -213,7 +213,7 @@ class ProductSpecification(models.Model): # is main field
 #__________________________________________ ------product option------ _______________________________________
 class ProductOption(models.Model):
     from accounts.models import  Provider
-    provider = models.ForeignKey(Provider , on_delete = models.DO_NOTHING , related_name= "product_option" , verbose_name="تامین کننده "  , )
+    provider = models.ForeignKey(Provider , on_delete = models.DO_NOTHING , related_name= "product_option" , verbose_name="تامین کننده ")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options')
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='options', blank=True, null=True)
     

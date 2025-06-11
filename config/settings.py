@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,9 +25,48 @@ SECRET_KEY = 'django-insecure-7q%1&o)t4u!6fg$&8ao&7x$_6=4$ufseb201eluoq*#cdbi)l3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+
+ALLOWED_HOSTS = ["*"]
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
+
+
+
+# ----------------------
+# ✅ امنیت ارتباط و HTTPS
+# ----------------------
+# تنظیمات امنیتی برای محیط توسعه و تولید
+if DEBUG:
+    # تنظیمات محیط توسعه
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_PROXY_SSL_HEADER = None
+    USE_X_FORWARDED_HOST = False
+    USE_X_FORWARDED_PORT = False
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+else:
+    # تنظیمات محیط تولید
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    USE_X_FORWARDED_HOST = True
+    USE_X_FORWARDED_PORT = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# تنظیمات امنیتی پایه که در هر دو محیط فعال هستند
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+# تنظیمات HSTS - غیرفعال در محیط توسعه
+# SECURE_HSTS_SECONDS = None
+
 
 
 # Application definition
@@ -47,6 +86,8 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'mptt',
+    'rest_framework_simplejwt',
+
 
     #####apps####
     'cart',
@@ -91,9 +132,6 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 
-
-
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  
@@ -134,6 +172,15 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+]
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -167,8 +214,37 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '10/minute',
+        'anon': '5/minute',
+    }
 }
 
+# ----------------------
+# ✅ JWT - توکن امن
+# ----------------------
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'UPDATE_LAST_LOGIN': True,
+}
+
+# ----------------------
+# ✅ CORS (در صورت نیاز)
+# ----------------------
+
+CORS_ALLOWED_ORIGINS = [
+    "https://frontend.yourdomain.com",
+]
+CORS_ALLOW_CREDENTIALS = False
 
 
 AUTHENTICATION_BACKENDS = [

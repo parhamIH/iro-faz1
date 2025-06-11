@@ -237,13 +237,13 @@ class Provider(models.Model):
         verbose_name_plural = "ارائه دهندگان"
 
     def __str__(self):
-        return f"{self.company_name} - {self.user.username}"
+        return f"{self.company_name} - {self.provider.username}"
 
     def save(self, *args, **kwargs):
         # Make sure the user is staff when saving a provider
-        if not self.user.is_staff:
-            self.user.is_staff = True
-            self.user.save()
+        if not self.provider.is_staff:
+            self.provider.is_staff = True
+            self.provider.save()
         super().save(*args, **kwargs)
 
 

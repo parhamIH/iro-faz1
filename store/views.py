@@ -164,12 +164,3 @@ class WarrantyViewSet(BaseModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['product_options']
     search_fields = ['product_options__product__title']
-
-
-class ArticleCategoryViewSet(viewsets.ModelViewSet):
-    queryset = ArticleCategory.objects.all()
-    serializer_class = ArticleCategorySerializer
-
-class ArticleViewSet(viewsets.ModelViewSet):
-    queryset = Article.objects.all().order_by('-created_at')
-    serializer_class = ArticleSerializer

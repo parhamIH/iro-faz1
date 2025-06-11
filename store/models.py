@@ -8,7 +8,6 @@ from django.utils.text import slugify
 import random
 from mptt.models import MPTTModel, TreeForeignKey
 
-#__________________________________________ ------models------ _______________________________________
 
 #__________________________________________ ------warranty------ _______________________________________
 
@@ -61,9 +60,6 @@ class Brand (models.Model):
 
 #__________________________________________ ------category------ _______________________________________
 
- #class Category(MPTTModel): ,
-    # parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
-
 class Category(MPTTModel):
 
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
@@ -72,9 +68,6 @@ class Category(MPTTModel):
     brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='categories')
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
     image = models.ImageField(upload_to='categories/', blank=True, null=True)
-
-
-    
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -167,6 +160,8 @@ class ProductSpecification(models.Model): # is main field
     decimal_value = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name='مقدار اعشاری')
     str_value = models.CharField(max_length=255, blank=True, null=True, verbose_name='مقدار متنی')
     bool_value = models.BooleanField(blank=True, null=True, verbose_name='مقدار بله/خیر')
+    is_main = models.BooleanField(default=False, verbose_name='مشخصه اصلی' , help_text='مشخصه اصلی برای محصول است')
+
 
     def clean(self):
         # Ensure only one value field is set based on specification's data_type
@@ -176,10 +171,7 @@ class ProductSpecification(models.Model): # is main field
             bool(self.str_value),
             bool(self.bool_value is not None)
         ]
-        # if sum(filled_values) > 1:
-        #     raise ValidationError('فقط یک نوع مقدار می‌تواند پر شود')
-        
-        # Validate value matches specification's data_type
+
         if self.specification.data_type == 'int' and self.int_value is None:
             raise ValidationError('برای مشخصه عددی صحیح باید مقدار عددی وارد شود')
         elif self.specification.data_type == 'decimal' and self.decimal_value is None:
@@ -219,8 +211,9 @@ class ProductOption(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options')
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='options', blank=True, null=True)
     option_price = models.PositiveIntegerField(help_text="قیمت به تومان برای محصول با این ویژگی")
-    quantity = models.PositiveIntegerField(default=1)
+    quantity = models.PositiveIntegerField( MinValueValidator(0),default=1 )
     is_active = models.BooleanField(default=True)
+
     
     warranty = models.ForeignKey(Warranty,on_delete=models.SET_NULL,null=True,blank=True,verbose_name='گارانتی',related_name='product_options')
     # Discount fields
@@ -276,11 +269,16 @@ class ProductOption(models.Model):
         self.discount = percentage
         self.is_active_discount = True
 
+    def change_activity(self):
+           self.is_active = self.quantity >= 1
+
     def __str__(self):
         base_str = f"{self.product.title} - (+{self.option_price})"
         if self.is_discount_active:
             return f"{base_str} (تخفیف: {self.discount}%)"
         return base_str
+
+
 
 class Gallery(models.Model):
     product = models.ForeignKey(ProductOption, on_delete=models.CASCADE, related_name='gallery')
@@ -310,46 +308,3 @@ class Color(models.Model):
     
     def __str__(self):
         return self.name
-
-
-class ArticleCategory(models.Model):
-    name = models.CharField(max_length=100, verbose_name='نام دسته‌بندی')
-    slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name, allow_unicode=True)
-            counter = 1
-            while ArticleCategory.objects.filter(slug=self.slug).exists():
-                self.slug = f"{slugify(self.name, allow_unicode=True)}-{counter}"
-                counter += 1
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.name
-
-
-class Article(models.Model):
-    title = models.CharField(max_length=255, verbose_name='عنوان')
-    slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
-    tags = models.ManyToManyField(Tag, blank=True, verbose_name='تگ‌ها')
-    content = models.TextField(verbose_name='محتوا')
-    image = models.ImageField(upload_to='articles/', blank=True, null=True, verbose_name='تصویر')
-    category = models.ForeignKey(ArticleCategory, on_delete=models.CASCADE, related_name='articles', verbose_name='دسته‌بندی')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='تاریخ ایجاد')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='تاریخ بروزرسانی')
-    is_published = models.BooleanField(default=True, verbose_name='منتشر شده')
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            base_slug = slugify(self.title, allow_unicode=True)
-            counter = 1
-            new_slug = base_slug
-            while Article.objects.filter(slug=new_slug).exists():
-                new_slug = f"{base_slug}-{counter}"
-                counter += 1
-            self.slug = new_slug
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.title

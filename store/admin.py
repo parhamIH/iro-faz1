@@ -160,18 +160,3 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ['name']
     prepopulated_fields = {'slug': ('name',)}
 
-from django.contrib import admin
-from .models import Article, ArticleCategory
-
-@admin.register(ArticleCategory)
-class ArticleCategoryAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'slug']
-    prepopulated_fields = {'slug': ('name',)}
-    search_fields = ['name']  # <=== این خط رو اضافه کن
-
-@admin.register(Article)
-class ArticleAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title', 'category', 'is_published', 'created_at']
-    list_filter = ['is_published', 'category', 'created_at']
-    search_fields = ['title', 'content']
-    autocomplete_fields = ['category']

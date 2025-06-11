@@ -7,8 +7,7 @@ from colorfield.fields import ColorField
 from django.utils.text import slugify
 import random
 from mptt.models import MPTTModel, TreeForeignKey
-
-#__________________________________________ ------models------ _______________________________________
+from accounts.models import Profile , Provider
 
 #__________________________________________ ------warranty------ _______________________________________
 
@@ -211,18 +210,20 @@ class ProductSpecification(models.Model): # is main field
         verbose_name_plural = 'مقادیر مشخصات محصول'
         unique_together = ['product', 'specification']
 
-#add  add provider for product-option foreignkey for faz 2 
 
 
 #__________________________________________ ------product option------ _______________________________________
 class ProductOption(models.Model):
+    provider = models.ForeignKey(Provider , on_delete = models.DO_NOTHING , related_name= "تامین کننده " )
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options')
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='options', blank=True, null=True)
+    
+    
     option_price = models.PositiveIntegerField(help_text="قیمت به تومان برای محصول با این ویژگی")
     quantity = models.PositiveIntegerField(default=1)
     is_active = models.BooleanField(default=True)
-    
     warranty = models.ForeignKey(Warranty,on_delete=models.SET_NULL,null=True,blank=True,verbose_name='گارانتی',related_name='product_options')
+
     # Discount fields
     is_active_discount = models.BooleanField(default=False)
     discount = models.PositiveIntegerField(
@@ -310,46 +311,3 @@ class Color(models.Model):
     
     def __str__(self):
         return self.name
-
-
-class ArticleCategory(models.Model):
-    name = models.CharField(max_length=100, verbose_name='نام دسته‌بندی')
-    slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name, allow_unicode=True)
-            counter = 1
-            while ArticleCategory.objects.filter(slug=self.slug).exists():
-                self.slug = f"{slugify(self.name, allow_unicode=True)}-{counter}"
-                counter += 1
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.name
-
-
-class Article(models.Model):
-    title = models.CharField(max_length=255, verbose_name='عنوان')
-    slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
-    tags = models.ManyToManyField(Tag, blank=True, verbose_name='تگ‌ها')
-    content = models.TextField(verbose_name='محتوا')
-    image = models.ImageField(upload_to='articles/', blank=True, null=True, verbose_name='تصویر')
-    category = models.ForeignKey(ArticleCategory, on_delete=models.CASCADE, related_name='articles', verbose_name='دسته‌بندی')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='تاریخ ایجاد')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='تاریخ بروزرسانی')
-    is_published = models.BooleanField(default=True, verbose_name='منتشر شده')
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            base_slug = slugify(self.title, allow_unicode=True)
-            counter = 1
-            new_slug = base_slug
-            while Article.objects.filter(slug=new_slug).exists():
-                new_slug = f"{base_slug}-{counter}"
-                counter += 1
-            self.slug = new_slug
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.title

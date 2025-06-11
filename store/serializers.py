@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Product, Category, ProductOption, Brand, Gallery, 
-    Specification, ProductSpecification , Color , Tag , Warranty, ArticleCategory, Article
+    Specification, ProductSpecification , Color , Tag , Warranty, 
 )
 from loan_calculator.serializers import LoanConditionSerializer
 from django.utils import timezone
@@ -112,17 +112,3 @@ class ProductSerializer(serializers.ModelSerializer):
             'is_active', 'tags'
         ] 
         
-class ArticleCategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ArticleCategory
-        fields = '__all__'
-
-class ArticleSerializer(serializers.ModelSerializer):
-    category = ArticleCategorySerializer(read_only=True)
-    category_id = serializers.PrimaryKeyRelatedField(
-        queryset=ArticleCategory.objects.all(), source='category', write_only=True
-    )
-
-    class Meta:
-        model = Article
-        fields = ['id', 'title', 'slug', 'content', 'image', 'category', 'category_id', 'created_at', 'updated_at', 'is_published']

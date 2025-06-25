@@ -1,4 +1,7 @@
 from rest_framework import serializers
+from django.contrib.auth import authenticate
+from django.utils.translation import gettext_lazy as _
+
 from .models import * 
 
 
@@ -10,8 +13,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
             'national_id', 'economic_code', 'is_verified', 'is_active', 'is_staff'
         ]
         read_only_fields = ['is_verified', 'is_active', 'is_staff']
-
-    def validate_phone_number(self, value):
+    # add kavenegar or more sms providers 
+    def validate_phone_number(self, value) :
         if not value:
             raise serializers.ValidationError("شماره تلفن الزامی است.")
         if not value.startswith('+98') and not value.startswith('09'):
@@ -100,17 +103,27 @@ class OfferCodeSerializer(serializers.ModelSerializer):
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
+    phone_number = serializers.CharField(required=True)
     password = serializers.CharField(write_only=True)
+
 
     class Meta:
         model = CustomUser
         fields = ['full_name', 'phone_number', 'email', 'password']
 
     def validate_phone_number(self, value):
+        if CustomUser.objects.filter(phone_number=value).exists():
+            raise serializers.ValidationError("شماره تلفن قبلا استفاده شده است.")
         if not value.startswith('+98') and not value.startswith('09'):
             raise serializers.ValidationError("شماره باید با +98 یا 09 شروع شود.")
         return value
-
+    
+    def validate_email(self, value):
+        if CustomUser.objects.filter(email=value).exists():
+            raise serializers.ValidationError("ایمیل قبلا استفاده شده است.")
+        return value
+    
     def create(self, validated_data):
         password = validated_data.pop('password')
         user = CustomUser(**validated_data)
@@ -118,9 +131,10 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+
 class UserLoginSerializer(serializers.Serializer):
-    phone_number = serializers.CharField(required=False)
     email = serializers.EmailField(required=False)
+    phone_number = serializers.CharField(required=False)
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
@@ -129,7 +143,7 @@ class UserLoginSerializer(serializers.Serializer):
         password = data.get('password')
 
         if not phone and not email:
-            raise serializers.ValidationError("باید شماره تلفن یا ایمیل وارد شود.")
+            raise serializers.ValidationError(_("باید شماره تلفن یا ایمیل وارد شود."))
 
         try:
             user = None
@@ -139,16 +153,21 @@ class UserLoginSerializer(serializers.Serializer):
                 user = CustomUser.objects.get(email=email)
 
             if not user.check_password(password):
-                raise serializers.ValidationError("رمز عبور اشتباه است.")
-            if not user.is_active:
-                raise serializers.ValidationError("حساب کاربری غیرفعال است.")
+                raise serializers.ValidationError(_("اطلاعات ورود نادرست است."))
 
+            if not user.is_active:
+                raise serializers.ValidationError(_("حساب کاربری غیرفعال است."))
+
+            user.backend = 'django.contrib.auth.backends.ModelBackend'
             data['user'] = user
             return data
 
         except CustomUser.DoesNotExist:
-            raise serializers.ValidationError("کاربری با این مشخصات یافت نشد.")
-
+            raise serializers.ValidationError(_("کاربری با این مشخصات یافت نشد."))
+        except serializers.ValidationError as ve:
+            raise ve  # همون خطای اصلی رو دوباره بنداز
+        except Exception as e:
+            raise serializers.ValidationError(_("خطای غیرمنتظره‌ای رخ داد."))  # فقط پیام عمومی بده
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:

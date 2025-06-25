@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
-
+from rest_framework_simplejwt.tokens import RefreshToken
 from .models import * 
+from .services import *
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -243,3 +243,126 @@ class ResetPasswordConfirmSerializer(serializers.Serializer):
         user.verification_code = None  # حذف کد بعد از استفاده
         user.save()
         return user
+
+class SMSVerificationSerializer(serializers.Serializer):
+    """Serializer for SMS verification request"""
+    phone_number = serializers.CharField(required=True)
+    
+    def validate_phone_number(self, value):
+        if not value.startswith('+98') and not value.startswith('09'):
+            raise serializers.ValidationError("شماره باید با +98 یا 09 شروع شود.")
+        return value
+
+class SMSVerificationConfirmSerializer(serializers.Serializer):
+    """Serializer for SMS verification confirmation"""
+    phone_number = serializers.CharField(required=True)
+    verification_code = serializers.CharField(required=True, max_length=6)
+    
+    def validate(self, data):
+        phone_number = data.get('phone_number')
+        verification_code = data.get('verification_code')
+        
+        try:
+            user = CustomUser.objects.get(phone_number=phone_number)
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError("کاربری با این شماره تلفن یافت نشد.")
+        
+        if not user.verification_code:
+            raise serializers.ValidationError("کد تأیید ارسال نشده است.")
+        
+        if is_verification_code_expired(user.verification_code_created_at):
+            raise serializers.ValidationError("کد تأیید منقضی شده است.")
+        
+        if user.verification_code != verification_code:
+            raise serializers.ValidationError("کد تأیید نادرست است.")
+        
+        data['user'] = user
+        return data
+
+class DeviceInfoSerializer(serializers.Serializer):
+    """Serializer for device information"""
+    device_name = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    device_type = serializers.ChoiceField(
+        choices=[
+            ('mobile', 'موبایل'),
+            ('tablet', 'تبلت'),
+            ('desktop', 'دسکتاپ'),
+            ('web', 'وب'),
+            ('other', 'سایر'),
+        ],
+        default='other'
+    )
+
+class JWTLoginSerializer(serializers.Serializer):
+    """Serializer for JWT login with SMS verification"""
+    phone_number = serializers.CharField(required=True)
+    verification_code = serializers.CharField(required=True, max_length=6)
+    device_info = DeviceInfoSerializer(required=False)
+    
+    def validate(self, data):
+        phone_number = data.get('phone_number')
+        verification_code = data.get('verification_code')
+        
+        try:
+            user = CustomUser.objects.get(phone_number=phone_number)
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError("کاربری با این شماره تلفن یافت نشد.")
+        
+        if not user.verification_code:
+            raise serializers.ValidationError("کد تأیید ارسال نشده است.")
+        
+        if is_verification_code_expired(user.verification_code_created_at):
+            raise serializers.ValidationError("کد تأیید منقضی شده است.")
+        
+        if user.verification_code != verification_code:
+            raise serializers.ValidationError("کد تأیید نادرست است.")
+        
+        if not user.is_active:
+            raise serializers.ValidationError("حساب کاربری غیرفعال است.")
+        
+        data['user'] = user
+        return data
+
+class JWTRefreshSerializer(serializers.Serializer):
+    """Serializer for JWT token refresh"""
+    refresh = serializers.CharField(required=True)
+    
+    def validate_refresh(self, value):
+        try:
+            # Validate refresh token
+            refresh = RefreshToken(value)
+            return value
+        except Exception:
+            raise serializers.ValidationError("توکن نامعتبر است.")
+
+class DeviceTokenSerializer(serializers.ModelSerializer):
+    """Serializer for device token model"""
+    class Meta:
+        model = DeviceToken
+        fields = ['id', 'device_name', 'device_type', 'is_active', 'last_used', 'created_at', 'expires_at']
+        read_only_fields = ['id', 'is_active', 'last_used', 'created_at', 'expires_at']
+
+class UserDevicesSerializer(serializers.ModelSerializer):
+    """Serializer for user's active devices"""
+    devices = DeviceTokenSerializer(source='device_tokens', many=True, read_only=True)
+    
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'full_name', 'phone_number', 'devices']
+
+class LogoutSerializer(serializers.Serializer):
+    """Serializer for logout (revoke all tokens)"""
+    revoke_all = serializers.BooleanField(default=False, required=False)
+
+class RevokeDeviceSerializer(serializers.Serializer):
+    """Serializer for revoking specific device token"""
+    device_id = serializers.UUIDField(required=True)
+    
+    def validate_device_id(self, value):
+        try:
+            device_token = DeviceToken.objects.get(id=value)
+            if not device_token.is_active:
+                raise serializers.ValidationError("این دستگاه قبلاً غیرفعال شده است.")
+            return value
+        except DeviceToken.DoesNotExist:
+            raise serializers.ValidationError("دستگاه یافت نشد.")

@@ -25,6 +25,8 @@ SECRET_KEY = 'django-insecure-7q%1&o)t4u!6fg$&8ao&7x$_6=4$ufseb201eluoq*#cdbi)l3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# Development settings for testing
+BYPASS_SMS_IN_DEV = True  # Set to False in production
 
 ALLOWED_HOSTS = ["*"]
 
@@ -218,6 +220,12 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
+
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'accounts.authentication.DeviceJWTAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.UserRateThrottle',
         'rest_framework.throttling.AnonRateThrottle',
@@ -233,12 +241,26 @@ REST_FRAMEWORK = {
 # ----------------------
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # Increased for better UX
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
     'UPDATE_LAST_LOGIN': True,
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'JTI_CLAIM': 'jti',
+    'TOKEN_USER_CLASS': 'accounts.CustomUser',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+    'AUTH_COOKIE': 'access_token',
+    'AUTH_COOKIE_REFRESH': 'refresh_token',
+    'AUTH_COOKIE_DOMAIN': None,
+    'AUTH_COOKIE_SECURE': False,
+    'AUTH_COOKIE_HTTP_ONLY': True,
+    'AUTH_COOKIE_PATH': '/',
+    'AUTH_COOKIE_SAMESITE': 'Lax',
 }
 
 # ----------------------
@@ -249,6 +271,12 @@ CORS_ALLOWED_ORIGINS = [
     "https://frontend.yourdomain.com",
 ]
 CORS_ALLOW_CREDENTIALS = False
+
+# ----------------------
+# ✅ Kavenegar SMS Settings
+# ----------------------
+KAVENEGAR_API_KEY = '454F4B50684B70626163446F6D4D6E2B496A7550586677746777444D543271777966303431534D486931383D'
+KAVENEGAR_SENDER = '2000660110'
 
 
 AUTHENTICATION_BACKENDS = [

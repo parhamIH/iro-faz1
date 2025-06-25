@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from store.models import Product 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+import uuid
 
 def validate_iranian_national_id(national_id):
     """
@@ -274,3 +275,33 @@ class OfferCode(models.Model):
 
     def __str__(self):
         return f" title: {self.title}  \n offer-code : {self.code}  "
+
+class DeviceToken(models.Model):
+    """Model to track JWT tokens for multiple devices"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='device_tokens')
+    device_name = models.CharField(max_length=255, blank=True, null=True)
+    device_type = models.CharField(max_length=50, choices=[
+        ('mobile', 'موبایل'),
+        ('tablet', 'تبلت'),
+        ('desktop', 'دسکتاپ'),
+        ('web', 'وب'),
+        ('other', 'سایر'),
+    ], default='other')
+    token_hash = models.CharField(max_length=255, unique=True)
+    is_active = models.BooleanField(default=True)
+    last_used = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    
+    class Meta:
+        verbose_name = "توکن دستگاه"
+        verbose_name_plural = "توکن‌های دستگاه"
+        ordering = ['-last_used']
+    
+    def __str__(self):
+        return f"{self.user.full_name} - {self.device_name or self.device_type}"
+    
+    def is_expired(self):
+        from django.utils import timezone
+        return timezone.now() > self.expires_at

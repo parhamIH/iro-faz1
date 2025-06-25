@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import CustomUser, Provider ,Profile ,Address ,Notification ,FavProductList ,OfferCode
+from django.contrib.auth.admin import UserAdmin
+from .models import CustomUser, Provider ,Profile ,Address ,Notification ,FavProductList ,OfferCode, DeviceToken
 
 #Register your models here.
 @admin.register(CustomUser)
@@ -75,4 +76,24 @@ class OfferCodeAdmin(admin.ModelAdmin):
 
     class Meta:
         verbose_name = "کد تخفیف"
-        verbose_name_plural = "کدهای تخفیف" 
+        verbose_name_plural = "کدهای تخفیف"
+
+@admin.register(DeviceToken)
+class DeviceTokenAdmin(admin.ModelAdmin):
+    list_display = ['user', 'device_name', 'device_type', 'is_active', 'last_used', 'created_at', 'expires_at']
+    list_filter = ['device_type', 'is_active', 'created_at', 'expires_at']
+    search_fields = ['user__full_name', 'user__phone_number', 'device_name']
+    readonly_fields = ['id', 'token_hash', 'created_at', 'last_used']
+    ordering = ['-created_at']
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user')
+    
+    def has_add_permission(self, request):
+        return False  # Device tokens should only be created through the API
+    
+    def has_change_permission(self, request, obj=None):
+        return True
+    
+    def has_delete_permission(self, request, obj=None):
+        return True 

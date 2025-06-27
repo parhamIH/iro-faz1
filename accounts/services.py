@@ -48,6 +48,7 @@ def is_verification_code_expired(created_at, expiry_minutes=2):
     expiry_time = created_at + timedelta(minutes=expiry_minutes)
     return now > expiry_time
 
+
 def generate_device_token_hash(user_id, device_info):
     """Generate a unique hash for device token"""
     device_string = f"{user_id}_{device_info.get('device_name', '')}_{device_info.get('device_type', '')}_{timezone.now().timestamp()}"

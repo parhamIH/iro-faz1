@@ -90,7 +90,6 @@ INSTALLED_APPS = [
     'mptt',
     'rest_framework_simplejwt',
 
-
     #####apps####
     'cart',
     'store',
@@ -152,6 +151,7 @@ DATABASES = {
         'PORT': '5432',
     }
 }
+
 DATABASE_ROUTERS = ['config.db_router.DBRouter']
 
 
@@ -205,13 +205,13 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
 # Django REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
-            
 
     ],
     'DEFAULT_RENDERER_CLASSES': [
@@ -233,7 +233,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'user': '10/minute',
         'anon': '5/minute',
-    }
+    },
 }
 
 # ----------------------

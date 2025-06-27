@@ -158,7 +158,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 class Address(models.Model): 
 
-    client = models.ForeignKey(CustomUser, on_delete=models.CASCADE , verbose_name=" مشتری")
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE , verbose_name=" مشتری")
     title_address= models.CharField(max_length=50)
     province = models.CharField(max_length=100)
     city = models.CharField(max_length=100)
@@ -201,7 +201,7 @@ class Notification(models.Model):
 
 class Profile(models.Model):
     
-    client  = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
+    user  = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
 
     legal_info = models.TextField(null=True, blank=True, verbose_name="اطلاعات حقوقی")
 
@@ -221,7 +221,7 @@ def save_user_profile(sender, instance, **kwargs):
         verbose_name_plural = "پروفایل‌ها"
     
     def __str__(self):
-        return f"{self.user.username} - {self.phone_number}"
+        return f"{self.user.username} - {self.user.phone_number}"
 
 
 class Provider(models.Model):
@@ -251,7 +251,7 @@ class Provider(models.Model):
 
 class FavProductList(models.Model):
 
-    client = models.ForeignKey(CustomUser, verbose_name=" مشتری", on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, verbose_name=" مشتری", on_delete=models.CASCADE)
     products=models.ManyToManyField(Product, verbose_name=("محصولات مورد علاقه"))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

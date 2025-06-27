@@ -31,12 +31,12 @@ class CustomUserSerializer(serializers.ModelSerializer):
         rep['full_identity'] = f"{instance.full_name} ({instance.national_id})" if instance.national_id else instance.full_name
         return rep
 class AddressSerializer(serializers.ModelSerializer):
-    client_name = serializers.CharField(source='client.full_name', read_only=True)
-    client_phone = serializers.CharField(source='client.phone_number', read_only=True)
+    user_name = serializers.CharField(source='user.full_name', read_only=True)
+    user_phone = serializers.CharField(source='user.phone_number', read_only=True)
 
     class Meta: 
         model = Address
-        fields = ['id', 'title_address', 'province', 'city', 'full_address', 'postcode', 'client_name', 'client_phone']
+        fields = ['id', 'title_address', 'province', 'city', 'full_address', 'postcode', 'user_name', 'user_phone']
     
     def validate_postcode(self, value):
         if not value.isdigit():
@@ -56,8 +56,8 @@ class NotificationSerializer(serializers.ModelSerializer):
         return rep
 
 class ProfileSerializer(serializers.ModelSerializer):
-    full_name = serializers.CharField(source='client.full_name', read_only=True)
-    email = serializers.EmailField(source='client.email', read_only=True)
+    full_name = serializers.CharField(source='user.full_name', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
 
     class Meta:
         model = Profile
@@ -79,11 +79,11 @@ class ProviderSerializer(serializers.ModelSerializer):
         ]
 class FavProductListSerializer(serializers.ModelSerializer):
     products = serializers.StringRelatedField(many=True)
-    client_name = serializers.CharField(source='client.full_name', read_only=True)
+    user_name = serializers.CharField(source='user.full_name', read_only=True)
 
     class Meta:
         model = FavProductList
-        fields = ['id', 'products', 'created_at', 'updated_at', 'client_name']
+        fields = ['id', 'products', 'created_at', 'updated_at', 'user_name']
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)

@@ -1,3 +1,4 @@
+
 """
 Django settings for config project.
 
@@ -87,16 +88,15 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'mptt',
     'rest_framework_simplejwt',
+    'jdatetime',
 
 
     #####apps####
     'cart',
     'store',
-   
+    'loan_calculator',    
     "accounts",
-
     'installments',
-    'jdatetime',
 ]
 
 MIDDLEWARE = [
@@ -138,12 +138,20 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  
-        'NAME': 'IRO3',         
+        'NAME': 'iro1',         
         'USER': 'root',             
-        'PASSWORD': 'mysql',     
+        'PASSWORD': 'parhams',     
         'HOST': '127.0.0.1',                   
         'PORT': '3306',                        
     },
+    'postgresql_db': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'iro1',
+        'USER': 'parham',
+        'PASSWORD': 'parhams',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
 DATABASE_ROUTERS = ['config.db_router.DBRouter']
 

@@ -3,7 +3,6 @@ from .models import (
     Product, Category, ProductOption, Brand, Gallery, 
     Specification, ProductSpecification , Color , Tag , Warranty
 )
-
 from django.utils import timezone
 from django.db.models import Q, Avg
 
@@ -100,7 +99,6 @@ class ProductSerializer(serializers.ModelSerializer):
     brand = serializers.StringRelatedField()
     options = ProductOptionSerializer(many=True, read_only=True)
     spec_values = ProductSpecificationSerializer(many=True, read_only=True)
-    # loan_conditions = LoanConditionSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True , read_only=True)
     
     
@@ -108,6 +106,6 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'title', 'slug', 'categories', 'description',
-            'image', 'brand', 'options', 'spec_values', 'loan_conditions',
+            'image', 'brand', 'options', 'spec_values',
             'is_active', 'tags'
         ] 

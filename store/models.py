@@ -309,6 +309,7 @@ class Color(models.Model):
     def __str__(self):
         return self.name
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 
 class ArticleCategory(models.Model):
@@ -354,5 +355,7 @@ class Article(models.Model):
         return self.title
 
 
+=======
+>>>>>>> main
 =======
 >>>>>>> main

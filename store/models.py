@@ -308,9 +308,6 @@ class Color(models.Model):
     
     def __str__(self):
         return self.name
-<<<<<<< HEAD
-<<<<<<< HEAD
-
 
 class ArticleCategory(models.Model):
     name = models.CharField(max_length=100, verbose_name='نام دسته‌بندی')
@@ -354,8 +351,3 @@ class Article(models.Model):
     def __str__(self):
         return self.title
 
-
-=======
->>>>>>> main
-=======
->>>>>>> main

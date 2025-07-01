@@ -2,16 +2,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .models import InstallmentParameter
-from .serializers import InstallmentCalculationInputSerializer
-from .utils import calculate_loan_payments
+from .models import InstallmentParameter, CompanyInstallmentParameter
+from store.models import Product
+from .serializers import InstallmentCalculationInputSerializer, CompanyInstallmentCalculationInputSerializer
+from .utils import calculate_loan_payments, calculate_company_installment, generate_company_checks
 from datetime import timedelta, date
-import jdatetime
 from decimal import Decimal, ROUND_HALF_UP
-from decimal import Decimal
-from .models import CompanyInstallmentParameter
-from .serializers import CompanyInstallmentCalculationInputSerializer
-from .utils import calculate_company_installment, generate_company_checks
+import jdatetime
 
 
 def convert_to_persian_digits(text):
@@ -19,9 +16,8 @@ def convert_to_persian_digits(text):
     return text.translate(en_to_fa_digits)
 
 def format_amount(amount):
-    # تبدیل هر عددی به Decimal
     if not isinstance(amount, Decimal):
-        amount = Decimal(str(amount))  # اطمینان از Decimal بودن
+        amount = Decimal(str(amount))
     formatted = f"{amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP):,}"
     return convert_to_persian_digits(formatted)
 
@@ -35,36 +31,35 @@ class InstallmentCalculationAPIView(APIView):
         data = serializer.validated_data
         product_price = Decimal(str(data['product_price']))
         down_payment = Decimal(str(data['down_payment']))
-        param = get_object_or_404(InstallmentParameter, pk=data['installment_param_id'])
+        product_id = data.get('product_id')
 
-        # تبدیل درصدها به Decimal
+        # یافتن پارامتر قسط مرتبط با محصول، یا پیش‌فرض
+        param = None
+        if product_id:
+            param = InstallmentParameter.objects.filter(products__id=product_id).first()
+        if not param:
+            param = InstallmentParameter.objects.filter(products=None).first()
+        if not param:
+            return Response({'error': 'هیچ پارامتر قسطی یافت نشد.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # ادامه محاسبه اقساط
         initial_increase_percent = Decimal(str(param.initial_increase_percent))
         post_down_payment_increase_percent = Decimal(str(param.post_down_payment_increase_percent))
         bank_tax_interest_percent = Decimal(str(param.bank_tax_interest_percent))
 
-        # مرحله ۱: افزایش اولیه
         increased_price = product_price + (product_price * initial_increase_percent / Decimal("100"))
-
-        # مرحله ۲: بعد از پیش‌پرداخت
         remaining_price = increased_price - down_payment
-
-        # مرحله ۳: افزایش بعد از پیش‌پرداخت
         post_increased_price = remaining_price * (Decimal("1") + post_down_payment_increase_percent / Decimal("100"))
 
-        # نرخ بهره ماهانه
         monthly_interest_rate = (bank_tax_interest_percent / Decimal("100")) / Decimal("12")
-
         final_loan_amount = post_increased_price
 
-        # محاسبه اقساط
         loan_results = calculate_loan_payments(final_loan_amount, monthly_interest_rate, param.repayment_period)
 
-        # تاریخ سررسید چک
         check_due_date = date.today() + timedelta(days=param.check_guarantee_period * 30)
         jdate = jdatetime.date.fromgregorian(date=check_due_date)
         jdate_str_fa = convert_to_persian_digits(jdate.strftime("%Y/%m/%d"))
 
-        # محاسبه مبلغ ضمانت
         total_with_interest = final_loan_amount + Decimal(str(loan_results["total_interest"]))
         if param.method == InstallmentParameter.METHOD_CHECK:
             guarantee_amount = total_with_interest * Decimal("1.25")
@@ -92,36 +87,38 @@ class InstallmentCalculationAPIView(APIView):
             "check_guarantee_period_months": convert_to_persian_digits(str(param.check_guarantee_period)),
             "check_due_date": jdate_str_fa,
             "check_due_message": check_message,
-            
-
         })
-class CompanyInstallmentCalculationAPIView(APIView):
-    """
-    API برای محاسبه اقساط براساس شرایط فروش شرکتی
-    """
 
+
+class CompanyInstallmentCalculationAPIView(APIView):
     def post(self, request):
         serializer = CompanyInstallmentCalculationInputSerializer(data=request.data)
-        if serializer.is_valid():
-            product_price = serializer.validated_data['product_price']
-            down_payment = serializer.validated_data['down_payment']
-            installment_param_id = serializer.validated_data['installment_param_id']
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            try:
-                param = CompanyInstallmentParameter.objects.get(pk=installment_param_id)
-            except CompanyInstallmentParameter.DoesNotExist:
-                return Response({'error': 'پارامتر اقساط شرکتی یافت نشد.'}, status=status.HTTP_404_NOT_FOUND)
+        data = serializer.validated_data
+        product_price = data['product_price']
+        down_payment = data['down_payment']
+        product_id = data.get('product_id')
 
-            result = calculate_company_installment(product_price, down_payment, param)
-            checks = generate_company_checks(result['monthly_payment'], result['repayment_period'])
+        # یافتن پارامتر قسط شرکتی بر اساس محصول
+        param = None
+        if product_id:
+            param = CompanyInstallmentParameter.objects.filter(products__id=product_id).first()
+        if not param:
+            param = CompanyInstallmentParameter.objects.filter(products=None).first()
+        if not param:
+            return Response({'error': 'هیچ پارامتر اقساط شرکتی یافت نشد.'}, status=status.HTTP_404_NOT_FOUND)
 
-            return Response({
-                "increased_price": result['increased_price'],
-                "remaining_price": result['remaining_price'],
-                "monthly_payment": result['monthly_payment'],
-                "total_interest": result['total_interest'],
-                "repayment_period": result['repayment_period'],
-                "checks": checks,
-            })
+        result = calculate_company_installment(product_price, down_payment, param)
+        checks = generate_company_checks(result['monthly_payment'], result['repayment_period'])
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            "increased_price": result['increased_price'],
+            "remaining_price": result['remaining_price'],
+            "monthly_payment": result['monthly_payment'],
+            "total_interest": result['total_interest'],
+            "repayment_period": result['repayment_period'],
+            "checks": checks,
+            "parameter_id_used": result.get('parameter_id_used', None),
+        })

@@ -1,3 +1,30 @@
+# from django.contrib import admin
+# from .models import InstallmentParameter, CompanyInstallmentParameter
+
+# @admin.register(InstallmentParameter)
+# class InstallmentParameterAdmin(admin.ModelAdmin):
+#     list_display = (
+#         'id',
+#         'repayment_period',
+#         'initial_increase_percent',
+#         'check_guarantee_period',
+#         'minimum_down_payment',
+#         'post_down_payment_increase_percent',
+#         'bank_tax_interest_percent',
+#         'method',
+#     )
+
+# @admin.register(CompanyInstallmentParameter)
+# class CompanyInstallmentParameterAdmin(admin.ModelAdmin):
+#     list_display = (
+#         'id',
+#         'repayment_period',
+#         'monthly_interest_percent',
+#         'minimum_down_payment',
+#         'guarantee_method',
+#     )
+
+
 from django.contrib import admin
 from .models import InstallmentParameter, CompanyInstallmentParameter
 
@@ -13,6 +40,7 @@ class InstallmentParameterAdmin(admin.ModelAdmin):
         'bank_tax_interest_percent',
         'method',
     )
+    filter_horizontal = ('products',)  # اضافه کردن این خط برای نمایش بهتر انتخاب محصولات
 
 @admin.register(CompanyInstallmentParameter)
 class CompanyInstallmentParameterAdmin(admin.ModelAdmin):
@@ -23,3 +51,4 @@ class CompanyInstallmentParameterAdmin(admin.ModelAdmin):
         'minimum_down_payment',
         'guarantee_method',
     )
+    filter_horizontal = ('products',)  # اضافه کن تا توی ادمین محصولات به صورت چند انتخابی راحت انتخاب بشن

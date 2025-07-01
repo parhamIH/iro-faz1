@@ -31,7 +31,7 @@ def calculate_loan_payments(loan_price: Decimal, monthly_interest_rate: Decimal,
         "total_payment": total_payment,
         "total_interest": total_interest,
     }
-def calculate_company_installment(product_price: Decimal, down_payment: Decimal, param) -> dict:
+def calculate_company_installment(product_price: Decimal, down_payment: Decimal, param ) -> dict:
     # اطمینان از Decimal بودن ورودی‌ها
     product_price = Decimal(product_price)
     down_payment = Decimal(down_payment)
@@ -65,6 +65,7 @@ def calculate_company_installment(product_price: Decimal, down_payment: Decimal,
         "monthly_payment": monthly_payment,
         "total_interest": total_interest,
         "repayment_period": repayment_period,
+        "parameter_id_used": param.id 
     }
 
 

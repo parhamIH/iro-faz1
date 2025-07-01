@@ -108,7 +108,7 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'title', 'slug', 'categories', 'description',
-            'image', 'brand', 'options', 'spec_values', 'loan_conditions',
+            'image', 'brand', 'options', 'spec_values', 
             'is_active', 'tags'
         ] 
         

@@ -6,8 +6,8 @@ from decimal import Decimal
 from colorfield.fields import ColorField
 from django.utils.text import slugify
 import random
+from mptt.models import MPTTModel, TreeForeignKey
 
-#__________________________________________ ------models------ _______________________________________
 
 #__________________________________________ ------warranty------ _______________________________________
 
@@ -60,12 +60,9 @@ class Brand (models.Model):
 
 #__________________________________________ ------category------ _______________________________________
 
- #class Category(MPTTModel): ,
-    # parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
+class Category(MPTTModel):
 
-class Category(models.Model):  
-
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
+    parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='categories')
@@ -83,6 +80,8 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name 
+    class  MPTTMeta:
+        order_insertion_by = ["parent",'name']
 
 
 #__________________________________________ ------product------ _______________________________________
@@ -161,6 +160,8 @@ class ProductSpecification(models.Model): # is main field
     decimal_value = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name='مقدار اعشاری')
     str_value = models.CharField(max_length=255, blank=True, null=True, verbose_name='مقدار متنی')
     bool_value = models.BooleanField(blank=True, null=True, verbose_name='مقدار بله/خیر')
+    is_main = models.BooleanField(default=False, verbose_name='مشخصه اصلی' , help_text='مشخصه اصلی برای محصول است')
+
 
     def clean(self):
         # Ensure only one value field is set based on specification's data_type
@@ -170,10 +171,7 @@ class ProductSpecification(models.Model): # is main field
             bool(self.str_value),
             bool(self.bool_value is not None)
         ]
-        # if sum(filled_values) > 1:
-        #     raise ValidationError('فقط یک نوع مقدار می‌تواند پر شود')
-        
-        # Validate value matches specification's data_type
+
         if self.specification.data_type == 'int' and self.int_value is None:
             raise ValidationError('برای مشخصه عددی صحیح باید مقدار عددی وارد شود')
         elif self.specification.data_type == 'decimal' and self.decimal_value is None:
@@ -213,8 +211,9 @@ class ProductOption(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options')
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='options', blank=True, null=True)
     option_price = models.PositiveIntegerField(help_text="قیمت به تومان برای محصول با این ویژگی")
-    quantity = models.PositiveIntegerField(default=1)
+    quantity = models.PositiveIntegerField( MinValueValidator(0),default=1 )
     is_active = models.BooleanField(default=True)
+
     
     warranty = models.ForeignKey(Warranty,on_delete=models.SET_NULL,null=True,blank=True,verbose_name='گارانتی',related_name='product_options')
     # Discount fields
@@ -270,11 +269,16 @@ class ProductOption(models.Model):
         self.discount = percentage
         self.is_active_discount = True
 
+    def change_activity(self):
+           self.is_active = self.quantity >= 1
+
     def __str__(self):
         base_str = f"{self.product.title} - (+{self.option_price})"
         if self.is_discount_active:
             return f"{base_str} (تخفیف: {self.discount}%)"
         return base_str
+
+
 
 class Gallery(models.Model):
     product = models.ForeignKey(ProductOption, on_delete=models.CASCADE, related_name='gallery')
@@ -304,6 +308,7 @@ class Color(models.Model):
     
     def __str__(self):
         return self.name
+<<<<<<< HEAD
 
 
 class ArticleCategory(models.Model):
@@ -349,3 +354,5 @@ class Article(models.Model):
         return self.title
 
 
+=======
+>>>>>>> main

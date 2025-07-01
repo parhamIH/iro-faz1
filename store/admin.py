@@ -1,17 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import *
-
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'parent', 'description', 'get_specifications_count']
-    search_fields = ['name', 'description']
-    list_filter = ['parent']
-    prepopulated_fields = {'slug': ('name',)}
-
-    def get_specifications_count(self, obj):
-        return obj.spec_definitions.count()
-    get_specifications_count.short_description = 'تعداد مشخصات'
+from mptt.admin import DraggableMPTTAdmin
 
 class ProductOptionInline(admin.TabularInline):
     model = ProductOption
@@ -40,7 +30,21 @@ class ProductSpecificationInline(admin.TabularInline):
         if obj.specification:
             return obj.specification.unit or '-'
         return '-'
+    get_unit.short_description = 'واحد'\
+
+# admin.py
+
+class SpecificationInline(admin.TabularInline):
+    model = Specification
+    extra = 0  # تعداد ردیف‌های اضافه برای ایجاد
+    readonly_fields = ['get_unit']
+    
+    def get_unit(self, obj):
+        if obj.specification:
+            return obj.specification.unit or '-'
+        return '-'
     get_unit.short_description = 'واحد'
+
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
@@ -60,6 +64,22 @@ class ProductAdmin(admin.ModelAdmin):
         return obj.spec_values.count()
     get_specifications_count.short_description = 'تعداد مشخصات'
 
+
+
+@admin.register(Category)
+class CategoryAdmin(DraggableMPTTAdmin):
+    mptt_indent_field = "name"
+    list_display = ('tree_actions', 'indented_title', 'parent', 'description', 'get_specifications_count')
+    list_display_links = ('indented_title',)
+    search_fields = ['name', 'description']
+    list_filter = ['parent']
+    prepopulated_fields = {'slug': ('name',)}
+    inlines = [SpecificationInline]  # 👈 این خط رو اضافه کن
+
+
+    def get_specifications_count(self, obj):
+        return obj.spec_definitions.count()
+    get_specifications_count.short_description = 'تعداد مشخصات'
 @admin.register(ProductOption)
 class ProductOptionAdmin(admin.ModelAdmin):
     list_display = ['product', 'color', 'option_price', 'is_active_discount', 'discount', 'quantity']
@@ -158,18 +178,3 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ['name']
     prepopulated_fields = {'slug': ('name',)}
 
-from django.contrib import admin
-from .models import Article, ArticleCategory
-
-@admin.register(ArticleCategory)
-class ArticleCategoryAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'slug']
-    prepopulated_fields = {'slug': ('name',)}
-    search_fields = ['name']  # <=== این خط رو اضافه کن
-
-@admin.register(Article)
-class ArticleAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title', 'category', 'is_published', 'created_at']
-    list_filter = ['is_published', 'category', 'created_at']
-    search_fields = ['title', 'content']
-    autocomplete_fields = ['category']

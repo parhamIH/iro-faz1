@@ -46,23 +46,23 @@ class SpecificationInline(admin.TabularInline):
     get_unit.short_description = 'واحد'
 
 
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ['title', 'get_categories', 'brand', 'get_specifications_count', 'is_active']
-    search_fields = ['title', 'description', 'brand__name']
-    list_filter = ['categories', 'brand', 'is_active']
-    filter_horizontal = ['categories']
-    prepopulated_fields = {'slug': ('title',)}
-    inlines = [ProductSpecificationInline, ProductOptionInline]
-    list_editable = ['is_active']
+# @admin.register(Product)
+# class ProductAdmin(admin.ModelAdmin):
+#     list_display = ['title', 'get_categories', 'brand', 'get_specifications_count', 'is_active']
+#     search_fields = ['title', 'description', 'brand__name']
+#     list_filter = ['categories', 'brand', 'is_active']
+#     filter_horizontal = ['categories']
+#     prepopulated_fields = {'slug': ('title',)}
+#     inlines = [ProductSpecificationInline, ProductOptionInline]
+#     list_editable = ['is_active']
 
-    def get_categories(self, obj):
-        return ", ".join([cat.name for cat in obj.categories.all()])
-    get_categories.short_description = 'دسته‌بندی‌ها'
+#     def get_categories(self, obj):
+#         return ", ".join([cat.name for cat in obj.categories.all()])
+#     get_categories.short_description = 'دسته‌بندی‌ها'
 
-    def get_specifications_count(self, obj):
-        return obj.spec_values.count()
-    get_specifications_count.short_description = 'تعداد مشخصات'
+#     def get_specifications_count(self, obj):
+#         return obj.spec_values.count()
+#     get_specifications_count.short_description = 'تعداد مشخصات'
 
 
 
@@ -178,3 +178,77 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ['name']
     prepopulated_fields = {'slug': ('name',)}
 
+from django.urls import path
+from django.shortcuts import render, redirect
+import pandas as pd
+from django.utils.text import slugify
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ['title', 'get_categories', 'brand', 'get_specifications_count', 'is_active']
+    search_fields = ['title', 'description', 'brand__name']
+    list_filter = ['categories', 'brand', 'is_active']
+    filter_horizontal = ['categories']
+    prepopulated_fields = {'slug': ('title',)}
+    inlines = [ProductSpecificationInline, ProductOptionInline]
+    list_editable = ['is_active']
+    change_list_template = "admin/product_changelist.html"  # اضافه کن
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('upload-excel/', self.upload_excel)
+        ]
+        return custom_urls + urls
+
+    def upload_excel(self, request):
+        if request.method == 'POST':
+            excel_file = request.FILES['excel_file']
+            df = pd.read_excel(excel_file)
+
+            for _, row in df.iterrows():
+                title = row['title']
+                description = row.get('description', '')
+                is_active = row.get('is_active', True)
+                brand_name = row.get('brand')
+
+                # برند
+                brand = None
+                if pd.notna(brand_name):
+                    brand, _ = Brand.objects.get_or_create(name=brand_name)
+
+                # ساخت محصول
+                product = Product.objects.create(
+                    title=title,
+                    description=description,
+                    brand=brand,
+                    is_active=bool(is_active),
+                )
+
+                # دسته‌بندی‌ها
+                category_names = str(row.get('categories', '')).split(',')
+                for name in category_names:
+                    name = name.strip()
+                    if name:
+                        category, _ = Category.objects.get_or_create(name=name)
+                        product.categories.add(category)
+
+                # تگ‌ها
+                tag_names = str(row.get('tags', '')).split(',')
+                for name in tag_names:
+                    name = name.strip()
+                    if name:
+                        tag, _ = Tag.objects.get_or_create(name=name)
+                        product.tags.add(tag)
+
+            self.message_user(request, "📥 محصولات با موفقیت از فایل اکسل وارد شدند.")
+            return redirect("..")
+        
+        return render(request, 'admin/upload_excel.html')
+
+    def get_categories(self, obj):
+        return ", ".join([cat.name for cat in obj.categories.all()])
+    get_categories.short_description = 'دسته‌بندی‌ها'
+
+    def get_specifications_count(self, obj):
+        return obj.spec_values.count()
+    get_specifications_count.short_description = 'تعداد مشخصات'

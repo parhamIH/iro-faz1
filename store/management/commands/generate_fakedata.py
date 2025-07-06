@@ -5,7 +5,7 @@ from store.models import (
     Category, Brand, Product, Specification, ProductSpecification,
     ProductOption, Warranty, Tag, Color, Gallery
 )
-from accounts.models import CustomUser, Address, Provider
+from django.db import transaction
 import random
 from decimal import Decimal
 from django.core.files.base import ContentFile
@@ -13,200 +13,273 @@ from PIL import Image
 import io
 
 class Command(BaseCommand):
-    help = 'Generate fake data for the store app'
+    help = 'Generate realistic fake data for the store app (clears old data first)'
 
+    @transaction.atomic
     def handle(self, *args, **kwargs):
-        fake = Faker('fa_IR')  # Using Persian locale for more realistic data
-        self.stdout.write('Starting to generate fake data...')
+        fake = Faker('fa_IR')
+        self.stdout.write('Clearing old data...')
+        # پاک‌سازی داده‌های قبلی
+        Gallery.objects.all().delete()
+        ProductSpecification.objects.all().delete()
+        ProductOption.objects.all().delete()
+        Product.objects.all().delete()
+        Specification.objects.all().delete()
+        Category.objects.all().delete()
+        Brand.objects.all().delete()
+        Warranty.objects.all().delete()
+        Tag.objects.all().delete()
+        Color.objects.all().delete()
 
-        # Create Colors
-        colors = [
-            ('سیاه', '#000000'),
-            ('سفید', '#FFFFFF'),
-            ('قرمز', '#FF0000'),
-            ('آبی', '#0000FF'),
-            ('سبز', '#008000'),
-            ('طلایی', '#FFD700'),
-            ('نقره‌ای', '#C0C0C0'),
+        self.stdout.write('Generating new data...')
+
+        # رنگ‌ها
+        color_data = [
+            ("سفید", "#FFFFFF"),
+            ("مشکی", "#000000"),
+            ("نقره‌ای", "#C0C0C0"),
+            ("آبی", "#0000FF"),
+            ("قرمز", "#FF0000"),
+            ("خاکستری", "#808080"),
+            ("طلایی", "#FFD700"),
         ]
-        color_objects = []
-        for name, hex_code in colors:
-            color = Color.objects.create(name=name, hex_code=hex_code)
-            color_objects.append(color)
+        colors = [Color.objects.create(name=n, hex_code=h) for n, h in color_data]
 
-        # Create Warranties
-        warranties = []
-        warranty_data = [
-            ('گارانتی 12 ماهه', 'شرکت گارانتی ایران', 12),
-            ('گارانتی 24 ماهه', 'شرکت گارانتی پارس', 24),
-            ('گارانتی 6 ماهه', 'شرکت گارانتی آریا', 6),
-        ]
-        for name, company, duration in warranty_data:
-            warranty = Warranty.objects.create(
-                name=name,
-                company=company,
-                duration=duration,
-                description=fake.text(),
-                terms_conditions=fake.text(),
-                support_phone=fake.phone_number(),
-                registration_required=random.choice([True, False])
-            )
-            warranties.append(warranty)
-
-        # Create Brands
-        brands = []
-        brand_data = [
-            ('اپل', 'شرکت اپل'),
-            ('سامسونگ', 'شرکت سامسونگ'),
-            ('شیائومی', 'شرکت شیائومی'),
-            ('هواوی', 'شرکت هواوی'),
-            ('سونی', 'شرکت سونی'),
-        ]
-        for name, description in brand_data:
-            brand = Brand.objects.create(
-                name=name,
-                description=description
-            )
-            brands.append(brand)
-
-        # Create Categories
-        categories = []
-        category_data = [
-            ('موبایل', None),
-            ('لپ تاپ', None),
-            ('تبلت', None),
-            ('هدفون', None),
-            ('گوشی‌های اپل', 'موبایل'),
-            ('گوشی‌های سامسونگ', 'موبایل'),
-            ('لپ تاپ‌های گیمینگ', 'لپ تاپ'),
-            ('لپ تاپ‌های اداری', 'لپ تاپ'),
-        ]
-        
-        # First create parent categories
-        category_dict = {}
-        for name, parent_name in category_data:
-            if parent_name is None:
-                category = Category.objects.create(
-                    name=name,
-                    description=fake.text(),
-                    brand=random.choice(brands) if random.random() > 0.5 else None
-                )
-                category_dict[name] = category
-                categories.append(category)
-
-        # Then create child categories
-        for name, parent_name in category_data:
-            if parent_name is not None:
-                parent = category_dict.get(parent_name)
-                if parent:
-                    category = Category.objects.create(
-                        name=name,
-                        description=fake.text(),
-                        parent=parent,
-                        brand=random.choice(brands) if random.random() > 0.5 else None
-                    )
-                    categories.append(category)
-
-        # Create Specifications
-        specifications = []
-        spec_data = [
-            ('حافظه داخلی', 'int', 'GB'),
-            ('RAM', 'int', 'GB'),
-            ('اندازه صفحه نمایش', 'decimal', 'اینچ'),
-            ('دوربین اصلی', 'int', 'مگاپیکسل'),
-            ('دوربین سلفی', 'int', 'مگاپیکسل'),
-            ('باتری', 'int', 'mAh'),
-            ('وزن', 'decimal', 'گرم'),
-            ('ضد آب', 'bool', None),
-            ('شارژ سریع', 'bool', None),
+        # گارانتی‌ها
+        warranties = [
+            Warranty.objects.create(name="گارانتی ۱۲ ماهه", company="شرکت گارانتی ایران", duration=12),
+            Warranty.objects.create(name="گارانتی ۲۴ ماهه", company="شرکت گارانتی پارس", duration=24),
         ]
 
-        for category in categories:
-            for name, data_type, unit in spec_data:
+        # برندها
+        brands = {
+            'اپل': Brand.objects.create(name='اپل', description='Apple Inc.'),
+            'سامسونگ': Brand.objects.create(name='سامسونگ', description='Samsung Electronics'),
+            'شیائومی': Brand.objects.create(name='شیائومی', description='Xiaomi'),
+            'هواوی': Brand.objects.create(name='هواوی', description='Huawei'),
+            'تویوتا': Brand.objects.create(name='تویوتا', description='Toyota'),
+            'هیوندای': Brand.objects.create(name='هیوندای', description='Hyundai'),
+            'کیا': Brand.objects.create(name='کیا', description='Kia'),
+            'ال‌جی': Brand.objects.create(name='ال‌جی', description='LG'),
+            'سونی': Brand.objects.create(name='سونی', description='Sony'),
+        }
+
+        # دسته‌بندی‌ها
+        categories = {
+            'موبایل': Category.objects.create(name='موبایل', description='گوشی‌های هوشمند'),
+            'تبلت': Category.objects.create(name='تبلت', description='تبلت‌ها'),
+            'لپ‌تاپ': Category.objects.create(name='لپ‌تاپ', description='لپ‌تاپ‌ها'),
+            'ماشین': Category.objects.create(name='ماشین', description='خودروها'),
+            'لوازم خانه': Category.objects.create(name='لوازم خانه', description='لوازم خانگی'),
+            'هدفون': Category.objects.create(name='هدفون', description='هدفون و هدست'),
+        }
+
+        # مشخصات هر دسته‌بندی
+        specs_by_category = {
+            'موبایل': [
+                ('حافظه داخلی', 'int', 'GB'),
+                ('RAM', 'int', 'GB'),
+                ('اندازه صفحه', 'decimal', 'اینچ'),
+                ('دوربین اصلی', 'int', 'MP'),
+                ('باتری', 'int', 'mAh'),
+            ],
+            'تبلت': [
+                ('حافظه داخلی', 'int', 'GB'),
+                ('RAM', 'int', 'GB'),
+                ('اندازه صفحه', 'decimal', 'اینچ'),
+                ('باتری', 'int', 'mAh'),
+                ('وزن', 'decimal', 'گرم'),
+            ],
+            'لپ‌تاپ': [
+                ('پردازنده', 'str', None),
+                ('حافظه داخلی', 'int', 'GB'),
+                ('RAM', 'int', 'GB'),
+                ('اندازه صفحه', 'decimal', 'اینچ'),
+                ('وزن', 'decimal', 'کیلوگرم'),
+            ],
+            'ماشین': [
+                ('حجم موتور', 'int', 'cc'),
+                ('قدرت موتور', 'int', 'hp'),
+                ('مصرف سوخت', 'decimal', 'L/100km'),
+                ('گیربکس', 'str', None),
+                ('تعداد سرنشین', 'int', 'نفر'),
+            ],
+            'لوازم خانه': [
+                ('ظرفیت', 'int', 'لیتر'),
+                ('مصرف انرژی', 'str', None),
+                ('وزن', 'decimal', 'کیلوگرم'),
+                ('رنگ', 'str', None),
+                ('نوع', 'str', None),
+            ],
+            'هدفون': [
+                ('نوع اتصال', 'str', None),
+                ('عمر باتری', 'int', 'ساعت'),
+                ('وزن', 'decimal', 'گرم'),
+                ('میکروفون', 'bool', None),
+                ('مقاومت در برابر آب', 'bool', None),
+            ],
+        }
+
+        # ایجاد مشخصات
+        spec_objs = {}
+        for cat_name, spec_list in specs_by_category.items():
+            spec_objs[cat_name] = []
+            for name, dtype, unit in spec_list:
                 spec = Specification.objects.create(
-                    category=category,
+                    category=categories[cat_name],
                     name=name,
-                    data_type=data_type,
+                    data_type=dtype,
                     unit=unit,
-                    is_main=random.choice([True, False])
+                    is_main=True if name in ['حافظه داخلی', 'حجم موتور', 'ظرفیت', 'نوع اتصال'] else False
                 )
-                specifications.append(spec)
+                spec_objs[cat_name].append(spec)
 
-        # Create Products
-        products = []
-        product_data = [
-            ('iPhone 14 Pro', 'اپل', 'گوشی‌های اپل'),
-            ('iPhone 13 Pro', 'اپل', 'گوشی‌های اپل'),
-            ('Galaxy S23 Ultra', 'سامسونگ', 'گوشی‌های سامسونگ'),
-            ('Galaxy S22', 'سامسونگ', 'گوشی‌های سامسونگ'),
-            ('Xiaomi 13 Pro', 'شیائومی', 'موبایل'),
-            ('Huawei P60 Pro', 'هواوی', 'موبایل'),
-        ]
+        # محصولات واقعی برای هر دسته‌بندی
+        products_data = {
+            'موبایل': [
+                {
+                    'title': 'iPhone 15 Pro',
+                    'brand': brands['اپل'],
+                    'specs': [256, 8, Decimal('6.1'), 48, 3274],
+                },
+                {
+                    'title': 'Samsung Galaxy S24 Ultra',
+                    'brand': brands['سامسونگ'],
+                    'specs': [512, 12, Decimal('6.8'), 200, 5000],
+                },
+                {
+                    'title': 'Xiaomi 13 Pro',
+                    'brand': brands['شیائومی'],
+                    'specs': [256, 12, Decimal('6.73'), 50, 4820],
+                },
+            ],
+            'تبلت': [
+                {
+                    'title': 'iPad Pro 12.9',
+                    'brand': brands['اپل'],
+                    'specs': [512, 8, Decimal('12.9'), 10758, Decimal('682')],
+                },
+                {
+                    'title': 'Samsung Galaxy Tab S9 Ultra',
+                    'brand': brands['سامسونگ'],
+                    'specs': [256, 12, Decimal('14.6'), 11200, Decimal('732')],
+                },
+                {
+                    'title': 'Xiaomi Pad 6',
+                    'brand': brands['شیائومی'],
+                    'specs': [128, 8, Decimal('11.0'), 8840, Decimal('490')],
+                },
+            ],
+            'لپ‌تاپ': [
+                {
+                    'title': 'MacBook Air M2',
+                    'brand': brands['اپل'],
+                    'specs': ['Apple M2', 512, 8, Decimal('13.6'), Decimal('1.24')],
+                },
+                {
+                    'title': 'Samsung Galaxy Book3 Pro',
+                    'brand': brands['سامسونگ'],
+                    'specs': ['Intel i7', 1024, 16, Decimal('16.0'), Decimal('1.56')],
+                },
+                {
+                    'title': 'Huawei MateBook X Pro',
+                    'brand': brands['هواوی'],
+                    'specs': ['Intel i7', 1024, 16, Decimal('14.2'), Decimal('1.26')],
+                },
+            ],
+            'ماشین': [
+                {
+                    'title': 'تویوتا کرولا 2023',
+                    'brand': brands['تویوتا'],
+                    'specs': [1800, 140, Decimal('6.5'), 'اتومات', 5],
+                },
+                {
+                    'title': 'هیوندای النترا 2023',
+                    'brand': brands['هیوندای'],
+                    'specs': [1600, 128, Decimal('7.0'), 'اتومات', 5],
+                },
+                {
+                    'title': 'کیا سراتو 2023',
+                    'brand': brands['کیا'],
+                    'specs': [2000, 150, Decimal('6.8'), 'اتومات', 5],
+                },
+            ],
+            'لوازم خانه': [
+                {
+                    'title': 'یخچال سامسونگ RT89',
+                    'brand': brands['سامسونگ'],
+                    'specs': [700, 'A++', Decimal('120'), 'نقره‌ای', 'یخچال'],
+                },
+                {
+                    'title': 'ماشین لباسشویی ال‌جی WM-1015',
+                    'brand': brands['ال‌جی'],
+                    'specs': [10, 'A++', Decimal('70'), 'سفید', 'لباسشویی'],
+                },
+                {
+                    'title': 'تلویزیون سونی X90J',
+                    'brand': brands['سونی'],
+                    'specs': [65, 'A+', Decimal('25'), 'مشکی', 'تلویزیون'],
+                },
+            ],
+            'هدفون': [
+                {
+                    'title': 'Sony WH-1000XM5',
+                    'brand': brands['سونی'],
+                    'specs': ['بی‌سیم', 30, Decimal('250'), True, True],
+                },
+                {
+                    'title': 'Apple AirPods Pro 2',
+                    'brand': brands['اپل'],
+                    'specs': ['بی‌سیم', 6, Decimal('50'), True, True],
+                },
+                {
+                    'title': 'Samsung Galaxy Buds2 Pro',
+                    'brand': brands['سامسونگ'],
+                    'specs': ['بی‌سیم', 8, Decimal('43'), True, True],
+                },
+            ],
+        }
 
-        for title, brand_name, category_name in product_data:
-            brand = next((b for b in brands if b.name == brand_name), random.choice(brands))
-            category = next((c for c in categories if c.name == category_name), random.choice(categories))
-            
-            product = Product.objects.create(
-                title=title,
-                description=fake.text(),
-                brand=brand,
-                is_active=True
-            )
-            product.categories.add(category)
-            products.append(product)
-
-            # Create Product Specifications
-            for spec in specifications:
-                if spec.category == category or spec.category.parent == category:
-                    value = None
-                    if spec.data_type == 'int':
-                        value = random.randint(64, 512) if spec.name == 'حافظه داخلی' else random.randint(4, 16)
-                    elif spec.data_type == 'decimal':
-                        value = Decimal(str(random.uniform(5.0, 7.0))) if spec.name == 'اندازه صفحه نمایش' else Decimal(str(random.uniform(150.0, 250.0)))
-                    elif spec.data_type == 'bool':
-                        value = random.choice([True, False])
-                    elif spec.data_type == 'str':
-                        value = fake.word()
-
-                    if value is not None:
-                        ProductSpecification.objects.create(
-                            product=product,
-                            specification=spec,
-                            int_value=value if spec.data_type == 'int' else None,
-                            decimal_value=value if spec.data_type == 'decimal' else None,
-                            str_value=str(value) if spec.data_type == 'str' else None,
-                            bool_value=value if spec.data_type == 'bool' else None
-                        )
-
-            # Create Product Options
-            for color in random.sample(color_objects, random.randint(1, 3)):
-                option = ProductOption.objects.create(
-                    product=product,
-                    color=color,
-                    option_price=random.randint(20000000, 50000000),
-                    quantity=random.randint(5, 50),
-                    warranty=random.choice(warranties),
+        # ایجاد محصولات و ویژگی‌ها و آپشن‌ها
+        for cat_name, plist in products_data.items():
+            category = categories[cat_name]
+            specs = spec_objs[cat_name]
+            for pdata in plist:
+                product = Product.objects.create(
+                    title=pdata['title'],
+                    brand=pdata['brand'],
+                    description=fake.text(),
                     is_active=True
                 )
+                product.categories.add(category)
+                # ویژگی‌ها
+                for spec, value in zip(specs, pdata['specs']):
+                    ProductSpecification.objects.create(
+                        product=product,
+                        specification=spec,
+                        int_value=value if spec.data_type == 'int' else None,
+                        decimal_value=value if spec.data_type == 'decimal' else None,
+                        str_value=value if spec.data_type == 'str' else None,
+                        bool_value=value if spec.data_type == 'bool' else None,
+                        is_main=spec.is_main
+                    )
+                # آپشن (رنگ و قیمت و گارانتی)
+                for color in random.sample(colors, 2):
+                    ProductOption.objects.create(
+                        product=product,
+                        color=color,
+                        option_price=random.randint(10_000_000, 100_000_000),
+                        quantity=random.randint(1, 20),
+                        warranty=random.choice(warranties),
+                        is_active=True,
+                        is_active_discount=random.choice([True, False]),
+                        discount=random.choice([0, 5, 10, 15, 20])
+                    )
 
-                # Add discount to some options
-                if random.random() > 0.7:
-                    option.is_active_discount = True
-                    option.discount = random.randint(5, 30)
-                    option.discount_start_date = timezone.now()
-                    option.discount_end_date = timezone.now() + timezone.timedelta(days=random.randint(7, 30))
-                    option.save()
-
-        # Create Tags
-        tags = []
+        # تگ‌ها
         tag_names = ['جدید', 'پرفروش', 'تخفیف‌دار', 'گارانتی دار', 'اصل', 'اورجینال']
-        for name in tag_names:
-            tag = Tag.objects.create(name=name)
-            tags.append(tag)
-
-        # Add tags to random products
-        for product in products:
+        tags = [Tag.objects.create(name=name) for name in tag_names]
+        for product in Product.objects.all():
             product.tags.add(*random.sample(tags, random.randint(1, 3)))
 
-        self.stdout.write(self.style.SUCCESS('Successfully generated fake data')) 
+        self.stdout.write(self.style.SUCCESS('Successfully generated realistic fake data!')) 

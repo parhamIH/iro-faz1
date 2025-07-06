@@ -9,6 +9,7 @@ import random
 from mptt.models import MPTTModel, TreeForeignKey
 
 
+
 #__________________________________________ ------warranty------ _______________________________________
 
 class Warranty(models.Model):
@@ -202,6 +203,7 @@ class ProductSpecification(models.Model): # is main field
         verbose_name = 'مقدار مشخصه محصول'
         verbose_name_plural = 'مقادیر مشخصات محصول'
         unique_together = ['product', 'specification']
+
 
 #add  add provider for product-option foreignkey for faz 2 
 

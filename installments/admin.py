@@ -13,6 +13,7 @@ class InstallmentParameterAdmin(admin.ModelAdmin):
         'bank_tax_interest_percent',
         'method',
     )
+filter_horizontal = ('categories',)    
 
 @admin.register(CompanyInstallmentParameter)
 class CompanyInstallmentParameterAdmin(admin.ModelAdmin):
@@ -23,3 +24,4 @@ class CompanyInstallmentParameterAdmin(admin.ModelAdmin):
         'minimum_down_payment',
         'guarantee_method',
     )
+filter_horizontal = ('categories',)    

@@ -7,6 +7,7 @@ from colorfield.fields import ColorField
 from django.utils.text import slugify
 import random
 from mptt.models import MPTTModel, TreeForeignKey
+from . import models as installments 
 
 
 #__________________________________________ ------warranty------ _______________________________________

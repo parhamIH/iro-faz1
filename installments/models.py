@@ -1,4 +1,5 @@
 from django.db import models
+from store.models import Category 
 
 class InstallmentParameter(models.Model):
     METHOD_CHECK = 'check'
@@ -55,6 +56,13 @@ class InstallmentParameter(models.Model):
         help_text="سود/مالیات بانکی (درصدی)"
     )
 
+    applicable_categories = models.ManyToManyField(
+        'store.Category',
+        blank=True,
+        related_name='bank_installment_params',
+        help_text="دسته‌بندی‌هایی که این روش قسطی بانکی روی آن‌ها اعمال می‌شود. اگر خالی باشد برای همه محصولات اعمال خواهد شد."
+    )
+
     def __str__(self):
         return f"{self.get_method_display()} - {self.repayment_period} ماه - {self.initial_increase_percent}% اولیه"
 
@@ -81,5 +89,11 @@ class CompanyInstallmentParameter(models.Model):
         help_text="نوع ضمانت (مثلا چک، سفته و غیره)"
     )
 
+    applicable_categories = models.ManyToManyField(
+        'store.Category',
+        blank=True,
+        related_name='company_installment_params',
+        help_text="دسته‌بندی‌هایی که این روش قسطی شرکتی روی آن‌ها اعمال می‌شود. اگر خالی باشد برای همه محصولات اعمال خواهد شد."
+    )
     def __str__(self):
         return f"شرایط شرکتی - {self.repayment_period} ماه - سود ماهیانه {self.monthly_interest_percent}%"

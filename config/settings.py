@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 from datetime import timedelta
-from pathlib import Path
+from pathlib import Path   
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -60,6 +60,9 @@ else:
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    CORS_ALLOW_ALL_ORIGINS = True
+
+    CORS_ALLOW_CREDENTIALS = False
 
 # تنظیمات امنیتی پایه که در هر دو محیط فعال هستند
 SECURE_BROWSER_XSS_FILTER = True
@@ -242,9 +245,6 @@ SIMPLE_JWT = {
 # ✅ CORS (در صورت نیاز)
 # ----------------------
 
-CORS_ALLOW_ALL_ORIGINS = True
-
-CORS_ALLOW_CREDENTIALS = False
 
 
 AUTHENTICATION_BACKENDS = [

@@ -9,10 +9,21 @@ from datetime import timedelta, date
 import jdatetime
 from decimal import Decimal, ROUND_HALF_UP
 from decimal import Decimal
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from .models import InstallmentParameter
+from store.models import Category
+from .serializers import InstallmentCalculationInputSerializer
+from .utils import calculate_loan_payments
+from datetime import timedelta, date
+import jdatetime
+from decimal import Decimal, ROUND_HALF_UP
 from .models import CompanyInstallmentParameter
 from .serializers import CompanyInstallmentCalculationInputSerializer
 from .utils import calculate_company_installment, generate_company_checks
-
+from drf_yasg.utils import swagger_auto_schema
 
 def convert_to_persian_digits(text):
     en_to_fa_digits = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
@@ -26,19 +37,6 @@ def format_amount(amount):
     return convert_to_persian_digits(formatted)
 
 
-class InstallmentCalculationAPIView(APIView):
-   from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.shortcuts import get_object_or_404
-from .models import InstallmentParameter
-from store.models import Category
-from .serializers import InstallmentCalculationInputSerializer
-from .utils import calculate_loan_payments
-from datetime import timedelta, date
-import jdatetime
-from decimal import Decimal, ROUND_HALF_UP
-
 def convert_to_persian_digits(text):
     en_to_fa_digits = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
     return text.translate(en_to_fa_digits)
@@ -49,7 +47,9 @@ def format_amount(amount):
     formatted = f"{amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP):,}"
     return convert_to_persian_digits(formatted)
 
+
 class InstallmentCalculationAPIView(APIView):
+    @swagger_auto_schema(request_body=InstallmentCalculationInputSerializer)
     def post(self, request):
         serializer = InstallmentCalculationInputSerializer(data=request.data)
         if not serializer.is_valid():
@@ -148,6 +148,18 @@ class InstallmentCalculationAPIView(APIView):
             "check_due_date": jdate_str_fa,
             "check_due_message": check_message,
         })
+
+    def get(self, request):
+        params = InstallmentParameter.objects.all()
+        result = []
+        for param in params:
+            categories = param.categories.values('id', 'name') if hasattr(param, 'categories') else []
+            result.append({
+                'id': param.id,
+                'name': getattr(param, 'name', ''),
+                'categories': list(categories),
+            })
+        return Response(result)
 
 class CompanyInstallmentCalculationAPIView(APIView):
     """

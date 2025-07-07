@@ -1,6 +1,6 @@
 from django_filters import FilterSet, RangeFilter, CharFilter, BooleanFilter, ChoiceFilter, NumberFilter, ModelMultipleChoiceFilter
 from django.db.models import Q
-from .models import Category, Product, Brand, Color, Specification, Tag
+from .models import Category, Product, Brand, Color, Specification, Tag, Warranty
 
 class SpecificationFilter(FilterSet):
     """
@@ -31,45 +31,86 @@ class SpecificationFilter(FilterSet):
         }
 
 class ProductFilter(FilterSet):
+    # جستجو و فیلترهای پایه
     search = CharFilter(method='filter_search', label='جستجو')
-    in_stock = BooleanFilter(method='filter_in_stock', label='موجودی')
+    in_stock = BooleanFilter(method='filter_in_stock', label='موجود در انبار')
     price_range = RangeFilter(field_name='options__option_price', label='محدوده قیمت')
     has_discount = BooleanFilter(method='filter_has_discount', label='دارای تخفیف')
-    tags = ModelMultipleChoiceFilter(
-        field_name='tags',
-        queryset=Tag.objects.all(),
-        label='تگ‌ها',
-        help_text='تگ‌هایی که با این محصول مرتبط هستند',
-        method='filter_tags'
+    
+    # فیلترهای مرتب‌سازی (مثل تکنولایف)
+    sort_by = ChoiceFilter(
+        method='filter_sort_by',
+        label='مرتب‌سازی',
+        choices=[
+            ('newest', 'جدیدترین'),
+            ('bestselling', 'پرفروش‌ترین'),
+            ('most_viewed', 'پربازدیدترین'),
+            ('cheapest', 'ارزان‌ترین'),
+            ('most_expensive', 'گران‌ترین'),
+            ('most_discount', 'بیشترین تخفیف'),
+            ('most_rated', 'بیشترین امتیاز')
+        ]
     )
 
+    # فیلترهای دسته‌بندی و برند
+    categories = ModelMultipleChoiceFilter(
+        field_name='categories',
+        queryset=Category.objects.all(),
+        label='دسته‌بندی‌ها'
+    )
     brands = ModelMultipleChoiceFilter(
         field_name='brand',
         queryset=Brand.objects.all(),
         label='برندها'
     )
+
+    # فیلترهای رنگ
     colors = ModelMultipleChoiceFilter(
         field_name='options__color',
         queryset=Color.objects.all(),
         distinct=True,
         label='رنگ‌ها'
     )
-    categories = ModelMultipleChoiceFilter(
-        field_name='categories',
-        queryset=Category.objects.all(),
-        label='دسته‌بندی‌ها'
+
+    # فیلترهای پیشرفته
+    is_new = BooleanFilter(method='filter_is_new', label='کالاهای جدید')
+    special_offer = BooleanFilter(method='filter_special_offer', label='پیشنهاد ویژه')
+    min_rating = NumberFilter(method='filter_min_rating', label='حداقل امتیاز')
+    tags = ModelMultipleChoiceFilter(
+        field_name='tags',
+        queryset=Tag.objects.all(),
+        label='برچسب‌ها'
     )
 
+    # فیلتر مشخصات فنی
     specification = CharFilter(method='filter_specification', label='مشخصات فنی')
-    
 
+    def filter_sort_by(self, queryset, name, value):
+        if value == 'newest':
+            return queryset.order_by('-created_at')
+        elif value == 'bestselling':
+            return queryset.order_by('-total_sales')
+        elif value == 'most_viewed':
+            return queryset.order_by('-views')
+        elif value == 'cheapest':
+            return queryset.order_by('options__option_price')
+        elif value == 'most_expensive':
+            return queryset.order_by('-options__option_price')
+        elif value == 'most_discount':
+            return queryset.filter(
+                options__is_active_discount=True
+            ).order_by('-options__discount')
+        elif value == 'most_rated':
+            return queryset.order_by('-rating')
+        return queryset
 
-    def filter_tags(self, queryset, name, value):
-        if not value:
-            return queryset
-        return queryset.filter(tags__name__in=value).distinct()
-
-
+    def filter_special_offer(self, queryset, name, value):
+        if value:
+            return queryset.filter(
+                options__is_active_discount=True,
+                options__discount__gte=30  # پیشنهاد ویژه برای تخفیف‌های بالای 30 درصد
+            ).distinct()
+        return queryset
 
     def filter_search(self, queryset, name, value):
         if not value:
@@ -78,7 +119,8 @@ class ProductFilter(FilterSet):
             Q(title__icontains=value) |
             Q(description__icontains=value) |
             Q(brand__name__icontains=value) |
-            Q(categories__name__icontains=value)
+            Q(categories__name__icontains=value) |
+            Q(tags__name__icontains=value)
         ).distinct()
     
     def filter_in_stock(self, queryset, name, value):
@@ -100,6 +142,21 @@ class ProductFilter(FilterSet):
             Q(options__is_active_discount=False) |
             Q(options__discount=0)
         ).distinct()
+
+    def filter_is_new(self, queryset, name, value):
+        if value is None:
+            return queryset
+        from django.utils import timezone
+        import datetime
+        seven_days_ago = timezone.now() - datetime.timedelta(days=7)  # تغییر از 30 روز به 7 روز
+        if value:
+            return queryset.filter(created_at__gte=seven_days_ago)
+        return queryset.filter(created_at__lt=seven_days_ago)
+
+    def filter_min_rating(self, queryset, name, value):
+        if value is not None:
+            return queryset.filter(rating__gte=value)
+        return queryset
 
     def filter_specification(self, queryset, name, value):
         if not value or ':' not in value:
@@ -152,6 +209,20 @@ class CategoryFilter(FilterSet):
     search = CharFilter(method='filter_search', label='جستجو')
     has_products = BooleanFilter(method='filter_has_products', label='دارای محصول')
     
+    # فیلترهای اصلی
+    parent = ModelMultipleChoiceFilter(
+        queryset=Category.objects.all(),
+        label='دسته‌بندی والد',
+        help_text='فیلتر بر اساس دسته‌بندی والد'
+    )
+    
+    is_root = BooleanFilter(method='filter_is_root', label='دسته‌بندی‌های اصلی')
+    has_children = BooleanFilter(method='filter_has_children', label='دارای زیر دسته')
+    
+    # فیلترهای مرتب‌سازی
+    sort_by_products = BooleanFilter(method='filter_sort_by_products', label='مرتب‌سازی بر اساس تعداد محصولات')
+    sort_by_subcategories = BooleanFilter(method='filter_sort_by_subcategories', label='مرتب‌سازی بر اساس تعداد زیردسته‌ها')
+    
     # فیلترهای مشخصات فنی
     spec_name = CharFilter(field_name='spec_definitions__name', lookup_expr='icontains', label='نام مشخصه')
     spec_data_type = ChoiceFilter(
@@ -159,13 +230,14 @@ class CategoryFilter(FilterSet):
         choices=Specification.DATA_TYPE_CHOICES,
         label='نوع داده مشخصه'
     )
-    
+
     def filter_search(self, queryset, name, value):
         if not value:
             return queryset
         return queryset.filter(
             Q(name__icontains=value) |
-            Q(description__icontains=value)
+            Q(description__icontains=value) |
+            Q(brand__name__icontains=value)
         ).distinct()
     
     def filter_has_products(self, queryset, name, value):
@@ -175,10 +247,35 @@ class CategoryFilter(FilterSet):
             return queryset.filter(products__isnull=False).distinct()
         return queryset.filter(products__isnull=True).distinct()
 
+    def filter_is_root(self, queryset, name, value):
+        if value is None:
+            return queryset
+        if value:
+            return queryset.filter(parent__isnull=True)
+        return queryset.filter(parent__isnull=False)
+
+    def filter_has_children(self, queryset, name, value):
+        if value is None:
+            return queryset
+        if value:
+            return queryset.filter(children__isnull=False).distinct()
+        return queryset.filter(children__isnull=True).distinct()
+
+    def filter_sort_by_products(self, queryset, name, value):
+        if value:
+            from django.db.models import Count
+            return queryset.annotate(product_count=Count('products')).order_by('-product_count')
+        return queryset
+
+    def filter_sort_by_subcategories(self, queryset, name, value):
+        if value:
+            from django.db.models import Count
+            return queryset.annotate(children_count=Count('children')).order_by('-children_count')
+        return queryset
+
     class Meta:
         model = Category
         fields = {
-            'parent': ['exact', 'isnull'],
             'brand': ['exact'],
             'spec_definitions': ['exact', 'in'],
         }

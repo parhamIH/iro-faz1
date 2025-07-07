@@ -185,6 +185,33 @@ class CategoryFilter(FilterSet):
         help_text='نام مشخصات فنی را انتخاب کنید'
     )
     
+    # فیلترهای مقادیر مشخصات فنی
+    spec_int_value = NumberFilter(
+        field_name='products__spec_values__int_value',
+        lookup_expr='exact',
+        label='مقدار عددی مشخصه'
+    )
+    
+    spec_decimal_value = NumberFilter(
+        field_name='products__spec_values__decimal_value',
+        lookup_expr='exact',
+        label='مقدار اعشاری مشخصه'
+    )
+    
+    spec_str_value = CharFilter(
+        field_name='products__spec_values__str_value',
+        lookup_expr='icontains',
+        label='مقدار متنی مشخصه'
+    )
+    
+    spec_bool_value = BooleanFilter(
+        field_name='products__spec_values__bool_value',
+        label='مقدار بله/خیر مشخصه'
+    )
+    
+    # فیلتر ترکیبی برای مقدار مشخصه با نام مشخصه
+    spec_value = CharFilter(method='filter_spec_value', label='مقدار مشخصه (نام:مقدار)')
+    
     def filter_search(self, queryset, name, value):
         if not value:
             return queryset
@@ -210,6 +237,44 @@ class CategoryFilter(FilterSet):
             return queryset
         spec_names = [spec.name for spec in value]
         return queryset.filter(spec_definitions__name__in=spec_names).distinct()
+
+    def filter_spec_value(self, queryset, name, value):
+        """
+        فیلتر ترکیبی برای مقدار مشخصه
+        فرمت: "نام_مشخصه:مقدار" یا "نام_مشخصه:min:max"
+        مثال: "RAM:8" یا "حافظه:64:128"
+        """
+        if not value or ':' not in value:
+            return queryset
+            
+        parts = value.split(':')
+        spec_name = parts[0].strip()
+        
+        if len(parts) == 2:
+            # فیلتر دقیق
+            spec_value = parts[1].strip()
+            return queryset.filter(
+                products__spec_values__specification__name__iexact=spec_name,
+                products__spec_values__str_value__icontains=spec_value
+            ).distinct()
+        elif len(parts) == 3:
+            # فیلتر محدوده
+            try:
+                min_val = float(parts[1]) if parts[1].strip() else None
+                max_val = float(parts[2]) if parts[2].strip() else None
+                
+                q = Q(products__spec_values__specification__name__iexact=spec_name)
+                if min_val is not None:
+                    q &= (Q(products__spec_values__int_value__gte=min_val) | 
+                          Q(products__spec_values__decimal_value__gte=min_val))
+                if max_val is not None:
+                    q &= (Q(products__spec_values__int_value__lte=max_val) | 
+                          Q(products__spec_values__decimal_value__lte=max_val))
+                
+                return queryset.filter(q).distinct()
+            except ValueError:
+                return queryset
+        return queryset
 
     class Meta:
         model = Category

@@ -1,6 +1,15 @@
-from django_filters import FilterSet, RangeFilter, CharFilter, BooleanFilter, ChoiceFilter, NumberFilter, ModelMultipleChoiceFilter
+from django_filters import FilterSet, RangeFilter, CharFilter, BooleanFilter, ChoiceFilter, NumberFilter, ModelMultipleChoiceFilter, Filter
 from django.db.models import Q
 from .models import Category, Product, Brand, Color, Specification, Tag
+
+class CommaOrMultiValueFilter(Filter):
+    def filter(self, qs, value):
+        if value is not None:
+            if isinstance(value, str):
+                value = value.split(',')
+            elif not isinstance(value, list):
+                value = [value]
+        return super().filter(qs, value)
 
 class SpecificationFilter(FilterSet):
     """
@@ -160,6 +169,22 @@ class CategoryFilter(FilterSet):
         label='نوع داده مشخصه'
     )
     
+    # فیلتر برای مشخصات فنی با ID - قابل انتخاب
+    spec_definitions = ModelMultipleChoiceFilter(
+        queryset=Specification.objects.all(),
+        method='filter_spec_definitions',
+        label='مشخصات فنی (آیدی)',
+        help_text='مشخصات فنی را انتخاب کنید'
+    )
+    
+    # فیلتر برای مشخصات فنی با نام - قابل انتخاب
+    spec_names = ModelMultipleChoiceFilter(
+        queryset=Specification.objects.all(),
+        method='filter_spec_names',
+        label='مشخصات فنی (نام)',
+        help_text='نام مشخصات فنی را انتخاب کنید'
+    )
+    
     def filter_search(self, queryset, name, value):
         if not value:
             return queryset
@@ -175,12 +200,22 @@ class CategoryFilter(FilterSet):
             return queryset.filter(products__isnull=False).distinct()
         return queryset.filter(products__isnull=True).distinct()
 
+    def filter_spec_definitions(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(spec_definitions__in=value).distinct()
+
+    def filter_spec_names(self, queryset, name, value):
+        if not value:
+            return queryset
+        spec_names = [spec.name for spec in value]
+        return queryset.filter(spec_definitions__name__in=spec_names).distinct()
+
     class Meta:
         model = Category
         fields = {
             'parent': ['exact', 'isnull'],
             'brand': ['exact'],
-            'spec_definitions': ['exact', 'in'],
         }
 
 

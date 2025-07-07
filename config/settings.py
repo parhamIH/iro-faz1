@@ -1,4 +1,3 @@
-
 """
 Django settings for config project.
 
@@ -15,7 +14,6 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 
 # Quick-start development settings - unsuitable for production
@@ -49,6 +47,8 @@ if DEBUG:
     SECURE_HSTS_SECONDS = 0
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_HSTS_PRELOAD = False
+    CORS_ALLOW_ALL_ORIGINS = True
+
 else:
     # تنظیمات محیط تولید
     SECURE_SSL_REDIRECT = True
@@ -81,7 +81,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'colorfield', 
+    'colorfield',
     'django_filters',
     'drf_yasg',
     'allauth',
@@ -89,14 +89,17 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'mptt',
     'rest_framework_simplejwt',
-    'jdatetime',
     "corsheaders",
+
+
     #####apps####
     'cart',
     'store',
-    'loan_calculator',    
+
     "accounts",
+
     'installments',
+    'jdatetime',
 ]
 
 MIDDLEWARE = [
@@ -110,7 +113,6 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
     "corsheaders.middleware.CorsMiddleware",
 
-
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -118,7 +120,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -139,21 +141,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',  
-        'NAME': 'iro1',         
-        'USER': 'root',             
-        'PASSWORD': 'parhams',     
-        'HOST': '127.0.0.1',                   
-        'PORT': '3306',                        
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'Parhamih$default',
+        'USER': 'Parhamih',
+        'PASSWORD': 'Xu$@q%Pg^8mLehJ',
+        'HOST': 'Parhamih.mysql.pythonanywhere-services.com',
     },
-    'postgresql_db': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'iro1',
-        'USER': 'parham',
-        'PASSWORD': 'parhams',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
 }
 DATABASE_ROUTERS = ['config.db_router.DBRouter']
 
@@ -198,14 +191,14 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images) , media files 
+# Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = Path(BASE_DIR,"assets")
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = Path(BASE_DIR, 'media')
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -217,7 +210,7 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
-            
+
 
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
@@ -249,7 +242,8 @@ SIMPLE_JWT = {
 # ✅ CORS (در صورت نیاز)
 # ----------------------
 
-CORS_ALLOWED_ORIGINS =True  
+CORS_ALLOW_ALL_ORIGINS = True
+
 CORS_ALLOW_CREDENTIALS = False
 
 

@@ -63,7 +63,7 @@ class SpecificationInline(admin.TabularInline):
 #     def get_specifications_count(self, obj):
 #         return obj.spec_values.count()
 #     get_specifications_count.short_description = 'تعداد مشخصات'
-
+    
 
 
 @admin.register(Category)

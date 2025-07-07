@@ -90,8 +90,7 @@ INSTALLED_APPS = [
     'mptt',
     'rest_framework_simplejwt',
     'jdatetime',
-
-
+    "corsheaders",
     #####apps####
     'cart',
     'store',
@@ -109,6 +108,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "allauth.account.middleware.AccountMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+
 
 ]
 
@@ -197,10 +198,13 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
+# Static files (CSS, JavaScript, Images) , media files 
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = Path(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -245,9 +249,7 @@ SIMPLE_JWT = {
 # ✅ CORS (در صورت نیاز)
 # ----------------------
 
-CORS_ALLOWED_ORIGINS = [
-    "https://frontend.yourdomain.com",
-]
+CORS_ALLOWED_ORIGINS =True  
 CORS_ALLOW_CREDENTIALS = False
 
 

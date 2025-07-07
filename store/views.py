@@ -21,12 +21,12 @@ class StandardResultsSetPagination(PageNumberPagination):
 
 class BaseModelViewSet(ModelViewSet):
     pagination_class = StandardResultsSetPagination
-    
+
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
         lookup = self.kwargs[lookup_url_kwarg]
-        
+
         if lookup.isdigit():
             try:
                 obj = queryset.get(id=lookup)
@@ -34,7 +34,7 @@ class BaseModelViewSet(ModelViewSet):
                 return obj
             except self.queryset.model.DoesNotExist:
                 pass
-        
+
         if hasattr(self.queryset.model, 'slug'):
             try:
                 obj = queryset.get(slug=lookup)
@@ -42,20 +42,20 @@ class BaseModelViewSet(ModelViewSet):
                 return obj
             except self.queryset.model.DoesNotExist:
                 pass
-        
+
         raise Http404
-    
+
     def list(self, request, *args, **kwargs):
         try:
             queryset = self.filter_queryset(self.get_queryset())
             page = self.paginate_queryset(queryset)
-            
+
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
                 response = self.get_paginated_response(serializer.data)
                 response.data['status'] = 'success'
                 return response
-            
+
             serializer = self.get_serializer(queryset, many=True)
             return Response({
                 'status': 'success',
@@ -75,19 +75,19 @@ class ProductViewSet(BaseModelViewSet):
         'spec_values__specification'
     ).all()
     serializer_class = ProductSerializer
-    filterset_class = ProductFilter 
+    filterset_class = ProductFilter
     ordering_fields = ['options__option_price','options__quantity', "created_at" , "updated_at" , "is_active" , "options__is_active_discount"]
     search_fields = ['title', 'description','options__color__name','options__option_price']
 
 class CategoryViewSet(BaseModelViewSet):
     queryset = Category.objects.prefetch_related(
-    
-        'products', 
+
+        'products',
         'spec_definitions'
     ).select_related('parent', 'brand').all()
     serializer_class = CategorySerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_class = CategoryFilter 
+    filterset_class = CategoryFilter
     search_fields = ['name', 'description']
     ordering_fields = ['name']
     ordering = ['name']
@@ -164,3 +164,11 @@ class WarrantyViewSet(BaseModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['product_options']
     search_fields = ['product_options__product__title']
+
+
+class TagViewSet(BaseModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
+    filterset_fields = ['name']

@@ -3,7 +3,8 @@ from .models import (
     Product, Category, ProductOption, Brand, Gallery,
     Specification, ProductSpecification , Color , Tag , Warranty
 )
-
+from .filters import ProductFilter
+from .models import Product
 from django.utils import timezone
 from django.db.models import Q, Avg
 
@@ -49,15 +50,22 @@ class CategorySerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
     brand = BrandSerializer(read_only=True)
     spec_definitions = SpecificationSerializer(many=True, read_only=True)
+    products = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
-        fields = ['id', 'name', 'description', 'parent', 'children', 'brand',
-                 'spec_definitions', 'slug', 'image']
+        fields = [
+            'id', 'name', 'description', 'parent', 'children', 'brand',
+            'spec_definitions', 'slug', 'image', 'products'
+        ]
 
     def get_children(self, obj):
         return CategorySerializer(obj.children.all(), many=True).data
 
+    def get_products(self, obj):
+        from .models import Product
+        qs = Product.objects.filter(categories=obj)
+        return ProductSerializer(qs, many=True, context=self.context).data
 class ProductOptionSerializer(serializers.ModelSerializer):
     color = serializers.StringRelatedField()
     final_price = serializers.SerializerMethodField()
@@ -94,15 +102,12 @@ class WarrantySerializer(serializers.ModelSerializer):
         fields = ['id', 'name',  'is_active', 'product_options']
 
 
-
 class ProductSerializer(serializers.ModelSerializer):
-    categories = CategorySerializer(many=True, read_only=True)
+    categories = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     brand = serializers.StringRelatedField()
     options = ProductOptionSerializer(many=True, read_only=True)
     spec_values = ProductSpecificationSerializer(many=True, read_only=True)
-    # loan_conditions = LoanConditionSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True , read_only=True)
-
 
     class Meta:
         model = Product

@@ -108,43 +108,64 @@ class ProductFilter(FilterSet):
         return queryset.filter(
             Q(options__is_active_discount=False) |
             Q(options__discount=0)
-        ).distinct()
+        ).distinct() 
 
     def filter_specification(self, queryset, name, value):
+        """
+        Filters products by technical specifications.
+        Input format: "specification_name:value" or "specification_name:min:max" or "specification_name:value1,value2,value3"
+        Examples: "RAM:8GB", "Storage:128:512", "Color:Black,White", "Bluetooth:true"
+        Supports multiple values for the same specification using commas (OR logic).
+        Multiple specification filters in the query string are combined with AND logic by django-filter.
+        """
         if not value or ':' not in value:
             return queryset
-            
+
         parts = value.split(':')
         spec_name = parts[0]
-        
+
         if len(parts) == 2:
-            return self._filter_spec_exact(queryset, spec_name, parts[1])
+            # Handle exact match or multiple exact values
+            values = parts[1].split(',')
+            return self._filter_spec_values(queryset, spec_name, values)
         elif len(parts) == 3:
+            # Handle range filter
             try:
                 min_val = float(parts[1]) if parts[1] else None
                 max_val = float(parts[2]) if parts[2] else None
                 return self._filter_spec_range(queryset, spec_name, min_val, max_val)
             except ValueError:
+                # Invalid range values
                 return queryset
+        # Invalid format
         return queryset
-    
-    def _filter_spec_exact(self, queryset, name, value):
-        q = Q(spec_values__specification__name__iexact=name)
-        try:
-            val = float(value)
-            return queryset.filter(
-                q & (Q(spec_values__int_value=val) | Q(spec_values__decimal_value=val))
-            ).distinct()
-        except ValueError:
-            if value.lower() in ['true', 'false']:
-                return queryset.filter(
-                    q & Q(spec_values__bool_value=(value.lower() == 'true'))
-                ).distinct()
-            return queryset.filter(
-                q & Q(spec_values__str_value__icontains=value)
-            ).distinct()
-    
+
+    def _filter_spec_values(self, queryset, name, values):
+        """Filters queryset for a specification by a list of exact values (OR logic)."""
+        if not values:
+            return queryset
+
+        spec_q = Q(spec_values__specification__name__iexact=name)
+        value_q = Q()
+
+        for value in values:
+            value = value.strip()
+            try:
+                # Try filtering as number (int or decimal)
+                num_val = float(value)
+                value_q |= (Q(spec_values__int_value=num_val) | Q(spec_values__decimal_value=num_val))
+            except ValueError:
+                # Try filtering as boolean
+                if value.lower() in ['true', 'false']:
+                    value_q |= Q(spec_values__bool_value=(value.lower() == 'true'))
+                else:
+                    # Filter as string (case-insensitive contains)
+                    value_q |= Q(spec_values__str_value__icontains=value)
+
+        return queryset.filter(spec_q & value_q).distinct()
+
     def _filter_spec_range(self, queryset, name, min_val, max_val):
+        """Filters queryset for a specification by a numeric range."""
         q = Q(spec_values__specification__name__iexact=name)
         if min_val is not None:
             q &= Q(spec_values__int_value__gte=min_val) | Q(spec_values__decimal_value__gte=min_val)
@@ -239,7 +260,7 @@ class CategoryFilter(FilterSet):
         return queryset.filter(spec_definitions__name__in=spec_names).distinct()
 
     def filter_spec_value(self, queryset, name, value):
-        """
+        """ # Redundant filter, removed in favor of the main ProductFilter's specification filter.
         فیلتر ترکیبی برای مقدار مشخصه
         فرمت: "نام_مشخصه:مقدار" یا "نام_مشخصه:min:max"
         مثال: "RAM:8" یا "حافظه:64:128"

@@ -4,9 +4,10 @@ from django.core.validators import RegexValidator , MinLengthValidator
 from django.contrib.auth import get_user_model 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from store.models import Product
+from store.models import Product 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+import uuid
 
 def validate_iranian_national_id(national_id):
     """
@@ -157,7 +158,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 class Address(models.Model): 
 
-    client = models.ForeignKey(CustomUser, on_delete=models.CASCADE , verbose_name=" مشتری")
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE , verbose_name=" مشتری")
     title_address= models.CharField(max_length=50)
     province = models.CharField(max_length=100)
     city = models.CharField(max_length=100)
@@ -200,7 +201,7 @@ class Notification(models.Model):
 
 class Profile(models.Model):
     
-    client  = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
+    user  = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
 
     legal_info = models.TextField(null=True, blank=True, verbose_name="اطلاعات حقوقی")
 
@@ -220,7 +221,7 @@ def save_user_profile(sender, instance, **kwargs):
         verbose_name_plural = "پروفایل‌ها"
     
     def __str__(self):
-        return f"{self.user.username} - {self.phone_number}"
+        return f"{self.user.username} - {self.user.phone_number}"
 
 
 class Provider(models.Model):
@@ -237,20 +238,20 @@ class Provider(models.Model):
         verbose_name_plural = "ارائه دهندگان"
 
     def __str__(self):
-        return f"{self.company_name} - {self.user.username}"
+        return f"{self.company_name} - {self.provider.username}"
 
     def save(self, *args, **kwargs):
         # Make sure the user is staff when saving a provider
-        if not self.user.is_staff:
-            self.user.is_staff = True
-            self.user.save()
+        if not self.provider.is_staff:
+            self.provider.is_staff = True
+            self.provider.save()
         super().save(*args, **kwargs)
 
 
 
 class FavProductList(models.Model):
 
-    client = models.ForeignKey(CustomUser, verbose_name=" مشتری", on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, verbose_name=" مشتری", on_delete=models.CASCADE)
     products=models.ManyToManyField(Product, verbose_name=("محصولات مورد علاقه"))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -274,3 +275,33 @@ class OfferCode(models.Model):
 
     def __str__(self):
         return f" title: {self.title}  \n offer-code : {self.code}  "
+
+class DeviceToken(models.Model):
+    """Model to track JWT tokens for multiple devices"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='device_tokens')
+    device_name = models.CharField(max_length=255, blank=True, null=True)
+    device_type = models.CharField(max_length=50, choices=[
+        ('mobile', 'موبایل'),
+        ('tablet', 'تبلت'),
+        ('desktop', 'دسکتاپ'),
+        ('web', 'وب'),
+        ('other', 'سایر'),
+    ], default='other')
+    token_hash = models.CharField(max_length=255, unique=True)
+    is_active = models.BooleanField(default=True)
+    last_used = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    
+    class Meta:
+        verbose_name = "توکن دستگاه"
+        verbose_name_plural = "توکن‌های دستگاه"
+        ordering = ['-last_used']
+    
+    def __str__(self):
+        return f"{self.user.full_name} - {self.device_name or self.device_type}"
+    
+    def is_expired(self):
+        from django.utils import timezone
+        return timezone.now() > self.expires_at

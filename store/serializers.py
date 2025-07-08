@@ -67,7 +67,7 @@ class CategorySerializer(serializers.ModelSerializer):
         qs = Product.objects.filter(categories=obj)
         return ProductSerializer(qs, many=True, context=self.context).data
 class ProductOptionSerializer(serializers.ModelSerializer):
-    color = serializers.StringRelatedField()
+    color = ColorSerializer(read_only=True)
     final_price = serializers.SerializerMethodField()
     gallery = serializers.SerializerMethodField()
     class Meta:

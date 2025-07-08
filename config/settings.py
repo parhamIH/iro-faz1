@@ -153,7 +153,6 @@ DATABASES = {
     }
 }
 
-DATABASE_ROUTERS = ['config.db_router.DBRouter']
 
 
 # Password validation

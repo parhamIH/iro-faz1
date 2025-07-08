@@ -191,7 +191,6 @@ class ProductAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title',)}
     inlines = [ProductSpecificationInline, ProductOptionInline]
     list_editable = ['is_active']
-    change_list_template = "admin/product_changelist.html"  # اضافه کن
 
     def get_urls(self):
         urls = super().get_urls()

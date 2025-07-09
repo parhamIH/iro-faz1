@@ -5,9 +5,6 @@ from store.models import ProductOption
 from model_utils import FieldTracker
 from django.contrib.auth import get_user_model
 # Create your models here.
-
-
-
 User = get_user_model()
 
 class Cart(models.Model):
@@ -19,6 +16,7 @@ class Cart(models.Model):
         ('لغو شده', 'لغو شده'),
     ]
 
+    guest_id = models.CharField(max_length=100, blank=True, null=True, unique=True, editable=False, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     is_paid = models.BooleanField(default=False)
     created_date = models.DateTimeField(auto_now_add=True)

@@ -133,24 +133,18 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 
 class UserLoginSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=False)
-    phone_number = serializers.CharField(required=False)
+    phone_number = serializers.CharField(required=True)
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
         phone = data.get('phone_number')
-        email = data.get('email')
         password = data.get('password')
 
-        if not phone and not email:
-            raise serializers.ValidationError(_("باید شماره تلفن یا ایمیل وارد شود."))
+        if not phone:
+            raise serializers.ValidationError(_("شماره تلفن الزامی است."))
 
         try:
-            user = None
-            if phone:
-                user = CustomUser.objects.get(phone_number=phone)
-            elif email:
-                user = CustomUser.objects.get(email=email)
+            user = CustomUser.objects.get(phone_number=phone)
 
             if not user.check_password(password):
                 raise serializers.ValidationError(_("اطلاعات ورود نادرست است."))
@@ -308,13 +302,15 @@ class JWTLoginSerializer(serializers.Serializer):
         except CustomUser.DoesNotExist:
             raise serializers.ValidationError("کاربری با این شماره تلفن یافت نشد.")
         
+        # استفاده از منطق services.py برای بررسی کد و زمان
         if not user.verification_code:
             raise serializers.ValidationError("کد تأیید ارسال نشده است.")
         
+        # استفاده از متد services.py برای بررسی expiry
         if is_verification_code_expired(user.verification_code_created_at):
             raise serializers.ValidationError("کد تأیید منقضی شده است.")
         
-        if user.verification_code != verification_code:
+        if str(user.verification_code) != str(verification_code):
             raise serializers.ValidationError("کد تأیید نادرست است.")
         
         if not user.is_active:
@@ -337,6 +333,7 @@ class JWTRefreshSerializer(serializers.Serializer):
 
 class DeviceTokenSerializer(serializers.ModelSerializer):
     """Serializer for device token model"""
+    
     class Meta:
         model = DeviceToken
         fields = ['id', 'device_name', 'device_type', 'is_active', 'last_used', 'created_at', 'expires_at']

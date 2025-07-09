@@ -46,23 +46,23 @@ class SpecificationInline(admin.TabularInline):
     get_unit.short_description = 'واحد'
 
 
-# @admin.register(Product)
-# class ProductAdmin(admin.ModelAdmin):
-#     list_display = ['title', 'get_categories', 'brand', 'get_specifications_count', 'is_active']
-#     search_fields = ['title', 'description', 'brand__name']
-#     list_filter = ['categories', 'brand', 'is_active']
-#     filter_horizontal = ['categories']
-#     prepopulated_fields = {'slug': ('title',)}
-#     inlines = [ProductSpecificationInline, ProductOptionInline]
-#     list_editable = ['is_active']
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ['title', 'get_categories', 'brand', 'get_specifications_count', 'is_active']
+    search_fields = ['title', 'description', 'brand__name']
+    list_filter = ['categories', 'brand', 'is_active']
+    filter_horizontal = ['categories']
+    prepopulated_fields = {'slug': ('title',)}
+    inlines = [ProductSpecificationInline, ProductOptionInline]
+    list_editable = ['is_active']
 
-#     def get_categories(self, obj):
-#         return ", ".join([cat.name for cat in obj.categories.all()])
-#     get_categories.short_description = 'دسته‌بندی‌ها'
+    def get_categories(self, obj):
+        return ", ".join([cat.name for cat in obj.categories.all()])
+    get_categories.short_description = 'دسته‌بندی‌ها'
 
-#     def get_specifications_count(self, obj):
-#         return obj.spec_values.count()
-#     get_specifications_count.short_description = 'تعداد مشخصات'
+    def get_specifications_count(self, obj):
+        return obj.spec_values.count()
+    get_specifications_count.short_description = 'تعداد مشخصات'
     
 
 
@@ -80,14 +80,6 @@ class CategoryAdmin(DraggableMPTTAdmin):
     def get_specifications_count(self, obj):
         return obj.spec_definitions.count()
     get_specifications_count.short_description = 'تعداد مشخصات'
-@admin.register(ProductOption)
-class ProductOptionAdmin(admin.ModelAdmin):
-    list_display = ['product', 'color', 'option_price', 'is_active_discount', 'discount', 'quantity']
-    search_fields = ['product__title', 'color__name']
-    list_filter = ['is_active', 'is_active_discount', 'color']
-    autocomplete_fields = ['product', 'color']
-    inlines = [GalleryInline]
-    list_editable = ['is_active_discount', 'discount', 'quantity']
 
 @admin.register(Gallery)
 class GalleryAdmin(admin.ModelAdmin):
@@ -178,3 +170,11 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ['name']
     prepopulated_fields = {'slug': ('name',)}
 
+@admin.register(ProductOption)
+class ProductOptionAdmin(admin.ModelAdmin):
+    list_display = ['product', 'color', 'option_price', 'is_active_discount', 'discount', 'quantity']
+    search_fields = ['product__title', 'color__name']
+    list_filter = ['is_active', 'is_active_discount', 'color']
+    autocomplete_fields = ['product', 'color']
+    inlines = [GalleryInline]
+    list_editable = ['is_active_discount', 'discount', 'quantity']

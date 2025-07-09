@@ -148,9 +148,6 @@ DATABASES = {
     }
 }
 
-DATABASE_ROUTERS = ['config.db_router.DBRouter']
-
-
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -230,8 +227,8 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.AnonRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'user': '10/minute',
-        'anon': '5/minute',
+        'user': '10000/minute',
+        'anon': '500/minute',
     },
 }
 

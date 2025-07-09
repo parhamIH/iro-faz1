@@ -62,31 +62,33 @@ def create_jwt_tokens_for_device(user, device_info):
     # Create device token record
     token_hash = generate_device_token_hash(user.id, device_info)
     expires_at = timezone.now() + timedelta(days=7)  # 7 days for refresh token
+    device_name = device_info.get('device_name', 'Unknown Device')
+    device_type = device_info.get('device_type', 'other')
     
     device_token = DeviceToken.objects.create(
         user=user,
-        device_name=device_info.get('device_name'),
-        device_type=device_info.get('device_type', 'other'),
+        device_name=device_name,
+        device_type=device_type,
         token_hash=token_hash,
         expires_at=expires_at
     )
     
     # Add custom claims to tokens
     refresh['device_id'] = str(device_token.id)
-    refresh['device_name'] = device_info.get('device_name', '')
-    refresh['device_type'] = device_info.get('device_type', 'other')
+    refresh['device_name'] = device_name
+    refresh['device_type'] = device_type
     
     access_token = refresh.access_token
     access_token['device_id'] = str(device_token.id)
-    access_token['device_name'] = device_info.get('device_name', '')
-    access_token['device_type'] = device_info.get('device_type', 'other')
+    access_token['device_name'] = device_name
+    access_token['device_type'] = device_type
     
     return {
         'access': str(access_token),
         'refresh': str(refresh),
         'device_id': str(device_token.id),
-        'device_name': device_info.get('device_name', ''),
-        'device_type': device_info.get('device_type', 'other')
+        'device_name': device_name,
+        'device_type': device_type
     }
 
 def revoke_device_token(device_id):

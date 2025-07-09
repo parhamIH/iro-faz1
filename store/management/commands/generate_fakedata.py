@@ -3,14 +3,17 @@ from django.utils import timezone
 from faker import Faker
 from store.models import (
     Category, Brand, Product, Specification, ProductSpecification,
-    ProductOption, Warranty, Tag, Color, Gallery
+    ProductOption, Warranty, Tag, Color, Gallery, 
 )
+from accounts.models import Provider
 from django.db import transaction
 import random
 from decimal import Decimal
 from django.core.files.base import ContentFile
 from PIL import Image
 import io
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 class Command(BaseCommand):
     help = 'Generate realistic fake data for the store app (clears old data first)'
@@ -241,6 +244,16 @@ class Command(BaseCommand):
         }
 
         # ایجاد محصولات و ویژگی‌ها و آپشن‌ها
+        user_obj, _ = User.objects.get_or_create(username="provideruser", defaults={"is_staff": True, "password": "testpass"})
+        provider_obj, _ = Provider.objects.get_or_create(
+            company_name="Provider Test",
+            defaults={
+                "company_description": "تست",
+                "company_registration_number": "12345",
+                "is_active": True,
+                "provider": user_obj,  # این خط اضافه شود
+            }
+        )
         for cat_name, plist in products_data.items():
             category = categories[cat_name]
             specs = spec_objs[cat_name]
@@ -273,7 +286,8 @@ class Command(BaseCommand):
                         warranty=random.choice(warranties),
                         is_active=True,
                         is_active_discount=random.choice([True, False]),
-                        discount=random.choice([0, 5, 10, 15, 20])
+                        discount=random.choice([0, 5, 10, 15, 20]),
+                        provider=provider_obj,
                     )
 
         # تگ‌ها

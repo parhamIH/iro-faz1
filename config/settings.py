@@ -81,7 +81,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'colorfield', 
+    'colorfield',
     'django_filters',
     'drf_yasg',
     'allauth',
@@ -93,8 +93,11 @@ INSTALLED_APPS = [
     #####apps####
     'cart',
     'store',
-    'loan_calculator',    
+
     "accounts",
+
+    'installments',
+    'jdatetime',
 ]
 
 MIDDLEWARE = [
@@ -106,6 +109,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "allauth.account.middleware.AccountMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
 
 ]
 
@@ -135,14 +139,6 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',  
-        'NAME': 'iro1',         
-        'USER': 'root',             
-        'PASSWORD': 'parhams',     
-        'HOST': '127.0.0.1',                   
-        'PORT': '3306',                        
-    },
-    'postgresql_db': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'iro1',
         'USER': 'parham',
@@ -199,7 +195,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = Path(BASE_DIR,"assets")
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = Path(BASE_DIR, 'media')
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

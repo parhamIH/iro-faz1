@@ -3,7 +3,8 @@ from .models import (
     Product, Category, ProductOption, Brand, Gallery, 
     Specification, ProductSpecification , Color , Tag , Warranty, 
 )
-from loan_calculator.serializers import LoanConditionSerializer
+from .filters import ProductFilter
+from .models import Product
 from django.utils import timezone
 from django.db.models import Q, Avg
 
@@ -12,7 +13,7 @@ from django.db.models import Q, Avg
 class GallerySerializer(serializers.ModelSerializer):
     product_title = serializers.CharField(source='product.product.title', read_only=True)
     color_name = serializers.CharField(source='product.color.name', read_only=True)
-    
+
     class Meta:
         model = Gallery
         fields = ['id', 'product', 'product_title', 'color_name', 'image', 'alt_text']
@@ -29,7 +30,7 @@ class ColorSerializer(serializers.ModelSerializer):
 
 class SpecificationSerializer(serializers.ModelSerializer):
     data_type_display = serializers.CharField(source='get_data_type_display', read_only=True)
-    
+
     class Meta:
         model = Specification
         fields = ['id', 'category', 'name', 'slug', 'data_type', 'data_type_display', 'unit']
@@ -37,11 +38,11 @@ class SpecificationSerializer(serializers.ModelSerializer):
 class ProductSpecificationSerializer(serializers.ModelSerializer):
     specification = SpecificationSerializer(read_only=True)
     value = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = ProductSpecification
-        fields = ['id', 'product', 'specification', 'value']
-    
+        fields = ['id', 'product', 'specification', 'value' , "is_main"]
+
     def get_value(self, obj):
         return obj.value()
 
@@ -49,17 +50,24 @@ class CategorySerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
     brand = BrandSerializer(read_only=True)
     spec_definitions = SpecificationSerializer(many=True, read_only=True)
-    
+    products = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
-        fields = ['id', 'name', 'description', 'parent', 'children', 'brand', 
-                 'spec_definitions', 'slug', 'image']
-    
+        fields = [
+            'id', 'name', 'description', 'parent', 'children', 'brand',
+            'spec_definitions', 'slug', 'image', 'products'
+        ]
+
     def get_children(self, obj):
         return CategorySerializer(obj.children.all(), many=True).data
 
+    def get_products(self, obj):
+        from .models import Product
+        qs = Product.objects.filter(categories=obj)
+        return ProductSerializer(qs, many=True, context=self.context).data
 class ProductOptionSerializer(serializers.ModelSerializer):
-    color = serializers.StringRelatedField()
+    color = ColorSerializer(read_only=True)
     final_price = serializers.SerializerMethodField()
     gallery = serializers.SerializerMethodField()
     class Meta:
@@ -71,7 +79,7 @@ class ProductOptionSerializer(serializers.ModelSerializer):
         return obj.get_final_price()
 
     def get_gallery(self, obj):
-        return [{'id': img.id, 'image': img.image.url if img.image else None, 'alt_text': img.alt_text} 
+        return [{'id': img.id, 'image': img.image.url if img.image else None, 'alt_text': img.alt_text}
                 for img in obj.gallery.all()]
 
     def get_tags(self, obj):
@@ -94,21 +102,18 @@ class WarrantySerializer(serializers.ModelSerializer):
         fields = ['id', 'name',  'is_active', 'product_options']
 
 
-
 class ProductSerializer(serializers.ModelSerializer):
-    categories = CategorySerializer(many=True, read_only=True)
+    categories = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     brand = serializers.StringRelatedField()
     options = ProductOptionSerializer(many=True, read_only=True)
     spec_values = ProductSpecificationSerializer(many=True, read_only=True)
-    loan_conditions = LoanConditionSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True , read_only=True)
-    
-    
+
     class Meta:
         model = Product
         fields = [
             'id', 'title', 'slug', 'categories', 'description',
-            'image', 'brand', 'options', 'spec_values', 'loan_conditions',
+            'image', 'brand', 'options', 'spec_values',
             'is_active', 'tags'
         ] 
         

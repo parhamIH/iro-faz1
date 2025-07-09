@@ -70,9 +70,6 @@ class Category(MPTTModel):
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
     image = models.ImageField(upload_to='categories/', blank=True, null=True)
 
-
-    
-
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name, allow_unicode=True)
@@ -164,6 +161,8 @@ class ProductSpecification(models.Model): # is main field
     decimal_value = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name='مقدار اعشاری')
     str_value = models.CharField(max_length=255, blank=True, null=True, verbose_name='مقدار متنی')
     bool_value = models.BooleanField(blank=True, null=True, verbose_name='مقدار بله/خیر')
+    is_main = models.BooleanField(default=False, verbose_name='مشخصه اصلی' , help_text='مشخصه اصلی برای محصول است')
+
 
     def clean(self):
         # Ensure only one value field is set based on specification's data_type
@@ -173,10 +172,7 @@ class ProductSpecification(models.Model): # is main field
             bool(self.str_value),
             bool(self.bool_value is not None)
         ]
-        # if sum(filled_values) > 1:
-        #     raise ValidationError('فقط یک نوع مقدار می‌تواند پر شود')
-        
-        # Validate value matches specification's data_type
+
         if self.specification.data_type == 'int' and self.int_value is None:
             raise ValidationError('برای مشخصه عددی صحیح باید مقدار عددی وارد شود')
         elif self.specification.data_type == 'decimal' and self.decimal_value is None:
@@ -219,7 +215,7 @@ class ProductOption(models.Model):
     
     
     option_price = models.PositiveIntegerField(help_text="قیمت به تومان برای محصول با این ویژگی")
-    quantity = models.PositiveIntegerField(default=1)
+    quantity = models.PositiveIntegerField( MinValueValidator(0),default=1 )
     is_active = models.BooleanField(default=True)
     warranty = models.ForeignKey(Warranty,on_delete=models.SET_NULL,null=True,blank=True,verbose_name='گارانتی',related_name='product_options')
 
@@ -276,11 +272,16 @@ class ProductOption(models.Model):
         self.discount = percentage
         self.is_active_discount = True
 
+    def change_activity(self):
+           self.is_active = self.quantity >= 1
+
     def __str__(self):
         base_str = f"{self.product.title} - (+{self.option_price})"
         if self.is_discount_active:
             return f"{base_str} (تخفیف: {self.discount}%)"
         return base_str
+
+
 
 class Gallery(models.Model):
     product = models.ForeignKey(ProductOption, on_delete=models.CASCADE, related_name='gallery')

@@ -3,18 +3,6 @@ from django.utils.html import format_html
 from .models import *
 from mptt.admin import DraggableMPTTAdmin
 
-@admin.register(Category)
-class CategoryAdmin(DraggableMPTTAdmin):
-    mptt_indent_field = "name"
-    list_display = ('tree_actions', 'indented_title', 'parent', 'description', 'get_specifications_count')
-    list_display_links = ('indented_title',)
-    search_fields = ['name', 'description']
-    list_filter = ['parent']
-    prepopulated_fields = {'slug': ('name',)}
-
-    def get_specifications_count(self, obj):
-        return obj.spec_definitions.count()
-    get_specifications_count.short_description = 'تعداد مشخصات'
 class ProductOptionInline(admin.TabularInline):
     model = ProductOption
     extra = 1
@@ -42,26 +30,56 @@ class ProductSpecificationInline(admin.TabularInline):
         if obj.specification:
             return obj.specification.unit or '-'
         return '-'
+    get_unit.short_description = 'واحد'\
+
+# admin.py
+
+class SpecificationInline(admin.TabularInline):
+    model = Specification
+    extra = 0  # تعداد ردیف‌های اضافه برای ایجاد
+    readonly_fields = ['get_unit']
+    
+    def get_unit(self, obj):
+        if obj.specification:
+            return obj.specification.unit or '-'
+        return '-'
     get_unit.short_description = 'واحد'
 
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ['title', 'get_categories', 'brand', 'get_specifications_count', 'is_active']
-    search_fields = ['title', 'description', 'brand__name']
-    list_filter = ['categories', 'brand', 'is_active']
-    filter_horizontal = ['categories']
-    prepopulated_fields = {'slug': ('title',)}
-    inlines = [ProductSpecificationInline, ProductOptionInline]
-    list_editable = ['is_active']
 
-    def get_categories(self, obj):
-        return ", ".join([cat.name for cat in obj.categories.all()])
-    get_categories.short_description = 'دسته‌بندی‌ها'
+# @admin.register(Product)
+# class ProductAdmin(admin.ModelAdmin):
+#     list_display = ['title', 'get_categories', 'brand', 'get_specifications_count', 'is_active']
+#     search_fields = ['title', 'description', 'brand__name']
+#     list_filter = ['categories', 'brand', 'is_active']
+#     filter_horizontal = ['categories']
+#     prepopulated_fields = {'slug': ('title',)}
+#     inlines = [ProductSpecificationInline, ProductOptionInline]
+#     list_editable = ['is_active']
+
+#     def get_categories(self, obj):
+#         return ", ".join([cat.name for cat in obj.categories.all()])
+#     get_categories.short_description = 'دسته‌بندی‌ها'
+
+#     def get_specifications_count(self, obj):
+#         return obj.spec_values.count()
+#     get_specifications_count.short_description = 'تعداد مشخصات'
+    
+
+
+@admin.register(Category)
+class CategoryAdmin(DraggableMPTTAdmin):
+    mptt_indent_field = "name"
+    list_display = ('tree_actions', 'indented_title', 'parent', 'description', 'get_specifications_count')
+    list_display_links = ('indented_title',)
+    search_fields = ['name', 'description']
+    list_filter = ['parent']
+    prepopulated_fields = {'slug': ('name',)}
+    inlines = [SpecificationInline]  # 👈 این خط رو اضافه کن
+
 
     def get_specifications_count(self, obj):
-        return obj.spec_values.count()
+        return obj.spec_definitions.count()
     get_specifications_count.short_description = 'تعداد مشخصات'
-
 @admin.register(ProductOption)
 class ProductOptionAdmin(admin.ModelAdmin):
     list_display = ['product', 'color', 'option_price', 'is_active_discount', 'discount', 'quantity']

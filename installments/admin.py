@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import InstallmentParameter, CompanyInstallmentParameter
 
+
 @admin.register(InstallmentParameter)
 class InstallmentParameterAdmin(admin.ModelAdmin):
     list_display = (
@@ -12,7 +13,14 @@ class InstallmentParameterAdmin(admin.ModelAdmin):
         'post_down_payment_increase_percent',
         'bank_tax_interest_percent',
         'method',
+        'get_categories',  # 🔹 نمایش دسته‌بندی‌ها
     )
+    filter_horizontal = ('applicable_categories',)
+
+    def get_categories(self, obj):
+        return ", ".join([c.name for c in obj.applicable_categories.all()])
+    get_categories.short_description = "دسته‌بندی‌ها"
+
 
 @admin.register(CompanyInstallmentParameter)
 class CompanyInstallmentParameterAdmin(admin.ModelAdmin):
@@ -22,4 +30,10 @@ class CompanyInstallmentParameterAdmin(admin.ModelAdmin):
         'monthly_interest_percent',
         'minimum_down_payment',
         'guarantee_method',
+        'get_categories',  # 🔹 نمایش دسته‌بندی‌ها
     )
+    filter_horizontal = ('applicable_categories',)
+
+    def get_categories(self, obj):
+        return ", ".join([c.name for c in obj.applicable_categories.all()])
+    get_categories.short_description = "دسته‌بندی‌ها"

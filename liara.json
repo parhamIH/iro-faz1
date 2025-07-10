@@ -7,7 +7,7 @@
     "disks": [
       {
         "name": "media",
-        "mountTo": "path/to/folder"
+        "mountTo": "medai"
       }
     ]
   }

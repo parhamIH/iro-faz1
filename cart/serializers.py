@@ -14,16 +14,22 @@ class CartItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CartItem
         fields = ['id', 'package', 'package_id', 'count', 'total_final_price']
+from rest_framework import serializers
 
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(source='cartitem_set', many=True, read_only=True)
     item_count = serializers.IntegerField(source='item_count', read_only=True)
-    total_price = serializers.DecimalField(source='total_price', max_digits=12, decimal_places=2, read_only=True)
+    total_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Cart
-        fields = ['id', 'user', 'is_paid', 'created_date', 'updated_date', 'item_count', 'total_price', 'items']
-        read_only_fields = ['user', 'is_paid', 'created_date', 'updated_date']
+        fields = ['id', 'user', 'session_key', 'is_paid', 'created_date', 'updated_date', 'item_count', 'total_price', 'items']
+        read_only_fields = ['user', 'is_paid', 'created_date', 'updated_date', 'session_key']
+
+    def get_total_price(self, obj):
+        return obj.total_price()
+
+
 
 class CartItemCreateSerializer(serializers.ModelSerializer):
     package_id = serializers.PrimaryKeyRelatedField(queryset=ProductOption.objects.all(), source='package')

@@ -8,24 +8,47 @@ from store.models import ProductOption
 from .serializers import (
     CartSerializer,
     CartItemCreateSerializer,
-    CartItemSerializer,
     OrderSerializer,
     OrderCreateSerializer,
 )
-from django.utils import timezone
+from rest_framework.permissions import IsAuthenticated
+
 
 class CartDetailAPIView(APIView):
+    authentication_classes = []  # اجازه دسترسی بدون احراز هویت
+
     def get(self, request):
-        user = request.user
-        cart, created = Cart.objects.get_or_create(user=user, is_paid=False)
+        session_key = request.session.session_key
+        if not session_key:
+            request.session.create()
+            session_key = request.session.session_key
+
+        user = request.user if request.user.is_authenticated else None
+
+        if user:
+            cart, _ = Cart.objects.get_or_create(user=user, is_paid=False)
+        else:
+            cart, _ = Cart.objects.get_or_create(session_key=session_key, is_paid=False)
+
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
 
 class CartItemAddAPIView(APIView):
+    authentication_classes = []
+
     def post(self, request):
-        user = request.user
-        cart, _ = Cart.objects.get_or_create(user=user, is_paid=False)
+        session_key = request.session.session_key
+        if not session_key:
+            request.session.create()
+            session_key = request.session.session_key
+
+        user = request.user if request.user.is_authenticated else None
+
+        if user:
+            cart, _ = Cart.objects.get_or_create(user=user, is_paid=False)
+        else:
+            cart, _ = Cart.objects.get_or_create(session_key=session_key, is_paid=False)
 
         serializer = CartItemCreateSerializer(data=request.data)
         if serializer.is_valid():
@@ -39,16 +62,23 @@ class CartItemAddAPIView(APIView):
                 cart_item.count = count
             cart_item.save()
 
-            cart_serializer = CartSerializer(cart)
-            return Response(cart_serializer.data, status=status.HTTP_201_CREATED)
+            return Response(CartSerializer(cart).data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CartItemUpdateAPIView(APIView):
     def patch(self, request, item_id):
-        user = request.user
-        cart = get_object_or_404(Cart, user=user, is_paid=False)
+        user = request.user if request.user.is_authenticated else None
+        session_key = request.session.session_key
+
+        if user:
+            cart = get_object_or_404(Cart, user=user, is_paid=False)
+        else:
+            if not session_key:
+                return Response({"detail": "بدون سشن کی امکان‌پذیر نیست."}, status=status.HTTP_400_BAD_REQUEST)
+            cart = get_object_or_404(Cart, session_key=session_key, is_paid=False)
+
         cart_item = get_object_or_404(CartItem, id=item_id, cart=cart)
 
         serializer = CartItemCreateSerializer(data=request.data, partial=True)
@@ -68,14 +98,24 @@ class CartItemUpdateAPIView(APIView):
 
 class CartItemDeleteAPIView(APIView):
     def delete(self, request, item_id):
-        user = request.user
-        cart = get_object_or_404(Cart, user=user, is_paid=False)
+        user = request.user if request.user.is_authenticated else None
+        session_key = request.session.session_key
+
+        if user:
+            cart = get_object_or_404(Cart, user=user, is_paid=False)
+        else:
+            if not session_key:
+                return Response({"detail": "بدون سشن کی امکان‌پذیر نیست."}, status=status.HTTP_400_BAD_REQUEST)
+            cart = get_object_or_404(Cart, session_key=session_key, is_paid=False)
+
         cart_item = get_object_or_404(CartItem, id=item_id, cart=cart)
         cart_item.delete()
         return Response({"detail": "آیتم حذف شد."}, status=status.HTTP_204_NO_CONTENT)
 
 
 class OrderCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # فقط کاربر وارد شده اجازه ساخت سفارش دارد
+
     @transaction.atomic
     def post(self, request):
         user = request.user
@@ -89,14 +129,14 @@ class OrderCreateAPIView(APIView):
             order = serializer.save(user=user, cart=cart)
             cart.is_paid = True
             cart.save()
-
-            order_serializer = OrderSerializer(order)
-            return Response(order_serializer.data, status=status.HTTP_201_CREATED)
+            return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class OrderDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, order_id):
         user = request.user
         order = get_object_or_404(Order, id=order_id, user=user)

@@ -8,6 +8,8 @@ from .views import (
     OrderDetailAPIView,
 )
 
+app_name = 'cart'  # برای namespace کردن مسیرها
+
 urlpatterns = [
     path('', CartDetailAPIView.as_view(), name='cart-detail'),
     path('items/add/', CartItemAddAPIView.as_view(), name='cartitem-add'),

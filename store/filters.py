@@ -260,41 +260,41 @@ class CategoryFilter(FilterSet):
         return queryset.filter(spec_definitions__name__in=spec_names).distinct()
 
     def filter_spec_value(self, queryset, name, value):
-        """ # Redundant filter, removed in favor of the main ProductFilter's specification filter.
-        فیلتر ترکیبی برای مقدار مشخصه
-        فرمت: "نام_مشخصه:مقدار" یا "نام_مشخصه:min:max"
-        مثال: "RAM:8" یا "حافظه:64:128"
-        """
         if not value or ':' not in value:
             return queryset
-            
+        
         parts = value.split(':')
         spec_name = parts[0].strip()
         
         if len(parts) == 2:
-            # فیلتر دقیق
-            spec_value = parts[1].strip()
-            return queryset.filter(
-                products__spec_values__specification__name__iexact=spec_name,
-                products__spec_values__str_value__icontains=spec_value
-            ).distinct()
-        elif len(parts) == 3:
-            # فیلتر محدوده
-            try:
-                min_val = float(parts[1]) if parts[1].strip() else None
-                max_val = float(parts[2]) if parts[2].strip() else None
-                
-                q = Q(products__spec_values__specification__name__iexact=spec_name)
-                if min_val is not None:
-                    q &= (Q(products__spec_values__int_value__gte=min_val) | 
-                          Q(products__spec_values__decimal_value__gte=min_val))
-                if max_val is not None:
-                    q &= (Q(products__spec_values__int_value__lte=max_val) | 
-                          Q(products__spec_values__decimal_value__lte=max_val))
-                
-                return queryset.filter(q).distinct()
-            except ValueError:
-                return queryset
+            values = [v.strip() for v in parts[1].split(',')]
+            q = Q()
+            for val in values:
+                # تلاش برای int
+                try:
+                    num_val = int(val)
+                    q |= Q(products__spec_values__specification__name__iexact=spec_name,
+                           products__spec_values__int_value=num_val)
+                    continue
+                except ValueError:
+                    pass
+                # تلاش برای float
+                try:
+                    num_val = float(val)
+                    q |= Q(products__spec_values__specification__name__iexact=spec_name,
+                           products__spec_values__decimal_value=num_val)
+                    continue
+                except ValueError:
+                    pass
+                # تلاش برای bool
+                if val.lower() in ['true', 'false']:
+                    q |= Q(products__spec_values__specification__name__iexact=spec_name,
+                           products__spec_values__bool_value=(val.lower() == 'true'))
+                else:
+                    # متن
+                    q |= Q(products__spec_values__specification__name__iexact=spec_name,
+                           products__spec_values__str_value__icontains=val)
+            return queryset.filter(q).distinct()
         return queryset
 
     class Meta:

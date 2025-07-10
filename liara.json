@@ -1,9 +1,13 @@
 {
-    "disks":
-    [{
-    "name": "media",
-    "mounTo" : "media"
-    }],
-    "app" :  "iro-backend"
-
-}
+    "app": "iro-backend",
+    "port": 80,
+    "build": {
+      "location": "iran"
+    },
+    "disks": [
+      {
+        "name": "media",
+        "mountTo": "path/to/folder"
+      }
+    ]
+  }

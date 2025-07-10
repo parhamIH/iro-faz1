@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/', include('store.urls')),
     path('api/installments/', include('installments.urls')),
     path("account/",include("accounts.urls")),
+    path('api/cart/', include('cart.urls')),
     # Swagger URLs
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

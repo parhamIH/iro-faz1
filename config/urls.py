@@ -23,12 +23,15 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('store.urls')),
-    path('installments/', include('installments.urls')),
-    path("account/",include("accounts.urls")),
+    path('api/installments/', include('installments.urls')),
+    path("api/account/",include("accounts.urls")),
+    path('api/installments/', include('installments.urls')),  
+    path('api/cart/', include('cart.urls')),
     # Swagger URLs
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
+
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

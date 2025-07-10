@@ -13,22 +13,23 @@ class SpecificationFilter(FilterSet):
             Q(name__icontains=value) |
             Q(slug__icontains=value) |
             Q(unit__icontains=value) |
-            Q(category__name__icontains=value) |
-            Q(category__parent__name__icontains=value) |
-            Q(category__brand__name__icontains=value) |
-            Q(category__brand__parent__name__icontains=value)
+            Q(categories__name__icontains=value) |
+            Q(categories__parent__name__icontains=value) |
+            Q(categories__brand__name__icontains=value) |
+            Q(categories__brand__parent__name__icontains=value)
         ).distinct()
     
     class Meta:
         model = Specification
         fields = {
-            'category': ['exact'],
+            'categories': ['exact', 'in'],
             'data_type': ['exact'],
             'name': ['exact', 'icontains'],
             "is_main": ['exact'],
             "slug": ['exact', 'icontains'],
             "unit": ['exact', 'icontains'],
         }
+
 
 class ProductFilter(FilterSet):
     # جستجو و فیلترهای پایه

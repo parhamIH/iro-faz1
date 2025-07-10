@@ -2,15 +2,12 @@ from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
-from decimal import Decimal
 from colorfield.fields import ColorField
 from django.utils.text import slugify
-import random
 from mptt.models import MPTTModel, TreeForeignKey
-from . import models as installments 
 
 
-#__________________________________________ ------warranty------ _______________________________________
+# __________________________________________ ------Warranty------ _______________________________________
 
 class Warranty(models.Model):
     name = models.CharField(max_length=100, verbose_name='نام گارانتی')
@@ -32,6 +29,9 @@ class Warranty(models.Model):
     def __str__(self):
         return f"{self.company} - {self.name} - {self.duration} ماه"
 
+
+# __________________________________________ ------Tag------ _______________________________________
+
 class Tag(models.Model):
     name = models.CharField(max_length=100, verbose_name='نام تگ')
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True, verbose_name='شناسه URL')
@@ -44,7 +44,8 @@ class Tag(models.Model):
         return self.name
 
 
-#__________________________________________ ------brand------ _______________________________________
+# __________________________________________ ------Brand------ _______________________________________
+
 class Brand(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
@@ -68,8 +69,7 @@ class Brand(models.Model):
         return self.name
 
 
-
-#__________________________________________ ------category------ _______________________________________
+# __________________________________________ ------Category------ _______________________________________
 
 class Category(MPTTModel):
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
@@ -99,11 +99,12 @@ class Category(MPTTModel):
         return self.name
 
 
-#__________________________________________ ------product------ _______________________________________
+# __________________________________________ ------Product------ _______________________________________
+
 class Product(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
-    categories = models.ManyToManyField(Category, related_name='products')
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
     specifications = models.ManyToManyField("Specification", through='ProductSpecification', verbose_name="مشخصات")
     tags = models.ManyToManyField('Tag', related_name='products')
     brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='products')
@@ -130,7 +131,8 @@ class Product(models.Model):
         return self.title
 
 
-#__________________________________________ ------specification------ _______________________________________   
+# __________________________________________ ------Specification------ _______________________________________
+
 class Specification(models.Model):
     DATA_TYPE_CHOICES = [
         ('int', 'عدد صحیح'),
@@ -139,7 +141,7 @@ class Specification(models.Model):
         ('bool', 'بله/خیر'),
     ]
 
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='spec_definitions', verbose_name='دسته‌بندی')
+    categories = models.ManyToManyField(Category, related_name='spec_definitions')
     name = models.CharField(max_length=100, verbose_name='نام مشخصه')
     slug = models.SlugField(max_length=120, unique=True, allow_unicode=True, blank=True)
     data_type = models.CharField(max_length=20, choices=DATA_TYPE_CHOICES, verbose_name='نوع داده')
@@ -149,7 +151,7 @@ class Specification(models.Model):
     class Meta:
         verbose_name = 'مشخصه'
         verbose_name_plural = 'مشخصات'
-        unique_together = ['category', 'name']
+        # unique_together حذف شد چون دسته‌بندی‌ها چندبه‌چند هستند
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -161,10 +163,12 @@ class Specification(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.category.name} - {self.name} ({self.get_data_type_display()})"
+        categories_names = ", ".join(cat.name for cat in self.categories.all())
+        return f"{categories_names} - {self.name} ({self.get_data_type_display()})"
 
 
-#__________________________________________ ------product specification------ _______________________________________
+# __________________________________________ ------ProductSpecification------ _______________________________________
+
 class ProductSpecification(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='spec_values', verbose_name='محصول')
     specification = models.ForeignKey(Specification, on_delete=models.CASCADE, related_name='values', verbose_name='مشخصه')
@@ -201,11 +205,8 @@ class ProductSpecification(models.Model):
         return None
 
 
+# __________________________________________ ------ProductOption------ _______________________________________
 
-#add  add provider for product-option foreignkey for faz 2 
-
-
-#__________________________________________ ------product option------ _______________________________________
 class ProductOption(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options', verbose_name='محصول')
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='options', blank=True, null=True, verbose_name='رنگ')
@@ -277,6 +278,8 @@ class ProductOption(models.Model):
         return base_str
 
 
+# __________________________________________ ------Gallery------ _______________________________________
+
 class Gallery(models.Model):
     product = models.ForeignKey(ProductOption, on_delete=models.CASCADE, related_name='gallery', verbose_name='ویژگی محصول')
     image = models.ImageField(upload_to='product_gallery/', verbose_name='تصویر')
@@ -291,7 +294,8 @@ class Gallery(models.Model):
         return f"عکس برای {self.product.product.title} - {color_name}"
 
 
-#__________________________________________ ------color------ _______________________________________
+# __________________________________________ ------Color------ _______________________________________
+
 class Color(models.Model):
     COLOR_PALETTE = [
         ("#FFFFFF", "white"),
@@ -310,6 +314,8 @@ class Color(models.Model):
     def __str__(self):
         return self.name
 
+
+# __________________________________________ ------ArticleCategory------ _______________________________________
 
 class ArticleCategory(models.Model):
     name = models.CharField(max_length=100, verbose_name='نام دسته‌بندی')
@@ -331,6 +337,8 @@ class ArticleCategory(models.Model):
     def __str__(self):
         return self.name
 
+
+# __________________________________________ ------Article------ _______________________________________
 
 class Article(models.Model):
     title = models.CharField(max_length=255, verbose_name='عنوان')
@@ -360,4 +368,3 @@ class Article(models.Model):
 
     def __str__(self):
         return self.title
-

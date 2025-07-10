@@ -30,40 +30,31 @@ class ProductSpecificationInline(admin.TabularInline):
         if obj.specification:
             return obj.specification.unit or '-'
         return '-'
-    get_unit.short_description = 'واحد'\
-
-# admin.py
-
-class SpecificationInline(admin.TabularInline):
-    model = Specification
-    extra = 0  # تعداد ردیف‌های اضافه برای ایجاد
-    readonly_fields = ['get_unit']
-    
-    def get_unit(self, obj):
-        if obj.specification:
-            return obj.specification.unit or '-'
-        return '-'
     get_unit.short_description = 'واحد'
+
+# Inline برای رابطه ManyToMany بین Specification و Category از مدل واسطه استفاده می‌کنیم
+class SpecificationInline(admin.TabularInline):
+    model = Specification.categories.through
+    extra = 1
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['title', 'get_categories', 'brand', 'get_specifications_count', 'is_active']
+    list_display = ['title', 'get_category', 'brand', 'get_specifications_count', 'is_active']
     search_fields = ['title', 'description', 'brand__name']
-    list_filter = ['categories', 'brand', 'is_active']
-    filter_horizontal = ['categories']
+    list_filter = ['category', 'brand', 'is_active']
+    # حذف filter_horizontal چون category ForeignKey است
     prepopulated_fields = {'slug': ('title',)}
     inlines = [ProductSpecificationInline, ProductOptionInline]
     list_editable = ['is_active']
 
-    def get_categories(self, obj):
-        return ", ".join([cat.name for cat in obj.categories.all()])
-    get_categories.short_description = 'دسته‌بندی‌ها'
+    def get_category(self, obj):
+        return obj.category.name if obj.category else '-'
+    get_category.short_description = 'دسته‌بندی'
 
     def get_specifications_count(self, obj):
         return obj.spec_values.count()
     get_specifications_count.short_description = 'تعداد مشخصات'
-
 
 
 @admin.register(Category)
@@ -74,12 +65,12 @@ class CategoryAdmin(DraggableMPTTAdmin):
     search_fields = ['name', 'description']
     list_filter = ['parent']
     prepopulated_fields = {'slug': ('name',)}
-    inlines = [SpecificationInline]  # 👈 این خط رو اضافه کن
-
+    inlines = [SpecificationInline]
 
     def get_specifications_count(self, obj):
         return obj.spec_definitions.count()
     get_specifications_count.short_description = 'تعداد مشخصات'
+
 @admin.register(ProductOption)
 class ProductOptionAdmin(admin.ModelAdmin):
     list_display = ['product', 'color', 'option_price', 'is_active_discount', 'discount', 'quantity']
@@ -133,12 +124,15 @@ class BrandAdmin(admin.ModelAdmin):
 
 @admin.register(Specification)
 class SpecificationAdmin(admin.ModelAdmin):
-    list_display = ['name', 'category', 'data_type', 'unit', 'get_usage_count']
-    list_filter = ['category', 'data_type']
-    search_fields = ['name', 'category__name']
+    list_display = ['name', 'get_categories', 'data_type', 'unit', 'get_usage_count']
+    list_filter = ['categories', 'data_type']
+    search_fields = ['name', 'categories__name']
     prepopulated_fields = {'slug': ('name',)}
-    autocomplete_fields = ['category']
-    list_select_related = ['category']
+    autocomplete_fields = ['categories']
+
+    def get_categories(self, obj):
+        return ", ".join([cat.name for cat in obj.categories.all()])
+    get_categories.short_description = 'دسته‌بندی‌ها'
 
     def get_usage_count(self, obj):
         return obj.values.count()
@@ -147,7 +141,7 @@ class SpecificationAdmin(admin.ModelAdmin):
 @admin.register(ProductSpecification)
 class ProductSpecificationAdmin(admin.ModelAdmin):
     list_display = ['product', 'specification', 'get_value', 'get_unit', 'get_data_type']
-    list_filter = ['specification__category', 'specification__data_type']
+    list_filter = ['specification__categories', 'specification__data_type']
     search_fields = ['product__title', 'specification__name']
     autocomplete_fields = ['product', 'specification']
     list_select_related = ['product', 'specification']
@@ -172,9 +166,9 @@ class WarrantyAdmin(admin.ModelAdmin):
     list_display = ('name',  'is_active')
     list_filter = ('is_active',)
     search_fields = ('name',)
+
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ['name', 'slug']
     search_fields = ['name']
     prepopulated_fields = {'slug': ('name',)}
-

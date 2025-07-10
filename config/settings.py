@@ -93,16 +93,14 @@ INSTALLED_APPS = [
     'mptt',
     'rest_framework_simplejwt',
     "corsheaders",
+    'jdatetime',
 
 
     #####apps####
     'cart',
     'store',
-
     "accounts",
-
     'installments',
-    'jdatetime',
 ]
 
 MIDDLEWARE = [

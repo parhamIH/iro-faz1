@@ -47,10 +47,46 @@ class BaseModelViewSet(ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         try:
+            parent_id = request.GET.get('parent')
+            if parent_id:
+                # اگر پارامتر parent وجود داشت، خود parent را هم به عنوان اولین عضو لیست برگردان
+                try:
+                    parent_obj = Category.objects.prefetch_related('products', 'spec_definitions').select_related('parent').get(id=parent_id)
+                    parent_data = self.get_serializer(parent_obj).data
+                except Category.DoesNotExist:
+                    parent_data = None
+                queryset = self.filter_queryset(self.get_queryset())
+                page = self.paginate_queryset(queryset)
+                filter_instance = CategoryFilter(request.GET, queryset=Category.objects.all(), request=request)
+                filters_data = {}
+                for name, f in filter_instance.filters.items():
+                    filters_data[name] = {
+                        'label': getattr(f, 'label', name),
+                        'help_text': getattr(f, 'help_text', ''),
+                        'choices': getattr(f, 'choices', None),
+                    }
+                filters_data['spec_value_choices'] = filter_instance.spec_value_choices
+                if page is not None:
+                    serializer = self.get_serializer(page, many=True)
+                    data = list(serializer.data)
+                    if parent_data:
+                        data.insert(0, parent_data)
+                    response = self.get_paginated_response(data)
+                    response.data['status'] = 'success'
+                    response.data['filters'] = filters_data
+                    return response
+                serializer = self.get_serializer(queryset, many=True)
+                data = list(serializer.data)
+                if parent_data:
+                    data.insert(0, parent_data)
+                return Response({
+                    'status': 'success',
+                    'data': data,
+                    'filters': filters_data
+                })
+            # حالت عادی (بدون parent)
             queryset = self.filter_queryset(self.get_queryset())
             page = self.paginate_queryset(queryset)
-
-            # آماده‌سازی متادیتا فیلترها برای لیست
             filter_instance = CategoryFilter(request.GET, queryset=Category.objects.all(), request=request)
             filters_data = {}
             for name, f in filter_instance.filters.items():
@@ -60,14 +96,12 @@ class BaseModelViewSet(ModelViewSet):
                     'choices': getattr(f, 'choices', None),
                 }
             filters_data['spec_value_choices'] = filter_instance.spec_value_choices
-
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
                 response = self.get_paginated_response(serializer.data)
                 response.data['status'] = 'success'
                 response.data['filters'] = filters_data
                 return response
-
             serializer = self.get_serializer(queryset, many=True)
             return Response({
                 'status': 'success',
@@ -93,15 +127,12 @@ class ProductViewSet(BaseModelViewSet):
     search_fields = ['title', 'description','options__color__name','options__option_price']
 
 class CategoryViewSet(BaseModelViewSet):
-    queryset = Category.objects.prefetch_related(
-        'products',
-        'spec_definitions'
-    ).select_related('parent', 'brand').all()
+    queryset = Category.objects.prefetch_related('products', 'spec_definitions', 'brand').select_related('parent').all()
     serializer_class = CategorySerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = CategoryFilter
     search_fields = ['name', 'description']
-    ordering_fields = ['name']
+    ordering_fields = ['name',]
     ordering = ['name']
 
     @action(detail=True, methods=['get'], url_path='specifications')

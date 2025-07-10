@@ -278,7 +278,7 @@ class CategoryFilter(FilterSet):
                            products__spec_values__int_value=num_val)
                     continue
                 except ValueError:
-                    pass
+                        pass
                 # تلاش برای float
                 try:
                     num_val = float(val)

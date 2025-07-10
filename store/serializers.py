@@ -48,7 +48,7 @@ class ProductSpecificationSerializer(serializers.ModelSerializer):
 
 class CategorySerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
-    brand = BrandSerializer(read_only=True)
+    brand = BrandSerializer(read_only=True,many=True)
     spec_definitions = SpecificationSerializer(many=True, read_only=True)
     products = serializers.SerializerMethodField()
     spec_value_choices = serializers.SerializerMethodField()

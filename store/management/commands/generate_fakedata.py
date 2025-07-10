@@ -8,9 +8,6 @@ from store.models import (
 from django.db import transaction
 import random
 from decimal import Decimal
-from django.core.files.base import ContentFile
-from PIL import Image
-import io
 
 class Command(BaseCommand):
     help = 'Generate realistic fake data for the store app (clears old data first)'
@@ -64,15 +61,21 @@ class Command(BaseCommand):
             'سونی': Brand.objects.create(name='سونی', description='Sony'),
         }
 
-        # دسته‌بندی‌ها
+        # دسته‌بندی‌های والد
+        digital_parent = Category.objects.create(name='کالای دیجیتال', description='انواع محصولات دیجیتال')
+        vehicle_parent = Category.objects.create(name='وسایل نقلیه', description='انواع وسایل نقلیه')
+
+        # دسته‌بندی‌ها با والد
         categories = {
-            'موبایل': Category.objects.create(name='موبایل', description='گوشی‌های هوشمند'),
-            'تبلت': Category.objects.create(name='تبلت', description='تبلت‌ها'),
-            'لپ‌تاپ': Category.objects.create(name='لپ‌تاپ', description='لپ‌تاپ‌ها'),
-            'ماشین': Category.objects.create(name='ماشین', description='خودروها'),
+            'موبایل': Category.objects.create(name='موبایل', description='گوشی‌های هوشمند', parent=digital_parent),
+            'تبلت': Category.objects.create(name='تبلت', description='تبلت‌ها', parent=digital_parent),
+            'لپ‌تاپ': Category.objects.create(name='لپ‌تاپ', description='لپ‌تاپ‌ها', parent=digital_parent),
+            'ماشین': Category.objects.create(name='ماشین', description='خودروها', parent=vehicle_parent),
             'لوازم خانه': Category.objects.create(name='لوازم خانه', description='لوازم خانگی'),
             'هدفون': Category.objects.create(name='هدفون', description='هدفون و هدست'),
         }
+        # دسته‌بندی فرزند برای موبایل
+        categories['قاب موبایل'] = Category.objects.create(name='قاب موبایل', description='انواع قاب و کاور برای موبایل', parent=categories['موبایل'])
 
         # مشخصات هر دسته‌بندی
         specs_by_category = {
@@ -118,6 +121,12 @@ class Command(BaseCommand):
                 ('میکروفون', 'bool', None),
                 ('مقاومت در برابر آب', 'bool', None),
             ],
+            'قاب موبایل': [
+                ('جنس', 'str', None),
+                ('رنگ', 'str', None),
+                ('ضد ضربه', 'bool', None),
+                ('مناسب برای مدل', 'str', None),
+            ],
         }
 
         # ایجاد مشخصات
@@ -130,7 +139,7 @@ class Command(BaseCommand):
                     name=name,
                     data_type=dtype,
                     unit=unit,
-                    is_main=True if name in ['حافظه داخلی', 'حجم موتور', 'ظرفیت', 'نوع اتصال'] else False
+                    is_main=True if name in ['حافظه داخلی', 'حجم موتور', 'ظرفیت', 'نوع اتصال', 'جنس'] else False
                 )
                 spec_objs[cat_name].append(spec)
 
@@ -147,10 +156,17 @@ class Command(BaseCommand):
                     'brand': brands['سامسونگ'],
                     'specs': [512, 12, Decimal('6.8'), 200, 5000],
                 },
+            ],
+            'قاب موبایل': [
                 {
-                    'title': 'Xiaomi 13 Pro',
-                    'brand': brands['شیائومی'],
-                    'specs': [256, 12, Decimal('6.73'), 50, 4820],
+                    'title': 'قاب سیلیکونی آیفون 15',
+                    'brand': brands['اپل'],
+                    'specs': ['سیلیکون', 'قرمز', True, 'iPhone 15'],
+                },
+                {
+                    'title': 'قاب ضدضربه سامسونگ S24',
+                    'brand': brands['سامسونگ'],
+                    'specs': ['پلاستیک سخت', 'مشکی', True, 'Galaxy S24'],
                 },
             ],
             'تبلت': [
@@ -159,32 +175,12 @@ class Command(BaseCommand):
                     'brand': brands['اپل'],
                     'specs': [512, 8, Decimal('12.9'), 10758, Decimal('682')],
                 },
-                {
-                    'title': 'Samsung Galaxy Tab S9 Ultra',
-                    'brand': brands['سامسونگ'],
-                    'specs': [256, 12, Decimal('14.6'), 11200, Decimal('732')],
-                },
-                {
-                    'title': 'Xiaomi Pad 6',
-                    'brand': brands['شیائومی'],
-                    'specs': [128, 8, Decimal('11.0'), 8840, Decimal('490')],
-                },
             ],
             'لپ‌تاپ': [
                 {
                     'title': 'MacBook Air M2',
                     'brand': brands['اپل'],
                     'specs': ['Apple M2', 512, 8, Decimal('13.6'), Decimal('1.24')],
-                },
-                {
-                    'title': 'Samsung Galaxy Book3 Pro',
-                    'brand': brands['سامسونگ'],
-                    'specs': ['Intel i7', 1024, 16, Decimal('16.0'), Decimal('1.56')],
-                },
-                {
-                    'title': 'Huawei MateBook X Pro',
-                    'brand': brands['هواوی'],
-                    'specs': ['Intel i7', 1024, 16, Decimal('14.2'), Decimal('1.26')],
                 },
             ],
             'ماشین': [
@@ -193,16 +189,6 @@ class Command(BaseCommand):
                     'brand': brands['تویوتا'],
                     'specs': [1800, 140, Decimal('6.5'), 'اتومات', 5],
                 },
-                {
-                    'title': 'هیوندای النترا 2023',
-                    'brand': brands['هیوندای'],
-                    'specs': [1600, 128, Decimal('7.0'), 'اتومات', 5],
-                },
-                {
-                    'title': 'کیا سراتو 2023',
-                    'brand': brands['کیا'],
-                    'specs': [2000, 150, Decimal('6.8'), 'اتومات', 5],
-                },
             ],
             'لوازم خانه': [
                 {
@@ -210,32 +196,12 @@ class Command(BaseCommand):
                     'brand': brands['سامسونگ'],
                     'specs': [700, 'A++', Decimal('120'), 'نقره‌ای', 'یخچال'],
                 },
-                {
-                    'title': 'ماشین لباسشویی ال‌جی WM-1015',
-                    'brand': brands['ال‌جی'],
-                    'specs': [10, 'A++', Decimal('70'), 'سفید', 'لباسشویی'],
-                },
-                {
-                    'title': 'تلویزیون سونی X90J',
-                    'brand': brands['سونی'],
-                    'specs': [65, 'A+', Decimal('25'), 'مشکی', 'تلویزیون'],
-                },
             ],
             'هدفون': [
                 {
                     'title': 'Sony WH-1000XM5',
                     'brand': brands['سونی'],
                     'specs': ['بی‌سیم', 30, Decimal('250'), True, True],
-                },
-                {
-                    'title': 'Apple AirPods Pro 2',
-                    'brand': brands['اپل'],
-                    'specs': ['بی‌سیم', 6, Decimal('50'), True, True],
-                },
-                {
-                    'title': 'Samsung Galaxy Buds2 Pro',
-                    'brand': brands['سامسونگ'],
-                    'specs': ['بی‌سیم', 8, Decimal('43'), True, True],
                 },
             ],
         }
@@ -281,5 +247,17 @@ class Command(BaseCommand):
         tags = [Tag.objects.create(name=name) for name in tag_names]
         for product in Product.objects.all():
             product.tags.add(*random.sample(tags, random.randint(1, 3)))
+
+        # افزودن برند به دسته‌بندی‌ها در generate_fakedata.py
+        categories['موبایل'].brand.add(brands['اپل'], brands['سامسونگ'], brands['شیائومی'])
+        categories['تبلت'].brand.add(brands['اپل'], brands['سامسونگ'])
+        categories['لپ‌تاپ'].brand.add(brands['اپل'], brands['سامسونگ'], brands['هواوی'])
+        categories['ماشین'].brand.add(brands['تویوتا'], brands['هیوندای'], brands['کیا'])
+        categories['لوازم خانه'].brand.add(brands['ال‌جی'], brands['سامسونگ'], brands['سونی'])
+        categories['هدفون'].brand.add(brands['سونی'], brands['اپل'], brands['سامسونگ'])
+        categories['قاب موبایل'].brand.add(brands['اپل'], brands['سامسونگ'])
+        # اگر خواستی به والدها هم برند بدهی:
+        # digital_parent.brand.add(brands['اپل'], brands['سامسونگ'])
+        # vehicle_parent.brand.add(brands['تویوتا'], brands['هیوندای'])
 
         self.stdout.write(self.style.SUCCESS('Successfully generated realistic fake data!')) 

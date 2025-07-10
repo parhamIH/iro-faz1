@@ -70,6 +70,7 @@ class ProductFilter(FilterSet):
     )
 
     specification = CharFilter(method='filter_specification', label='مشخصات فنی')
+    spec_value = CharFilter(method='filter_specification', label='مقدار مشخصه (نام:مقدار)')
     
 
 

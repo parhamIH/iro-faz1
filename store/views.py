@@ -50,16 +50,29 @@ class BaseModelViewSet(ModelViewSet):
             queryset = self.filter_queryset(self.get_queryset())
             page = self.paginate_queryset(queryset)
 
+            # آماده‌سازی متادیتا فیلترها برای لیست
+            filter_instance = CategoryFilter(request.GET, queryset=Category.objects.all(), request=request)
+            filters_data = {}
+            for name, f in filter_instance.filters.items():
+                filters_data[name] = {
+                    'label': getattr(f, 'label', name),
+                    'help_text': getattr(f, 'help_text', ''),
+                    'choices': getattr(f, 'choices', None),
+                }
+            filters_data['spec_value_choices'] = filter_instance.spec_value_choices
+
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
                 response = self.get_paginated_response(serializer.data)
                 response.data['status'] = 'success'
+                response.data['filters'] = filters_data
                 return response
 
             serializer = self.get_serializer(queryset, many=True)
             return Response({
                 'status': 'success',
-                'data': serializer.data
+                'data': serializer.data,
+                'filters': filters_data
             })
         except Exception as e:
             return Response({
@@ -81,7 +94,6 @@ class ProductViewSet(BaseModelViewSet):
 
 class CategoryViewSet(BaseModelViewSet):
     queryset = Category.objects.prefetch_related(
-
         'products',
         'spec_definitions'
     ).select_related('parent', 'brand').all()
@@ -91,6 +103,35 @@ class CategoryViewSet(BaseModelViewSet):
     search_fields = ['name', 'description']
     ordering_fields = ['name']
     ordering = ['name']
+
+    @action(detail=True, methods=['get'], url_path='specifications')
+    def specifications(self, request, pk=None):
+        """
+        لیست مشخصات فنی این دسته‌بندی به همراه مقادیر یکتای هر مشخصه (بر اساس محصولات این دسته‌بندی)
+        خروجی مناسب برای ساخت فیلتر داینامیک در فرانت‌اند
+        """
+        category = self.get_object()
+        serializer = CategorySpecificationWithValuesSerializer(category)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], url_path='filter-metadata')
+    def filter_metadata(self, request, pk=None):
+        """
+        متادیتا و لیست فیلترهای قابل استفاده برای این دسته‌بندی (شامل choices داینامیک مشخصات فنی)
+        """
+        category = self.get_object()
+        # فیلتر را با context مناسب بساز
+        filter_instance = CategoryFilter(request.GET, queryset=Category.objects.all(), request=request)
+        filters_data = {}
+        for name, f in filter_instance.filters.items():
+            filters_data[name] = {
+                'label': getattr(f, 'label', name),
+                'help_text': getattr(f, 'help_text', ''),
+                'choices': getattr(f, 'choices', None),
+            }
+        # اضافه کردن choices داینامیک برای spec_value
+        filters_data['spec_value_choices'] = filter_instance.spec_value_choices
+        return Response(filters_data)
 
 class BrandViewSet(BaseModelViewSet):
     queryset = Brand.objects.all()

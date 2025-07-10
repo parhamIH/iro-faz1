@@ -304,4 +304,22 @@ class CategoryFilter(FilterSet):
             'brand': ['exact'],
         }
 
+    @property
+    def spec_value_choices(self):
+        # فرض: category_id از context یا request گرفته می‌شود
+        from .models import Category
+        from .serializers import CategorySpecificationWithValuesSerializer
+        request = getattr(self, 'request', None)
+        category_id = None
+        if request:
+            category_id = request.query_params.get('id') or request.query_params.get('category')
+        if not category_id:
+            return []
+        try:
+            category = Category.objects.get(id=category_id)
+        except Category.DoesNotExist:
+            return []
+        serializer = CategorySpecificationWithValuesSerializer(category)
+        return serializer.data.get('specifications', [])
+
 

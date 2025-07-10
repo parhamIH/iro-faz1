@@ -1,0 +1,9 @@
+{
+    "disks":
+    [{
+    "name": "media",
+    "mounTo" : "media"
+    }],
+    "app" :  "iro-backend"
+
+}

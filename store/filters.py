@@ -66,7 +66,8 @@ class ProductFilter(FilterSet):
     categories = ModelMultipleChoiceFilter(
         field_name='categories',
         queryset=Category.objects.all(),
-        label='دسته‌بندی‌ها'
+        label='دسته‌بندی‌ها',
+        method='filter_categories'
     )
 
     specification = CharFilter(method='filter_specification', label='مشخصات فنی')
@@ -173,6 +174,17 @@ class ProductFilter(FilterSet):
         if max_val is not None:
             q &= Q(spec_values__int_value__lte=max_val) | Q(spec_values__decimal_value__lte=max_val)
         return queryset.filter(q).distinct()
+
+    def filter_categories(self, queryset, name, value):
+        if not value:
+            return queryset
+        # جمع‌آوری همه idهای دسته و فرزندانش
+        all_ids = set()
+        for cat in value:
+            all_ids.add(cat.id)
+            # اگر از mptt استفاده می‌کنی:
+            all_ids.update(cat.get_descendants().values_list('id', flat=True))
+        return queryset.filter(categories__in=all_ids).distinct()
 
     class Meta:
         model = Product

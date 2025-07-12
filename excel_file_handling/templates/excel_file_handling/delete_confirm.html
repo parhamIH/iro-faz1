@@ -1,0 +1,82 @@
+{% extends 'excel_file_handling/base.html' %}
+
+{% block title %}حذف فایل {{ excel_file.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    تأیید حذف فایل
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>هشدار:</strong> این عملیات غیرقابل بازگشت است!
+                </div>
+                
+                <h5>آیا مطمئن هستید که می‌خواهید فایل زیر را حذف کنید؟</h5>
+                
+                <div class="card bg-light mb-3">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>عنوان:</strong><br>
+                                {{ excel_file.title }}
+                            </div>
+                            <div class="col-6">
+                                <strong>نوع:</strong><br>
+                                {{ excel_file.get_file_type_display }}
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>نام فایل:</strong><br>
+                                {{ excel_file.get_file_name }}
+                            </div>
+                            <div class="col-6">
+                                <strong>تاریخ آپلود:</strong><br>
+                                {{ excel_file.uploaded_at|date:"Y/m/d H:i" }}
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>وضعیت:</strong><br>
+                                <span class="badge 
+                                    {% if excel_file.status == 'pending' %}bg-secondary
+                                    {% elif excel_file.status == 'processing' %}bg-warning
+                                    {% elif excel_file.status == 'completed' %}bg-success
+                                    {% elif excel_file.status == 'failed' %}bg-danger
+                                    {% endif %}">
+                                    {{ excel_file.get_status_display }}
+                                </span>
+                            </div>
+                            <div class="col-6">
+                                <strong>حجم:</strong><br>
+                                {{ excel_file.get_file_size }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'excel_file_handling:file_detail' excel_file.id %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-arrow-right me-1"></i>انصراف
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-1"></i>حذف فایل
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

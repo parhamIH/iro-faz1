@@ -1,0 +1,171 @@
+{% extends 'excel_file_handling/base.html' %}
+
+{% block title %}لیست فایل‌های Excel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-list me-2"></i>
+        لیست فایل‌های Excel
+    </h2>
+    <a href="{% url 'excel_file_handling:upload' %}" class="btn btn-excel">
+        <i class="fas fa-plus me-1"></i>آپلود فایل جدید
+    </a>
+</div>
+
+{% if files %}
+    <div class="row">
+        {% for file in files %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-file-excel text-success me-1"></i>
+                            {{ file.title }}
+                        </h6>
+                        <span class="badge status-badge 
+                            {% if file.status == 'pending' %}bg-secondary
+                            {% elif file.status == 'processing' %}bg-warning
+                            {% elif file.status == 'completed' %}bg-success
+                            {% elif file.status == 'failed' %}bg-danger
+                            {% endif %}">
+                            {{ file.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <small class="text-muted">نوع:</small>
+                                <br>
+                                <strong>{{ file.get_file_type_display }}</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">حجم:</small>
+                                <br>
+                                <strong>{{ file.get_file_size }}</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <small class="text-muted">تاریخ آپلود:</small>
+                                <br>
+                                <strong>{{ file.uploaded_at|date:"Y/m/d H:i" }}</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">تعداد ردیف:</small>
+                                <br>
+                                <strong>{{ file.total_rows|default:"-" }}</strong>
+                            </div>
+                        </div>
+
+                        {% if file.status == 'completed' %}
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <small class="text-muted">پردازش شده:</small>
+                                    <br>
+                                    <span class="text-success">{{ file.processed_rows }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">خطا:</small>
+                                    <br>
+                                    <span class="text-danger">{{ file.error_rows }}</span>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'excel_file_handling:file_detail' file.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>مشاهده جزئیات
+                            </a>
+                            
+                            {% if file.status == 'pending' %}
+                                <button class="btn btn-success btn-sm process-btn" data-file-id="{{ file.id }}">
+                                    <i class="fas fa-play me-1"></i>شروع پردازش
+                                </button>
+                            {% elif file.status == 'processing' %}
+                                <button class="btn btn-warning btn-sm" disabled>
+                                    <i class="fas fa-spinner fa-spin me-1"></i>در حال پردازش
+                                </button>
+                            {% elif file.status == 'completed' %}
+                                <button class="btn btn-info btn-sm process-btn" data-file-id="{{ file.id }}">
+                                    <i class="fas fa-redo me-1"></i>پردازش مجدد
+                                </button>
+                            {% elif file.status == 'failed' %}
+                                <button class="btn btn-warning btn-sm process-btn" data-file-id="{{ file.id }}">
+                                    <i class="fas fa-redo me-1"></i>تلاش مجدد
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">{{ file.get_file_name }}</small>
+                            <a href="{% url 'excel_file_handling:delete_file' file.id %}" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-file-excel fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">هیچ فایل Excel‌ای یافت نشد</h4>
+        <p class="text-muted">برای شروع، یک فایل Excel آپلود کنید.</p>
+        <a href="{% url 'excel_file_handling:upload' %}" class="btn btn-excel">
+            <i class="fas fa-upload me-1"></i>آپلود فایل جدید
+        </a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // تنظیم CSRF token برای تمام درخواست‌های AJAX
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                // فقط برای درخواست‌های نسبی CSRF token اضافه کن
+                xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+            }
+        }
+    });
+
+    $('.process-btn').click(function() {
+        var fileId = $(this).data('file-id');
+        var btn = $(this);
+        
+        // تغییر وضعیت دکمه
+        btn.prop('disabled', true);
+        btn.html('<i class="fas fa-spinner fa-spin me-1"></i>در حال پردازش...');
+        
+        // ارسال درخواست AJAX
+        $.ajax({
+            url: '/excel/file/' + fileId + '/process-ajax/',
+            method: 'POST',
+            success: function(response) {
+                if (response.status === 'success') {
+                    // بروزرسانی صفحه بعد از 2 ثانیه
+                    setTimeout(function() {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    alert(response.message);
+                    btn.prop('disabled', false);
+                    btn.html('<i class="fas fa-play me-1"></i>شروع پردازش');
+                }
+            },
+            error: function() {
+                alert('خطا در ارتباط با سرور');
+                btn.prop('disabled', false);
+                btn.html('<i class="fas fa-play me-1"></i>شروع پردازش');
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,475 @@
+{% extends 'excel_file_handling/base.html' %}
+
+{% block title %}آپلود فایل Excel{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-upload me-2"></i>
+                    آپلود فایل Excel
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                            <i class="fas fa-tag me-1"></i>عنوان فایل
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.title.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.file_type.id_for_label }}" class="form-label">
+                            <i class="fas fa-list me-1"></i>نوع فایل
+                        </label>
+                        {{ form.file_type }}
+                        {% if form.file_type.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.file_type.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            نوع داده‌هایی که در فایل Excel قرار دارند را انتخاب کنید.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.file.id_for_label }}" class="form-label">
+                            <i class="fas fa-file-excel me-1"></i>فایل Excel
+                        </label>
+                        {{ form.file }}
+                        {% if form.file.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.file.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            فقط فایل‌های Excel (.xlsx, .xls) با حداکثر حجم 10 مگابایت مجاز هستند.
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'excel_file_handling:root' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-arrow-right me-1"></i>انصراف
+                        </a>
+                        <button type="submit" class="btn btn-excel">
+                            <i class="fas fa-upload me-1"></i>آپلود فایل
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- راهنمای تعاملی قالب‌ها -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-graduation-cap me-2"></i>
+                    راهنمای تعاملی قالب‌های Excel
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- تب‌های راهنما -->
+                <ul class="nav nav-tabs" id="templateTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="brands-tab" data-bs-toggle="tab" data-bs-target="#brands" type="button" role="tab">
+                            <i class="fas fa-tags me-1"></i>برندها
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button" role="tab">
+                            <i class="fas fa-sitemap me-1"></i>دسته‌بندی‌ها
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="colors-tab" data-bs-toggle="tab" data-bs-target="#colors" type="button" role="tab">
+                            <i class="fas fa-palette me-1"></i>رنگ‌ها
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="warranties-tab" data-bs-toggle="tab" data-bs-target="#warranties" type="button" role="tab">
+                            <i class="fas fa-shield-alt me-1"></i>گارانتی‌ها
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="products-tab" data-bs-toggle="tab" data-bs-target="#products" type="button" role="tab">
+                            <i class="fas fa-box me-1"></i>محصولات
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content mt-3" id="templateTabContent">
+                    <!-- تب برندها -->
+                    <div class="tab-pane fade show active" id="brands" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-table me-1"></i>ساختار فایل Excel</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>name</th>
+                                                <th>description</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>سامسونگ</td>
+                                                <td>شرکت سامسونگ الکترونیکس</td>
+                                            </tr>
+                                            <tr>
+                                                <td>اپل</td>
+                                                <td>شرکت اپل</td>
+                                            </tr>
+                                            <tr>
+                                                <td>شیائومی</td>
+                                                <td>شرکت شیائومی</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-info-circle me-1"></i>نکات مهم</h6>
+                                <ul class="small">
+                                    <li><strong>name:</strong> نام برند (اجباری)</li>
+                                    <li><strong>description:</strong> توضیحات برند (اختیاری)</li>
+                                    <li>نام برند باید منحصر به فرد باشد</li>
+                                    <li>برای محصولات، از همین نام‌ها استفاده کنید</li>
+                                </ul>
+                                <a href="{% url 'excel_file_handling:download_template' 'brands' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-download me-1"></i>دانلود قالب
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- تب دسته‌بندی‌ها -->
+                    <div class="tab-pane fade" id="categories" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-table me-1"></i>ساختار فایل Excel</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>name</th>
+                                                <th>description</th>
+                                                <th>parent</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>الکترونیک</td>
+                                                <td>محصولات الکترونیکی</td>
+                                                <td><em>خالی</em></td>
+                                            </tr>
+                                            <tr>
+                                                <td>موبایل</td>
+                                                <td>گوشی‌های موبایل</td>
+                                                <td>الکترونیک</td>
+                                            </tr>
+                                            <tr>
+                                                <td>لپ‌تاپ</td>
+                                                <td>لپ‌تاپ‌ها</td>
+                                                <td>الکترونیک</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-info-circle me-1"></i>نکات مهم</h6>
+                                <ul class="small">
+                                    <li><strong>name:</strong> نام دسته‌بندی (اجباری)</li>
+                                    <li><strong>description:</strong> توضیحات (اختیاری)</li>
+                                    <li><strong>parent:</strong> نام دسته‌بندی والد (اختیاری)</li>
+                                    <li>برای دسته‌بندی اصلی، parent را خالی بگذارید</li>
+                                    <li>برای زیردسته، نام دسته‌بندی والد را بنویسید</li>
+                                </ul>
+                                <div class="alert alert-warning small">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    <strong>ترتیب مهم:</strong> ابتدا دسته‌بندی‌های اصلی، سپس زیردسته‌ها
+                                </div>
+                                <a href="{% url 'excel_file_handling:download_template' 'categories' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-download me-1"></i>دانلود قالب
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- تب رنگ‌ها -->
+                    <div class="tab-pane fade" id="colors" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-table me-1"></i>ساختار فایل Excel</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>name</th>
+                                                <th>hex_code</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>قرمز</td>
+                                                <td>#FF0000</td>
+                                            </tr>
+                                            <tr>
+                                                <td>آبی</td>
+                                                <td>#0000FF</td>
+                                            </tr>
+                                            <tr>
+                                                <td>سبز</td>
+                                                <td>#008000</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-info-circle me-1"></i>نکات مهم</h6>
+                                <ul class="small">
+                                    <li><strong>name:</strong> نام رنگ (اجباری)</li>
+                                    <li><strong>hex_code:</strong> کد رنگ (اجباری)</li>
+                                    <li>کد hex باید با # شروع شود</li>
+                                    <li>فرمت صحیح: #RRGGBB</li>
+                                </ul>
+                                <div class="row mt-2">
+                                    <div class="col-3">
+                                        <div style="width: 30px; height: 30px; background-color: #FF0000; border: 1px solid #ccc;"></div>
+                                        <small>قرمز</small>
+                                    </div>
+                                    <div class="col-3">
+                                        <div style="width: 30px; height: 30px; background-color: #0000FF; border: 1px solid #ccc;"></div>
+                                        <small>آبی</small>
+                                    </div>
+                                    <div class="col-3">
+                                        <div style="width: 30px; height: 30px; background-color: #008000; border: 1px solid #ccc;"></div>
+                                        <small>سبز</small>
+                                    </div>
+                                </div>
+                                <a href="{% url 'excel_file_handling:download_template' 'colors' %}" class="btn btn-sm btn-outline-primary mt-2">
+                                    <i class="fas fa-download me-1"></i>دانلود قالب
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- تب گارانتی‌ها -->
+                    <div class="tab-pane fade" id="warranties" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-table me-1"></i>ساختار فایل Excel</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>name</th>
+                                                <th>company</th>
+                                                <th>duration</th>
+                                                <th>registration_required</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>گارانتی 1 ساله</td>
+                                                <td>شرکت گارانتی ایران</td>
+                                                <td>12</td>
+                                                <td>True</td>
+                                            </tr>
+                                            <tr>
+                                                <td>گارانتی 2 ساله</td>
+                                                <td>شرکت گارانتی پارس</td>
+                                                <td>24</td>
+                                                <td>False</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-info-circle me-1"></i>نکات مهم</h6>
+                                <ul class="small">
+                                    <li><strong>name:</strong> نام گارانتی (اجباری)</li>
+                                    <li><strong>company:</strong> شرکت ارائه دهنده (اختیاری)</li>
+                                    <li><strong>duration:</strong> مدت گارانتی به ماه (عدد)</li>
+                                    <li><strong>registration_required:</strong> نیاز به ثبت (True/False)</li>
+                                </ul>
+                                <div class="alert alert-info small">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    <strong>نکته:</strong> ستون‌های description, terms_conditions, support_phone نیز اختیاری هستند
+                                </div>
+                                <a href="{% url 'excel_file_handling:download_template' 'warranties' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-download me-1"></i>دانلود قالب
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- تب محصولات -->
+                    <div class="tab-pane fade" id="products" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-table me-1"></i>ساختار فایل Excel</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>title</th>
+                                                <th>brand</th>
+                                                <th>categories</th>
+                                                <th>tags</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>گوشی سامسونگ Galaxy S21</td>
+                                                <td>سامسونگ</td>
+                                                <td>موبایل</td>
+                                                <td>گوشی,هوشمند,سامسونگ</td>
+                                            </tr>
+                                            <tr>
+                                                <td>لپ‌تاپ اپل MacBook Pro</td>
+                                                <td>اپل</td>
+                                                <td>لپ‌تاپ</td>
+                                                <td>لپ‌تاپ,اپل,MacBook</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-info-circle me-1"></i>نکات مهم</h6>
+                                <ul class="small">
+                                    <li><strong>title:</strong> عنوان محصول (اجباری)</li>
+                                    <li><strong>brand:</strong> نام برند (باید قبلاً ثبت شده باشد)</li>
+                                    <li><strong>categories:</strong> نام دسته‌بندی (باید قبلاً ثبت شده باشد)</li>
+                                    <li><strong>tags:</strong> تگ‌ها با کاما جدا می‌شوند</li>
+                                </ul>
+                                <div class="alert alert-warning small">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    <strong>ترتیب import:</strong> ابتدا برندها و دسته‌بندی‌ها را import کنید
+                                </div>
+                                <div class="alert alert-success small">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    <strong>مثال:</strong> brand="سامسونگ" (نام دقیق برند)
+                                </div>
+                                <a href="{% url 'excel_file_handling:download_template' 'products' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-download me-1"></i>دانلود قالب
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- راهنمای ترتیب import -->
+                <div class="alert alert-primary mt-3">
+                    <h6><i class="fas fa-list-ol me-1"></i>ترتیب صحیح import:</h6>
+                    <ol class="mb-0 small">
+                        <li><strong>برندها</strong> → ابتدا برندها را import کنید</li>
+                        <li><strong>دسته‌بندی‌ها</strong> → سپس دسته‌بندی‌ها را import کنید</li>
+                        <li><strong>رنگ‌ها و گارانتی‌ها</strong> → سپس رنگ‌ها و گارانتی‌ها را import کنید</li>
+                        <li><strong>محصولات</strong> → در نهایت محصولات را import کنید</li>
+                    </ol>
+                </div>
+
+                <!-- مثال کامل و مرتبط -->
+                <div class="card mt-3">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            مثال کامل و مرتبط
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-3">در اینجا یک مثال کامل از داده‌های مرتبط نشان داده می‌شود:</p>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6 class="text-primary"><i class="fas fa-tags me-1"></i>1. برندها</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr><th>name</th><th>description</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>سامسونگ</td><td>شرکت سامسونگ</td></tr>
+                                            <tr><td>اپل</td><td>شرکت اپل</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="text-primary"><i class="fas fa-sitemap me-1"></i>2. دسته‌بندی‌ها</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr><th>name</th><th>parent</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>الکترونیک</td><td><em>خالی</em></td></tr>
+                                            <tr><td>موبایل</td><td>الکترونیک</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="text-primary"><i class="fas fa-box me-1"></i>3. محصولات</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr><th>title</th><th>brand</th><th>categories</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>Galaxy S21</td><td>سامسونگ</td><td>موبایل</td></tr>
+                                            <tr><td>iPhone 15</td><td>اپل</td><td>موبایل</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info mt-3">
+                            <h6><i class="fas fa-link me-1"></i>نحوه ارتباط داده‌ها:</h6>
+                            <ul class="mb-0 small">
+                                <li><strong>برند → محصول:</strong> در ستون "brand" محصول، نام دقیق برند را بنویسید</li>
+                                <li><strong>دسته‌بندی → محصول:</strong> در ستون "categories" محصول، نام دقیق دسته‌بندی را بنویسید</li>
+                                <li><strong>دسته‌بندی والد → فرزند:</strong> در ستون "parent" زیردسته، نام دسته‌بندی والد را بنویسید</li>
+                                <li><strong>تگ‌ها:</strong> با کاما جدا کنید: "گوشی,هوشمند,سامسونگ"</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle me-1"></i>خطاهای رایج:</h6>
+                            <ul class="mb-0 small">
+                                <li><strong>"نام برند یافت نشد":</strong> ابتدا برند را import کنید</li>
+                                <li><strong>"نام دسته‌بندی یافت نشد":</strong> ابتدا دسته‌بندی را import کنید</li>
+                                <li><strong>"دسته‌بندی والد یافت نشد":</strong> ابتدا دسته‌بندی والد را import کنید</li>
+                                <li><strong>نام‌ها باید دقیقاً مطابقت داشته باشند</strong> (حساس به حروف بزرگ و کوچک)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

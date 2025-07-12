@@ -1,0 +1,76 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}دسترسی محدود{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .error-container {
+        text-align: center;
+        padding: 50px 20px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .error-icon {
+        font-size: 64px;
+        color: #dc3545;
+        margin-bottom: 20px;
+    }
+    .error-title {
+        font-size: 24px;
+        color: #dc3545;
+        margin-bottom: 15px;
+        font-weight: bold;
+    }
+    .error-message {
+        font-size: 16px;
+        color: #6c757d;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+    .back-button {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        display: inline-block;
+        transition: background-color 0.3s;
+    }
+    .back-button:hover {
+        background-color: #0056b3;
+        color: white;
+        text-decoration: none;
+    }
+    .admin-link {
+        background-color: #28a745;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        display: inline-block;
+        margin-right: 10px;
+        transition: background-color 0.3s;
+    }
+    .admin-link:hover {
+        background-color: #1e7e34;
+        color: white;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-icon">🚫</div>
+    <h1 class="error-title">دسترسی محدود</h1>
+    <p class="error-message">
+        شما مجوز دسترسی به بخش مدیریت فایل‌های Excel را ندارید.<br>
+        فقط مدیران سیستم (Superuser) می‌توانند به این بخش دسترسی داشته باشند.
+    </p>
+    <div>
+        <a href="{% url 'admin:index' %}" class="admin-link">بازگشت به پنل مدیریت</a>
+        <a href="javascript:history.back()" class="back-button">بازگشت به صفحه قبل</a>
+    </div>
+</div>
+{% endblock %} 

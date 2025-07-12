@@ -114,6 +114,7 @@ INSTALLED_APPS = [
     'store',
     "accounts",
     'installments',
+    "excel_file_handling"
 ]
 
 MIDDLEWARE = [

@@ -4,6 +4,10 @@ import uuid
 from store.models import ProductOption
 from model_utils import FieldTracker
 from django.contrib.auth import get_user_model
+<<<<<<< HEAD
+=======
+from decimal import Decimal
+>>>>>>> 44326bdd00e41038f3f57ffbe53f1ba80f8e3880
 
 User = get_user_model()
 
@@ -37,7 +41,7 @@ class Cart(models.Model):
     
     def total_price(self):
         """محاسبه مجموع قیمت همه آیتم‌های سبد خرید"""
-        return sum(item.total_final_price for item in self.cartitem_set.all())
+        return sum(item.total_final_price for item in self.cartitem_set.all()) or Decimal('0.00')
 
     def item_count(self):
         """تعداد کل آیتم‌های موجود در سبد خرید"""
@@ -45,31 +49,32 @@ class Cart(models.Model):
 
     def total_items_quantity(self):
         """مجموع تعداد همه محصولات در سبد خرید"""
-        return sum(item.count for item in self.cartitem_set.all())
+        return sum(item.count for item in self.cartitem_set.all()) or 0
 
     def clear(self):
         """پاک کردن همه آیتم‌های سبد خرید"""
         self.cartitem_set.all().delete()
 
+
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     package = models.ForeignKey(ProductOption, on_delete=models.CASCADE)
     count = models.PositiveIntegerField(default=1)
-    final_price = models.PositiveIntegerField(null=True, blank=True)
+    final_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     added_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-added_date']
 
     def save(self, *args, **kwargs):
-        # اگر سبد پرداخت شده و قیمت نهایی هنوز ثبت نشده، قیمت جاری رو ذخیره کن
+        # اگر سبد پرداخت شده و قیمت نهایی هنوز ثبت نشده، قیمت نهایی فعلی پکیج را ذخیره کن
         if self.cart.is_paid and self.final_price is None:
-            self.final_price = self.package.price
+            self.final_price = self.package.get_final_price()
         super().save(*args, **kwargs)
 
     def get_price(self):
         """گرفتن قیمت: اگر پرداخت شده از final_price، وگرنه از قیمت جاری پکیج"""
-        return self.final_price if self.final_price is not None else self.package.price
+        return self.final_price if self.final_price is not None else self.package.get_final_price()
 
     def total_price(self):
         """قیمت کل بدون در نظر گرفتن ویژگی جدید"""
@@ -81,7 +86,12 @@ class CartItem(models.Model):
         return self.get_price() * self.count
 
     def __str__(self):
+<<<<<<< HEAD
         return f'{self.package.product.name} - {self.count} عدد'
+=======
+        return f'{self.package.product.title} - {self.count} عدد'
+
+>>>>>>> 44326bdd00e41038f3f57ffbe53f1ba80f8e3880
 
 class Order(models.Model):
     SHIPPING_CHOICES = [
@@ -113,10 +123,17 @@ class Order(models.Model):
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='در انتظار پرداخت')
     status = models.CharField(max_length=20, choices=Cart.STATUS_CHOICES, default='در حال انتظار')
     shipping_method = models.CharField(max_length=20, choices=SHIPPING_CHOICES, default='post')
+<<<<<<< HEAD
     shipping_cost = models.PositiveIntegerField(default=0)
     total_price = models.PositiveIntegerField(default=0)
     discount_code = models.CharField(max_length=50, blank=True, null=True)
     discount_amount = models.PositiveIntegerField(default=0)
+=======
+    shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    total_price = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
+    discount_code = models.CharField(max_length=50, blank=True, null=True)
+    discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+>>>>>>> 44326bdd00e41038f3f57ffbe53f1ba80f8e3880
     shipping_date = models.DateTimeField(null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
     jalali_delivery_date = models.CharField(max_length=50, blank=True, null=True)
@@ -133,7 +150,11 @@ class Order(models.Model):
     def calculate_total_price(self):
         """محاسبه مجموع نهایی سفارش با در نظر گرفتن ارسال و تخفیف"""
         total = self.cart.total_price() + self.shipping_cost - self.discount_amount
+<<<<<<< HEAD
         return max(total, 0)
+=======
+        return max(total, Decimal('0.00'))
+>>>>>>> 44326bdd00e41038f3f57ffbe53f1ba80f8e3880
 
     def save(self, *args, **kwargs):
         # به روز رسانی قیمت کل هنگام ذخیره

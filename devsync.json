@@ -1,0 +1,27 @@
+{
+  "enabled": true,
+  "watch_dirs": [
+    "excel_file_handling",
+    "store",
+    "accounts",
+    "cart",
+    "installments"
+  ],
+  "ignore_patterns": [
+    "*.pyc",
+    "__pycache__",
+    "*.log",
+    ".git",
+    "media",
+    "static",
+    "venv",
+    "node_modules",
+    "*.swp",
+    "*.swo",
+    ".DS_Store"
+  ],
+  "reload_delay": 1.0,
+  "auto_reload": true,
+  "notifications": true,
+  "log_level": "INFO"
+} 

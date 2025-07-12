@@ -268,3 +268,27 @@ SITE_ID = 1
 
 LOGIN_REDIRECT_URL = '/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+
+# ----------------------
+# ✅ Django DevSync Settings
+# ----------------------
+if DEBUG:
+    DEVSYNC = {
+        'ENABLED': True,
+        'WATCH_DIRS': [
+            str(BASE_DIR / 'excel_file_handling'),
+            str(BASE_DIR / 'store'),
+            str(BASE_DIR / 'accounts'),
+            str(BASE_DIR / 'cart'),
+            str(BASE_DIR / 'installments'),
+        ],
+        'IGNORE_PATTERNS': [
+            '*.pyc',
+            '__pycache__',
+            '*.log',
+            '.git',
+            'media',
+            'static',
+        ],
+        'RELOAD_DELAY': 1.0,
+    }

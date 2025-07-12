@@ -11,4 +11,4 @@ urlpatterns = [
     path('company-calculate/', CompanyInstallmentCalculationAPIView.as_view(), name='company-installment-calculate'),
     path('category-installments/<int:category_id>/', CategoryInstallmentOptionsAPIView.as_view(), name='category-installments'),
     
-]
+]   

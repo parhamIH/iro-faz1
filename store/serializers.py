@@ -114,6 +114,10 @@ class WarrantySerializer(serializers.ModelSerializer):
 class SpecificationGroupSerializer(serializers.ModelSerializer):
     specifications = serializers.SerializerMethodField()
     
+    class Meta:
+        model = SpecificationGroup
+        fields = ['id', 'name', 'specifications']
+    
     def get_specifications(self, obj):
         product = self.context.get('product')
         spec_values = ProductSpecification.objects.filter(
@@ -121,6 +125,7 @@ class SpecificationGroupSerializer(serializers.ModelSerializer):
             specification__group=obj
         ).select_related('specification')
         return ProductSpecificationSerializer(spec_values, many=True).data
+
 class ProductSerializer(serializers.ModelSerializer):
     categories = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     brand = serializers.StringRelatedField()

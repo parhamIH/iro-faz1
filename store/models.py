@@ -75,7 +75,7 @@ class Category(MPTTModel):
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
-    brand = models.ManyToManyField('Brand', null=True, blank=True, related_name='categories')
+    brand = models.ManyToManyField('Brand', blank=True, related_name='categories')
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
     image = models.ImageField(upload_to='categories/', blank=True, null=True)
 
@@ -149,9 +149,9 @@ class Specification(models.Model):
         ('bool', 'بله/خیر'),
     ]
 
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='spec_definitions', verbose_name='دسته‌بندی')
+    categories = models.ManyToManyField(Category, related_name='spec_definitions', verbose_name='دسته‌بندی‌ها')
 
-    group = models.ForeignKey(SpecificationGroup,on_delete=models.SET_NULL,null=True,blank=True,related_name='specifications',verbose_name='گروه مشخصات')
+    group = models.ForeignKey(SpecificationGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='specifications', verbose_name='گروه مشخصات')
 
     name = models.CharField(max_length=100, verbose_name='نام مشخصه')
     slug = models.SlugField(max_length=120, unique=True, allow_unicode=True, blank=True)
@@ -162,7 +162,6 @@ class Specification(models.Model):
     class Meta:
         verbose_name = 'مشخصه'
         verbose_name_plural = 'مشخصات'
-        unique_together = ['category', 'name']
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -173,9 +172,9 @@ class Specification(models.Model):
                 counter += 1
         super().save(*args, **kwargs)
 
-def __str__(self):
-    categories_names = ", ".join(cat.name for cat in self.categories.all())
-    return f"{categories_names} - {self.name} ({self.get_data_type_display()})"
+    def __str__(self):
+        categories_names = ", ".join(cat.name for cat in self.categories.all())
+        return f"{categories_names} - {self.name} ({self.get_data_type_display()})"
 
 #__________________________________________ ------product specification------ _______________________________________
 class ProductSpecification(models.Model):

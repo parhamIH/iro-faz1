@@ -30,10 +30,14 @@ class ColorSerializer(serializers.ModelSerializer):
 
 class SpecificationSerializer(serializers.ModelSerializer):
     data_type_display = serializers.CharField(source='get_data_type_display', read_only=True)
+    categories = serializers.SerializerMethodField()
 
     class Meta:
         model = Specification
-        fields = ['id', 'category', 'name', 'slug', 'data_type', 'data_type_display', 'unit']
+        fields = ['id', 'categories', 'name', 'slug', 'data_type', 'data_type_display', 'unit']
+
+    def get_categories(self, obj):
+        return [{'id': cat.id, 'name': cat.name, 'slug': cat.slug} for cat in obj.categories.all()]
 
 class ProductSpecificationSerializer(serializers.ModelSerializer):
     specification = SpecificationSerializer(read_only=True)
@@ -131,7 +135,7 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'slug', 'categories', 'description',
             'image', 'brand', 'options', 'spec_values',
-            'is_active', 'tags'
+            'is_active', 'tags','spec_groups',
         ]
     def get_spec_groups(self,obj):
         groups = SpecificationGroup.objects.filter(

@@ -16,22 +16,37 @@ class SpecificationFilter(FilterSet):
     فیلتر مشخصات فنی برای بخش مدیریت یا پنل
     """
     search = CharFilter(method='filter_search', label='جستجو')
+    categories = ModelMultipleChoiceFilter(
+        field_name='categories',
+        queryset=Category.objects.all(),
+        label='دسته‌بندی‌ها',
+        method='filter_categories'
+    )
     
     def filter_search(self, queryset, name, value):
         return queryset.filter(
             Q(name__icontains=value) |
             Q(slug__icontains=value) |
             Q(unit__icontains=value) |
-            Q(category__name__icontains=value) |
-            Q(category__parent__name__icontains=value) |
-            Q(category__brand__name__icontains=value) |
-            Q(category__brand__parent__name__icontains=value)
+            Q(categories__name__icontains=value) |
+            Q(categories__parent__name__icontains=value) |
+            Q(categories__brand__name__icontains=value) |
+            Q(categories__brand__parent__name__icontains=value)
         ).distinct()
     
+    def filter_categories(self, queryset, name, value):
+        if not value:
+            return queryset
+        all_ids = set()
+        for cat in value:
+            all_ids.add(cat.id)
+            all_ids.update(cat.get_descendants().values_list('id', flat=True))
+        return queryset.filter(categories__in=all_ids).distinct()
+
     class Meta:
         model = Specification
         fields = {
-            'category': ['exact'],
+            'categories': ['exact'],
             'data_type': ['exact'],
             'name': ['exact', 'icontains'],
             "is_main": ['exact'],

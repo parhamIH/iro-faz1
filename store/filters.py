@@ -11,6 +11,12 @@ class CommaSeparatedModelMultipleChoiceFilter(Filter):
     def filter(self, qs, value):
         if not value:
             return qs
+        
+        # اگر متد سفارشی تعریف شده، آن را فراخوانی کن
+        if hasattr(self, 'method') and self.method:
+            return getattr(self.parent, self.method)(qs, self.field_name, value)
+        
+        # در غیر این صورت، پارس کردن معمولی
         if isinstance(value, str):
             value = [v.strip() for v in value.split(',') if v.strip()]
         try:
@@ -29,6 +35,7 @@ class SpecificationFilter(FilterSet):
         field_name='categories',
         queryset=Category.objects.all(),
         label='دسته‌بندی‌ها',
+        method='filter_categories_with_children',
     )
     group = CommaSeparatedModelMultipleChoiceFilter(
         field_name='group',
@@ -200,11 +207,7 @@ class ProductFilter(FilterSet):
         queryset=Color.objects.all(),
         label='رنگ‌ها',
     )
-    categories = CommaSeparatedModelMultipleChoiceFilter(
-        field_name='categories',
-        queryset=Category.objects.all(),
-        label='دسته‌بندی‌ها',
-    )
+    categories = CharFilter(method='filter_categories_with_children', label='دسته‌بندی‌ها')
     warranties = CommaSeparatedModelMultipleChoiceFilter(
         field_name='options__warranty',
         queryset=Warranty.objects.all(),
@@ -256,6 +259,27 @@ class ProductFilter(FilterSet):
         if value:
             return queryset.filter(options__warranty__isnull=False).distinct()
         return queryset.filter(options__warranty__isnull=True).distinct()
+
+    def filter_categories_with_children(self, queryset, name, value):
+        if not value:
+            return queryset
+        # اگر مقدار رشته بود، به لیست آیدی تبدیل کن
+        if isinstance(value, str):
+            value = [v.strip() for v in value.split(',') if v.strip()]
+            try:
+                value = [int(v) for v in value]
+            except Exception:
+                return queryset.none()
+        all_category_ids = set()
+        for category_id in value:
+            try:
+                category = Category.objects.get(id=category_id)
+                all_category_ids.add(category.id)
+                descendants = category.get_descendants()
+                all_category_ids.update(descendants.values_list('id', flat=True))
+            except Category.DoesNotExist:
+                continue
+        return queryset.filter(categories__id__in=all_category_ids).distinct()
 
     def filter_specification(self, queryset, name, value):
         """

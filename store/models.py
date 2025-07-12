@@ -99,6 +99,7 @@ class Category(MPTTModel):
         return self.name
 
 
+
 #__________________________________________ ------product------ _______________________________________
 class Product(models.Model):
     title = models.CharField(max_length=255)

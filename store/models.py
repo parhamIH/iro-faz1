@@ -80,7 +80,7 @@ class Category(MPTTModel):
     image = models.ImageField(upload_to='categories/', blank=True, null=True)
 
     class MPTTMeta:
-        order_insertion_by = ["parent", "name"]
+        order_insertion_by = ["name"]
 
     class Meta:
         verbose_name = 'دسته‌بندی'

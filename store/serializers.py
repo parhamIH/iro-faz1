@@ -66,10 +66,17 @@ class SpecificationGroupSerializer(serializers.ModelSerializer):
         return ProductSpecificationSerializer(spec_values, many=True).data
 
 
+class ParentCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'slug']
+
+
 class CategorySerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
     brand = BrandSerializer(read_only=True)
     spec_definitions = SpecificationSerializer(many=True, read_only=True)
+    parent = ParentCategorySerializer(read_only=True)  # نمایش نام و slug والد
 
     class Meta:
         model = Category
@@ -100,7 +107,7 @@ class ProductOptionSerializer(serializers.ModelSerializer):
                 'option_id': obj.id,
                 'image': img.image.url if img.image else None,
                 'alt_text': img.alt_text
-            } 
+            }
             for img in obj.gallery.all()
         ]
 
@@ -120,8 +127,8 @@ class WarrantySerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)  # اصلاح به جای categories با many=True
-    brand = serializers.StringRelatedField()
+    category = CategorySerializer(read_only=True)
+    brand = BrandSerializer(read_only=True)  # تغییر داده شده به BrandSerializer
     options = ProductOptionSerializer(many=True, read_only=True)
     spec_groups = serializers.SerializerMethodField()
     tags = TagSerializer(many=True, read_only=True)
@@ -134,5 +141,9 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
 
     def get_spec_groups(self, obj):
-        groups = SpecificationGroup.objects.filter(specifications__values__product=obj).distinct()
-        return SpecificationGroupSerializer(groups, many=True, context={'product': obj}).data
+        groups = SpecificationGroup.objects.filter(
+            specifications__values__product=obj
+        ).distinct()
+
+        serializer = SpecificationGroupSerializer(groups, many=True, context={'product': obj})
+        return serializer.data

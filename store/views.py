@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import Http404
 from django.utils import timezone
+from django.db.models import Min, Q
 
 from .models import (
     Product, Category, ProductOption, Brand, Gallery,
@@ -62,7 +63,7 @@ class BaseModelViewSet(viewsets.ModelViewSet):
                 'data': serializer.data
             })
         except Exception as e:
-            # بهتره اینجا لاگ‌گذاری کنی
+            # بهتر است اینجا لاگ خطا بگذارید
             return Response({
                 'status': 'error',
                 'message': str(e)
@@ -83,6 +84,37 @@ class ProductViewSet(BaseModelViewSet):
     filterset_class = ProductFilter
     ordering_fields = ['options__option_price', 'options__quantity', "created_at", "updated_at", "is_active", "options__is_active_discount"]
     search_fields = ['title', 'description', 'options__color__name', 'options__option_price']
+
+    from rest_framework.decorators import action
+
+    @action(detail=True, methods=['get'])
+    def similar(self, request, pk=None):
+        product = self.get_object()
+        category = product.category
+
+        if not category:
+            return Response({
+                'status': 'error',
+                'message': 'این محصول دسته‌بندی ندارد.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        base_price = product.options.aggregate(min_price=Min('option_price'))['min_price'] or 0
+
+        price_lower = base_price * 0.8
+        price_upper = base_price * 1.2
+
+        similar_products = Product.objects.filter(
+            category=category,
+            options__option_price__gte=price_lower,
+            options__option_price__lte=price_upper,
+            is_active=True
+        ).exclude(id=product.id).distinct()[:10]
+
+        serializer = self.get_serializer(similar_products, many=True)
+        return Response({
+            'status': 'success',
+            'similar_products': serializer.data
+        })
 
 
 class CategoryViewSet(BaseModelViewSet):
@@ -154,13 +186,12 @@ class ProductSpecificationViewSet(BaseModelViewSet):
     filterset_fields = ['product', 'specification']
     search_fields = ['specification__name', 'product__title']
 
-
 class WarrantyViewSet(BaseModelViewSet):
     queryset = Warranty.objects.prefetch_related('product_options').all()
     serializer_class = WarrantySerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['product_options']
-    search_fields = ['product_options__product__title']
+    filterset_fields = ['name', 'is_active']
+    search_fields = ['name']
 
 
 class SpecificationGroupViewSet(BaseModelViewSet):

@@ -55,6 +55,9 @@ class CartItemAddAPIView(APIView):
             package = serializer.validated_data['package']
             count = serializer.validated_data.get('count', 1)
 
+            if count < 1:
+                return Response({"detail": "تعداد باید حداقل 1 باشد."}, status=status.HTTP_400_BAD_REQUEST)
+
             cart_item, created = CartItem.objects.get_or_create(cart=cart, package=package)
             if not created:
                 cart_item.count += count

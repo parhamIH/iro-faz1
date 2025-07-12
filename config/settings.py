@@ -17,13 +17,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-import dj_database_url
 
-DATABASES = {
-    'default': dj_database_url.parse(
-        'postgres://postgres:yourpassword@localhost:5432/iro1'
-    )
-}
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,13 +27,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-7q%1&o)t4u!6fg$&8ao&7x$_6=4$ufseb201eluoq*#cdbi)l3'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-7q%1&o)t4u!6fg$&8ao&7x$_6=4$ufseb201eluoq*#cdbi)l3')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,*').split(',')
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
@@ -118,6 +111,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -126,8 +120,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "allauth.account.middleware.AccountMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
-
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -157,11 +149,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'iro1',
-        'USER': 'parham',
-        'PASSWORD': 'parhams',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME', 'iro1'),
+        'USER': os.getenv('DB_USER', 'parham'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'parhams'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
@@ -210,8 +202,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = Path(BASE_DIR,"assets")
+STATIC_URL = '/static/'
+STATIC_ROOT = Path(BASE_DIR, "assets")
+
+# اضافه کردن مسیرهای اضافی برای static files
+STATICFILES_DIRS = [
+    Path(BASE_DIR, "static"),
+]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = Path(BASE_DIR, 'media')

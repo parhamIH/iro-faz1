@@ -1,28 +1,36 @@
-from django_filters import FilterSet, RangeFilter, CharFilter, BooleanFilter, ChoiceFilter, NumberFilter, ModelMultipleChoiceFilter, Filter
+from django_filters import FilterSet, RangeFilter, CharFilter, BooleanFilter, ChoiceFilter, NumberFilter, Filter
 from django.db.models import Q
 from .models import Category, Product, Brand, Color, Specification, Tag, SpecificationGroup, Warranty, ProductOption
 
-class CommaOrMultiValueFilter(Filter):
-    def filter(self, qs, value):
-        if value is not None:
-            if isinstance(value, str):
-                value = value.split(',')
-            elif not isinstance(value, list):
-                value = [value]
-        return super().filter(qs, value)
+class CommaSeparatedModelMultipleChoiceFilter(Filter):
+    def __init__(self, *args, **kwargs):
+        self.queryset = kwargs.pop('queryset', None)
+        self.field_name = kwargs.get('field_name')
+        super().__init__(*args, **kwargs)
 
+    def filter(self, qs, value):
+        if not value:
+            return qs
+        if isinstance(value, str):
+            value = [v.strip() for v in value.split(',') if v.strip()]
+        try:
+            value = [int(v) for v in value]
+        except Exception:
+            return qs.none()
+        return qs.filter(**{f"{self.field_name}__in": value})
+
+# --- SpecificationFilter ---
 class SpecificationFilter(FilterSet):
     """
     فیلتر مشخصات فنی برای بخش مدیریت یا پنل
     """
     search = CharFilter(method='filter_search', label='جستجو')
-    categories = ModelMultipleChoiceFilter(
+    categories = CommaSeparatedModelMultipleChoiceFilter(
         field_name='categories',
         queryset=Category.objects.all(),
         label='دسته‌بندی‌ها',
-        method='filter_categories'
     )
-    group = ModelMultipleChoiceFilter(
+    group = CommaSeparatedModelMultipleChoiceFilter(
         field_name='group',
         queryset=SpecificationGroup.objects.all(),
         label='گروه‌های مشخصات'
@@ -59,6 +67,7 @@ class SpecificationFilter(FilterSet):
             "unit": ['exact', 'icontains'],
         }
 
+# --- SpecificationGroupFilter ---
 class SpecificationGroupFilter(FilterSet):
     """
     فیلتر گروه‌های مشخصات
@@ -87,6 +96,7 @@ class SpecificationGroupFilter(FilterSet):
             'name': ['exact', 'icontains'],
         }
 
+# --- WarrantyFilter ---
 class WarrantyFilter(FilterSet):
     """
     فیلتر گارانتی‌ها
@@ -121,6 +131,7 @@ class WarrantyFilter(FilterSet):
             'registration_required': ['exact'],
         }
 
+# --- ProductOptionFilter ---
 class ProductOptionFilter(FilterSet):
     """
     فیلتر ویژگی‌های محصول
@@ -167,58 +178,46 @@ class ProductOptionFilter(FilterSet):
             'discount': ['exact', 'gte', 'lte'],
         }
 
+# --- ProductFilter ---
 class ProductFilter(FilterSet):
     search = CharFilter(method='filter_search', label='جستجو')
     in_stock = BooleanFilter(method='filter_in_stock', label='موجودی')
     price_range = RangeFilter(field_name='options__option_price', label='محدوده قیمت')
     has_discount = BooleanFilter(method='filter_has_discount', label='دارای تخفیف')
     has_warranty = BooleanFilter(method='filter_has_warranty', label='دارای گارانتی')
-    tags = ModelMultipleChoiceFilter(
+    tags = CommaSeparatedModelMultipleChoiceFilter(
         field_name='tags',
         queryset=Tag.objects.all(),
         label='تگ‌ها',
-        help_text='تگ‌هایی که با این محصول مرتبط هستند',
-        method='filter_tags'
     )
-
-    brands = ModelMultipleChoiceFilter(
+    brands = CommaSeparatedModelMultipleChoiceFilter(
         field_name='brand',
         queryset=Brand.objects.all(),
-        label='برندها'
+        label='برندها',
     )
-    colors = ModelMultipleChoiceFilter(
+    colors = CommaSeparatedModelMultipleChoiceFilter(
         field_name='options__color',
         queryset=Color.objects.all(),
-        distinct=True,
-        label='رنگ‌ها'
+        label='رنگ‌ها',
     )
-    categories = ModelMultipleChoiceFilter(
+    categories = CommaSeparatedModelMultipleChoiceFilter(
         field_name='categories',
         queryset=Category.objects.all(),
         label='دسته‌بندی‌ها',
-        method='filter_categories'
     )
-    warranties = ModelMultipleChoiceFilter(
+    warranties = CommaSeparatedModelMultipleChoiceFilter(
         field_name='options__warranty',
         queryset=Warranty.objects.all(),
-        distinct=True,
-        label='گارانتی‌ها'
+        label='گارانتی‌ها',
     )
-    spec_groups = ModelMultipleChoiceFilter(
+    spec_groups = CommaSeparatedModelMultipleChoiceFilter(
         field_name='spec_values__specification__group',
         queryset=SpecificationGroup.objects.all(),
-        distinct=True,
-        label='گروه‌های مشخصات'
+        label='گروه‌های مشخصات',
     )
-
     specification = CharFilter(method='filter_specification', label='مشخصات فنی')
     spec_value = CharFilter(method='filter_specification', label='مقدار مشخصه (نام:مقدار)')
     
-
-    def filter_tags(self, queryset, name, value):
-        if not value:
-            return queryset
-        return queryset.filter(tags__name__in=value).distinct()
 
     def filter_search(self, queryset, name, value):
         if not value:
@@ -321,63 +320,34 @@ class ProductFilter(FilterSet):
             q &= Q(spec_values__int_value__lte=max_val) | Q(spec_values__decimal_value__lte=max_val)
         return queryset.filter(q).distinct()
 
-    def filter_categories(self, queryset, name, value):
-        if not value:
-            return queryset
-        # جمع‌آوری همه idهای دسته و فرزندانش
-        all_ids = set()
-        for cat in value:
-            all_ids.add(cat.id)
-            # اگر از mptt استفاده می‌کنی:
-            all_ids.update(cat.get_descendants().values_list('id', flat=True))
-        return queryset.filter(categories__in=all_ids).distinct()
-
     class Meta:
         model = Product
         fields = {
             'is_active': ['exact'],
         }
 
+# --- CategoryFilter ---
 class CategoryFilter(FilterSet):
     search = CharFilter(method='filter_search', label='جستجو')
     has_products = BooleanFilter(method='filter_has_products', label='دارای محصول')
     has_specifications = BooleanFilter(method='filter_has_specifications', label='دارای مشخصات')
-    
-    # فیلترهای برند
-    brands = ModelMultipleChoiceFilter(
+    brands = CommaSeparatedModelMultipleChoiceFilter(
         field_name='brand',
         queryset=Brand.objects.all(),
-        label='برندها'
+        label='برندها',
     )
-    
-    # فیلترهای مشخصات فنی
-    spec_name = CharFilter(field_name='spec_definitions__name', lookup_expr='icontains', label='نام مشخصه')
-    spec_data_type = ChoiceFilter(
-        field_name='spec_definitions__data_type',
-        choices=Specification.DATA_TYPE_CHOICES,
-        label='نوع داده مشخصه'
-    )
-    spec_group = ModelMultipleChoiceFilter(
+    spec_group = CommaSeparatedModelMultipleChoiceFilter(
         field_name='spec_definitions__group',
         queryset=SpecificationGroup.objects.all(),
-        label='گروه مشخصات'
+        label='گروه مشخصات',
     )
-    
-    # فیلتر برای مشخصات فنی با ID - قابل انتخاب
-    spec_definitions = ModelMultipleChoiceFilter(
+    spec_definitions = CommaSeparatedModelMultipleChoiceFilter(
+        field_name='spec_definitions',
         queryset=Specification.objects.all(),
-        method='filter_spec_definitions',
         label='مشخصات فنی (آیدی)',
-        help_text='مشخصات فنی را انتخاب کنید'
+        help_text='مشخصات فنی را انتخاب کنید',
     )
-    
-    # فیلتر برای مشخصات فنی با نام - قابل انتخاب
-    spec_names = ModelMultipleChoiceFilter(
-        queryset=Specification.objects.all(),
-        method='filter_spec_names',
-        label='مشخصات فنی (نام)',
-        help_text='نام مشخصات فنی را انتخاب کنید'
-    )
+    spec_names = CharFilter(field_name='spec_definitions__name', lookup_expr='icontains', label='مشخصات فنی (نام)')
     
     # فیلترهای مقادیر مشخصات فنی
     spec_int_value = NumberFilter(
@@ -429,17 +399,6 @@ class CategoryFilter(FilterSet):
         if value:
             return queryset.filter(spec_definitions__isnull=False).distinct()
         return queryset.filter(spec_definitions__isnull=True).distinct()
-
-    def filter_spec_definitions(self, queryset, name, value):
-        if not value:
-            return queryset
-        return queryset.filter(spec_definitions__in=value).distinct()
-
-    def filter_spec_names(self, queryset, name, value):
-        if not value:
-            return queryset
-        spec_names = [spec.name for spec in value]
-        return queryset.filter(spec_definitions__name__in=spec_names).distinct()
 
     def filter_spec_value(self, queryset, name, value):
         """

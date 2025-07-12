@@ -3,36 +3,39 @@ from django.utils.html import format_html
 from .models import *
 from mptt.admin import DraggableMPTTAdmin
 
+
 class ProductOptionInline(admin.TabularInline):
     model = ProductOption
     extra = 1
     autocomplete_fields = ['color']
     show_change_link = True
 
+
 class GalleryInline(admin.TabularInline):
     model = Gallery
     extra = 1
     readonly_fields = ['image_preview']
-    
+
     def image_preview(self, obj):
         if obj.image:
-            return format_html('<img src="{}" style="max-height: 50px;"/>', obj.image.url)
+            return format_html('<img src="{}" style="max-height: 50px;" />', obj.image.url)
         return '-'
     image_preview.short_description = 'پیش‌نمایش'
+
 
 class ProductSpecificationInline(admin.TabularInline):
     model = ProductSpecification
     extra = 1
     autocomplete_fields = ['specification']
     readonly_fields = ['get_unit']
-    
+
     def get_unit(self, obj):
         if obj.specification:
             return obj.specification.unit or '-'
         return '-'
     get_unit.short_description = 'واحد'
 
-# Inline برای رابطه ManyToMany بین Specification و Category از مدل واسطه استفاده می‌کنیم
+
 class SpecificationInline(admin.TabularInline):
     model = Specification.categories.through
     extra = 1
@@ -43,7 +46,6 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = ['title', 'get_category', 'brand', 'get_specifications_count', 'is_active']
     search_fields = ['title', 'description', 'brand__name']
     list_filter = ['category', 'brand', 'is_active']
-    # حذف filter_horizontal چون category ForeignKey است
     prepopulated_fields = {'slug': ('title',)}
     inlines = [ProductSpecificationInline, ProductOptionInline]
     list_editable = ['is_active']
@@ -71,14 +73,16 @@ class CategoryAdmin(DraggableMPTTAdmin):
         return obj.spec_definitions.count()
     get_specifications_count.short_description = 'تعداد مشخصات'
 
+
 @admin.register(ProductOption)
 class ProductOptionAdmin(admin.ModelAdmin):
-    list_display = ['product', 'color', 'option_price', 'is_active_discount', 'discount', 'quantity']
+    list_display = ['product', 'color', 'option_price', 'is_active_discount', 'discount', 'quantity', 'is_active']
     search_fields = ['product__title', 'color__name']
     list_filter = ['is_active', 'is_active_discount', 'color']
     autocomplete_fields = ['product', 'color']
     inlines = [GalleryInline]
-    list_editable = ['is_active_discount', 'discount', 'quantity']
+    list_editable = ['is_active_discount', 'discount', 'quantity', 'is_active']
+
 
 @admin.register(Gallery)
 class GalleryAdmin(admin.ModelAdmin):
@@ -90,12 +94,13 @@ class GalleryAdmin(admin.ModelAdmin):
     def product_title(self, obj):
         return obj.product.product.title
     product_title.short_description = 'محصول'
-    
+
     def image_preview(self, obj):
         if obj.image:
-            return format_html('<img src="{}" style="max-height: 50px;"/>', obj.image.url)
+            return format_html('<img src="{}" style="max-height: 50px;" />', obj.image.url)
         return '-'
     image_preview.short_description = 'پیش‌نمایش'
+
 
 @admin.register(Color)
 class ColorAdmin(admin.ModelAdmin):
@@ -109,6 +114,7 @@ class ColorAdmin(admin.ModelAdmin):
         )
     color_preview.short_description = 'رنگ'
 
+
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
     list_display = ['name', 'description', 'logo_preview']
@@ -118,9 +124,10 @@ class BrandAdmin(admin.ModelAdmin):
 
     def logo_preview(self, obj):
         if obj.logo:
-            return format_html('<img src="{}" style="max-height: 50px;"/>', obj.logo.url)
+            return format_html('<img src="{}" style="max-height: 50px;" />', obj.logo.url)
         return '-'
     logo_preview.short_description = 'لوگو'
+
 
 @admin.register(Specification)
 class SpecificationAdmin(admin.ModelAdmin):
@@ -137,6 +144,11 @@ class SpecificationAdmin(admin.ModelAdmin):
     def get_usage_count(self, obj):
         return obj.values.count()
     get_usage_count.short_description = 'تعداد استفاده'
+@admin.register(SpecificationGroup)
+class SpecificationGroupAdmin(admin.ModelAdmin):
+    list_display = ['name']  # یا هر فیلد مهمی که دارید
+    search_fields = ['name']    
+
 
 @admin.register(ProductSpecification)
 class ProductSpecificationAdmin(admin.ModelAdmin):
@@ -161,14 +173,17 @@ class ProductSpecificationAdmin(admin.ModelAdmin):
         return obj.specification.get_data_type_display()
     get_data_type.short_description = 'نوع داده'
 
+
 @admin.register(Warranty)
 class WarrantyAdmin(admin.ModelAdmin):
-    list_display = ('name',  'is_active')
+    list_display = ('name', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('name',)
+
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ['name', 'slug']
     search_fields = ['name']
     prepopulated_fields = {'slug': ('name',)}
+

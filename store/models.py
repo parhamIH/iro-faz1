@@ -133,6 +133,17 @@ class Product(models.Model):
 
 # __________________________________________ ------Specification------ _______________________________________
 
+class SpecificationGroup(models.Model):
+    name = models.CharField(max_length=100, verbose_name='نام گروه مشخصات')
+    
+    class Meta:
+        verbose_name = 'گروه مشخصات'
+        verbose_name_plural = 'گروه‌های مشخصات'
+
+    def __str__(self):
+        return self.name
+
+
 class Specification(models.Model):
     DATA_TYPE_CHOICES = [
         ('int', 'عدد صحیح'),
@@ -141,7 +152,15 @@ class Specification(models.Model):
         ('bool', 'بله/خیر'),
     ]
 
-    categories = models.ManyToManyField(Category, related_name='spec_definitions')
+    categories = models.ManyToManyField(Category, related_name='spec_definitions', verbose_name='دسته‌بندی‌ها')
+    group = models.ForeignKey(  # ← این جدید اضافه شده
+        SpecificationGroup,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='specifications',
+        verbose_name='گروه مشخصات'
+    )
     name = models.CharField(max_length=100, verbose_name='نام مشخصه')
     slug = models.SlugField(max_length=120, unique=True, allow_unicode=True, blank=True)
     data_type = models.CharField(max_length=20, choices=DATA_TYPE_CHOICES, verbose_name='نوع داده')
@@ -151,7 +170,10 @@ class Specification(models.Model):
     class Meta:
         verbose_name = 'مشخصه'
         verbose_name_plural = 'مشخصات'
-        # unique_together حذف شد چون دسته‌بندی‌ها چندبه‌چند هستند
+
+    def __str__(self):
+        return self.name
+
 
     def save(self, *args, **kwargs):
         if not self.slug:

@@ -3,169 +3,444 @@
 {% block title %}لیست فایل‌های Excel{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>
-        <i class="fas fa-list me-2"></i>
-        لیست فایل‌های Excel
-    </h2>
-    <a href="{% url 'excel_file_handling:upload' %}" class="btn btn-excel">
-        <i class="fas fa-plus me-1"></i>آپلود فایل جدید
-    </a>
-</div>
-
-{% if files %}
-    <div class="row">
-        {% for file in files %}
-            <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card h-100">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">
-                            <i class="fas fa-file-excel text-success me-1"></i>
-                            {{ file.title }}
-                        </h6>
-                        <span class="badge status-badge 
-                            {% if file.status == 'pending' %}bg-secondary
-                            {% elif file.status == 'processing' %}bg-warning
-                            {% elif file.status == 'completed' %}bg-success
-                            {% elif file.status == 'failed' %}bg-danger
-                            {% endif %}">
-                            {{ file.get_status_display }}
-                        </span>
+<!-- CSRF Token برای JavaScript -->
+{% csrf_token %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        لیست فایل‌های Excel
+                    </h4>
+                    <a href="{% url 'excel_file_handling:upload_excel' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        آپلود فایل جدید
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- فیلترها -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label">نوع فایل</label>
+                        <select class="form-select" id="fileTypeFilter">
+                            <option value="">همه انواع</option>
+                            {% for value, label in file_types %}
+                            <option value="{{ value }}" {% if current_filters.file_type == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="card-body">
-                        <div class="row mb-2">
-                            <div class="col-6">
-                                <small class="text-muted">نوع:</small>
-                                <br>
-                                <strong>{{ file.get_file_type_display }}</strong>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted">حجم:</small>
-                                <br>
-                                <strong>{{ file.get_file_size }}</strong>
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-2">
-                            <div class="col-6">
-                                <small class="text-muted">تاریخ آپلود:</small>
-                                <br>
-                                <strong>{{ file.uploaded_at|date:"Y/m/d H:i" }}</strong>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted">تعداد ردیف:</small>
-                                <br>
-                                <strong>{{ file.total_rows|default:"-" }}</strong>
-                            </div>
-                        </div>
-
-                        {% if file.status == 'completed' %}
-                            <div class="row mb-3">
-                                <div class="col-6">
-                                    <small class="text-muted">پردازش شده:</small>
-                                    <br>
-                                    <span class="text-success">{{ file.processed_rows }}</span>
-                                </div>
-                                <div class="col-6">
-                                    <small class="text-muted">خطا:</small>
-                                    <br>
-                                    <span class="text-danger">{{ file.error_rows }}</span>
-                                </div>
-                            </div>
-                        {% endif %}
-
-                        <div class="d-grid gap-2">
-                            <a href="{% url 'excel_file_handling:file_detail' file.id %}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-eye me-1"></i>مشاهده جزئیات
-                            </a>
-                            
-                            {% if file.status == 'pending' %}
-                                <button class="btn btn-success btn-sm process-btn" data-file-id="{{ file.id }}">
-                                    <i class="fas fa-play me-1"></i>شروع پردازش
-                                </button>
-                            {% elif file.status == 'processing' %}
-                                <button class="btn btn-warning btn-sm" disabled>
-                                    <i class="fas fa-spinner fa-spin me-1"></i>در حال پردازش
-                                </button>
-                            {% elif file.status == 'completed' %}
-                                <button class="btn btn-info btn-sm process-btn" data-file-id="{{ file.id }}">
-                                    <i class="fas fa-redo me-1"></i>پردازش مجدد
-                                </button>
-                            {% elif file.status == 'failed' %}
-                                <button class="btn btn-warning btn-sm process-btn" data-file-id="{{ file.id }}">
-                                    <i class="fas fa-redo me-1"></i>تلاش مجدد
-                                </button>
-                            {% endif %}
-                        </div>
+                    <div class="col-md-3">
+                        <label class="form-label">وضعیت</label>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">همه وضعیت‌ها</option>
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if current_filters.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="card-footer">
-                        <div class="d-flex justify-content-between">
-                            <small class="text-muted">{{ file.get_file_name }}</small>
-                            <a href="{% url 'excel_file_handling:delete_file' file.id %}" class="btn btn-outline-danger btn-sm">
-                                <i class="fas fa-trash"></i>
-                            </a>
+                    <div class="col-md-4">
+                        <label class="form-label">جستجو</label>
+                        <input type="text" class="form-control" id="searchInput" 
+                               placeholder="جستجو در عنوان یا نام فایل..." 
+                               value="{{ current_filters.search }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button class="btn btn-outline-secondary" id="clearFilters">
+                                <i class="fas fa-times me-1"></i>
+                                پاک کردن
+                            </button>
                         </div>
                     </div>
                 </div>
+
+                <!-- لیست فایل‌ها -->
+                {% if page_obj %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAll" class="form-check-input">
+                                    </th>
+                                    <th>عنوان</th>
+                                    <th>نوع فایل</th>
+                                    <th>وضعیت</th>
+                                    <th>آمار</th>
+                                    <th>تاریخ آپلود</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for file in page_obj %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input file-checkbox" value="{{ file.id }}">
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-file-excel text-primary me-2"></i>
+                                            <div>
+                                                <h6 class="mb-0">{{ file.title }}</h6>
+                                                <small class="text-muted">{{ file.get_file_name }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ file.get_file_type_display }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-{{ file.status }}">
+                                            {{ file.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="small">
+                                            <div>کل: {{ file.total_rows }}</div>
+                                            <div>پردازش شده: {{ file.processed_rows }}</div>
+                                            <div>خطا: {{ file.error_rows }}</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="small">
+                                            <div>{{ file.uploaded_at|date:"Y/m/d" }}</div>
+                                            <div class="text-muted">{{ file.uploaded_at|date:"H:i" }}</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'excel_file_handling:file_detail' file.id %}" 
+                                               class="btn btn-outline-primary" 
+                                               data-bs-toggle="tooltip" 
+                                               title="مشاهده جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            
+                                            {% if file.status == 'pending' %}
+                                            <a href="{% url 'excel_file_handling:process_file' file.id %}" 
+                                               class="btn btn-outline-success" 
+                                               data-bs-toggle="tooltip" 
+                                               title="پردازش فایل">
+                                                <i class="fas fa-play"></i>
+                                            </a>
+                                            {% endif %}
+                                            
+                                            <a href="{% url 'excel_file_handling:preview_file' file.id %}" 
+                                               class="btn btn-outline-info" 
+                                               data-bs-toggle="tooltip" 
+                                               title="پیش‌نمایش">
+                                                <i class="fas fa-search"></i>
+                                            </a>
+                                            
+                                            <a href="{% url 'excel_file_handling:delete_file' file.id %}" 
+                                               class="btn btn-outline-danger" 
+                                               data-bs-toggle="tooltip" 
+                                               title="حذف فایل">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- عملیات گروهی -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <span class="me-3">عملیات گروهی:</span>
+                                <select class="form-select form-select-sm me-2" id="bulkAction" style="width: auto;">
+                                    <option value="">انتخاب کنید...</option>
+                                    <option value="process">پردازش فایل‌های انتخاب شده</option>
+                                    <option value="delete">حذف فایل‌های انتخاب شده</option>
+                                    <option value="download_logs">دانلود لاگ‌ها</option>
+                                </select>
+                                <button class="btn btn-sm btn-primary" id="executeBulkAction">
+                                    <i class="fas fa-play me-1"></i>
+                                    اجرا
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <small class="text-muted">
+                                نمایش {{ page_obj.start_index }} تا {{ page_obj.end_index }} از {{ page_obj.paginator.count }} فایل
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- صفحه‌بندی -->
+                    {% if page_obj.has_other_pages %}
+                    <nav aria-label="صفحه‌بندی" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_filters.file_type %}&file_type={{ current_filters.file_type }}{% endif %}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if current_filters.file_type %}&file_type={{ current_filters.file_type }}{% endif %}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_filters.file_type %}&file_type={{ current_filters.file_type }}{% endif %}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">فایلی یافت نشد</h5>
+                        <p class="text-muted">هنوز هیچ فایل Excel آپلود نشده است.</p>
+                        <a href="{% url 'excel_file_handling:upload_excel' %}" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i>
+                            آپلود اولین فایل
+                        </a>
+                    </div>
+                {% endif %}
             </div>
-        {% endfor %}
+        </div>
     </div>
-{% else %}
-    <div class="text-center py-5">
-        <i class="fas fa-file-excel fa-3x text-muted mb-3"></i>
-        <h4 class="text-muted">هیچ فایل Excel‌ای یافت نشد</h4>
-        <p class="text-muted">برای شروع، یک فایل Excel آپلود کنید.</p>
-        <a href="{% url 'excel_file_handling:upload' %}" class="btn btn-excel">
-            <i class="fas fa-upload me-1"></i>آپلود فایل جدید
-        </a>
-    </div>
-{% endif %}
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    // تنظیم CSRF token برای تمام درخواست‌های AJAX
-    $.ajaxSetup({
-        beforeSend: function(xhr, settings) {
-            if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
-                // فقط برای درخواست‌های نسبی CSRF token اضافه کن
-                xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
-            }
+    // بررسی وجود عناصر قبل از اجرای کد
+    document.addEventListener('DOMContentLoaded', function() {
+        // بررسی وجود عناصر ضروری
+        const requiredElements = [
+            'selectAll',
+            'executeBulkAction', 
+            'bulkAction',
+            'fileTypeFilter',
+            'statusFilter',
+            'searchInput',
+            'clearFilters'
+        ];
+        
+        const missingElements = requiredElements.filter(id => !document.getElementById(id));
+        if (missingElements.length > 0) {
+            console.warn('عناصر زیر در صفحه یافت نشدند:', missingElements);
         }
+        
+        // ادامه اجرای کد
+        initializeEventListeners();
     });
+    
+    function initializeEventListeners() {
+    // انتخاب همه
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.file-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBulkActionButton();
+        });
+    }
 
-    $('.process-btn').click(function() {
-        var fileId = $(this).data('file-id');
-        var btn = $(this);
-        
-        // تغییر وضعیت دکمه
-        btn.prop('disabled', true);
-        btn.html('<i class="fas fa-spinner fa-spin me-1"></i>در حال پردازش...');
-        
-        // ارسال درخواست AJAX
-        $.ajax({
-            url: '/excel/file/' + fileId + '/process-ajax/',
-            method: 'POST',
-            success: function(response) {
-                if (response.status === 'success') {
-                    // بروزرسانی صفحه بعد از 2 ثانیه
-                    setTimeout(function() {
-                        location.reload();
-                    }, 2000);
-                } else {
-                    alert(response.message);
-                    btn.prop('disabled', false);
-                    btn.html('<i class="fas fa-play me-1"></i>شروع پردازش');
-                }
-            },
-            error: function() {
-                alert('خطا در ارتباط با سرور');
-                btn.prop('disabled', false);
-                btn.html('<i class="fas fa-play me-1"></i>شروع پردازش');
+    // انتخاب تک تک
+    document.querySelectorAll('.file-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateBulkActionButton();
+            
+            // بررسی انتخاب همه
+            const allCheckboxes = document.querySelectorAll('.file-checkbox');
+            const checkedCheckboxes = document.querySelectorAll('.file-checkbox:checked');
+            const selectAllCheckbox = document.getElementById('selectAll');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = allCheckboxes.length === checkedCheckboxes.length;
             }
         });
     });
-});
+
+    // به‌روزرسانی دکمه عملیات گروهی
+    function updateBulkActionButton() {
+        const checkedBoxes = document.querySelectorAll('.file-checkbox:checked');
+        const bulkActionBtn = document.getElementById('executeBulkAction');
+        
+        if (bulkActionBtn) {
+            if (checkedBoxes.length > 0) {
+                bulkActionBtn.disabled = false;
+                bulkActionBtn.innerHTML = `<i class="fas fa-play me-1"></i>اجرا (${checkedBoxes.length})`;
+            } else {
+                bulkActionBtn.disabled = true;
+                bulkActionBtn.innerHTML = '<i class="fas fa-play me-1"></i>اجرا';
+            }
+        }
+    }
+
+    // اجرای عملیات گروهی
+    const executeBulkActionBtn = document.getElementById('executeBulkAction');
+    if (executeBulkActionBtn) {
+        executeBulkActionBtn.addEventListener('click', function() {
+        const bulkActionSelect = document.getElementById('bulkAction');
+        const action = bulkActionSelect ? bulkActionSelect.value : '';
+        const checkedBoxes = document.querySelectorAll('.file-checkbox:checked');
+        
+        if (!action) {
+            alert('لطفاً نوع عملیات را انتخاب کنید');
+            return;
+        }
+        
+        if (checkedBoxes.length === 0) {
+            alert('لطفاً حداقل یک فایل را انتخاب کنید');
+            return;
+        }
+        
+        const fileIds = Array.from(checkedBoxes).map(cb => cb.value);
+        
+        if (action === 'delete') {
+            if (confirm(`آیا از حذف ${checkedBoxes.length} فایل اطمینان دارید؟`)) {
+                // ارسال درخواست حذف
+                fileIds.forEach(id => {
+                    fetch(`/excel/files/${id}/delete/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCSRFToken(),
+                        }
+                    }).then(() => {
+                        location.reload();
+                    }).catch(error => {
+                        console.error('خطا در حذف فایل:', error);
+                        alert('خطا در حذف فایل');
+                    });
+                });
+            }
+        } else if (action === 'process') {
+            // پردازش فایل‌ها
+            fileIds.forEach(id => {
+                fetch(`/excel/files/${id}/process/`, {
+                    method: 'GET'
+                }).then(() => {
+                    location.reload();
+                }).catch(error => {
+                    console.error('خطا در پردازش فایل:', error);
+                    alert('خطا در پردازش فایل');
+                });
+            });
+        }
+    });
+    }
+
+    // تابع برای دریافت CSRF token
+    function getCSRFToken() {
+        const token = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (token) {
+            return token.value;
+        }
+        
+        // اگر token در صفحه نباشد، از cookie بخوانیم
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // فیلترها
+    function applyFilters() {
+        const fileTypeFilter = document.getElementById('fileTypeFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const searchInput = document.getElementById('searchInput');
+        
+        const fileType = fileTypeFilter ? fileTypeFilter.value : '';
+        const status = statusFilter ? statusFilter.value : '';
+        const search = searchInput ? searchInput.value : '';
+        
+        let url = window.location.pathname + '?';
+        const params = [];
+        
+        if (fileType) params.push(`file_type=${fileType}`);
+        if (status) params.push(`status=${status}`);
+        if (search) params.push(`search=${encodeURIComponent(search)}`);
+        
+        if (params.length > 0) {
+            url += params.join('&');
+        }
+        
+        window.location.href = url;
+    }
+
+    const fileTypeFilter = document.getElementById('fileTypeFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const searchInput = document.getElementById('searchInput');
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    
+    if (fileTypeFilter) {
+        fileTypeFilter.addEventListener('change', applyFilters);
+    }
+    
+    if (statusFilter) {
+        statusFilter.addEventListener('change', applyFilters);
+    }
+    
+    // جستجو با تاخیر
+    let searchTimeout;
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(applyFilters, 500);
+        });
+    }
+
+    // پاک کردن فیلترها
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', function() {
+            window.location.href = window.location.pathname;
+        });
+    }
+
+    // تایید حذف
+    document.querySelectorAll('a[href*="/delete/"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (!confirm('آیا از حذف این فایل اطمینان دارید؟')) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    // نمایش tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+    }
 </script>
 {% endblock %} 

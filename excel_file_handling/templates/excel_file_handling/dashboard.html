@@ -1,0 +1,342 @@
+{% extends 'excel_file_handling/base.html' %}
+
+{% block title %}داشبورد - مدیریت فایل‌های Excel{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    داشبورد مدیریت فایل‌های Excel
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    خوش آمدید! این داشبورد آمار کلی سیستم و وضعیت فایل‌های Excel شما را نمایش می‌دهد.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- آمار کلی -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="stats-card bg-primary text-white">
+            <div class="number">{{ total_files }}</div>
+            <div class="label">کل فایل‌ها</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card bg-warning text-dark">
+            <div class="number">{{ pending_files }}</div>
+            <div class="label">در انتظار پردازش</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card bg-success text-white">
+            <div class="number">{{ completed_files }}</div>
+            <div class="label">پردازش شده</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card bg-danger text-white">
+            <div class="number">{{ failed_files }}</div>
+            <div class="label">ناموفق</div>
+        </div>
+    </div>
+</div>
+
+<!-- آمار مدل‌ها -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-database me-2"></i>
+                    آمار مدل‌های سیستم
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-2 col-sm-4 col-6 mb-3">
+                        <div class="text-center">
+                            <div class="h4 text-primary">{{ model_stats.products }}</div>
+                            <small class="text-muted">محصولات</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-4 col-6 mb-3">
+                        <div class="text-center">
+                            <div class="h4 text-success">{{ model_stats.categories }}</div>
+                            <small class="text-muted">دسته‌بندی‌ها</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-4 col-6 mb-3">
+                        <div class="text-center">
+                            <div class="h4 text-info">{{ model_stats.brands }}</div>
+                            <small class="text-muted">برندها</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-4 col-6 mb-3">
+                        <div class="text-center">
+                            <div class="h4 text-warning">{{ model_stats.specifications }}</div>
+                            <small class="text-muted">مشخصات</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-4 col-6 mb-3">
+                        <div class="text-center">
+                            <div class="h4 text-danger">{{ model_stats.colors }}</div>
+                            <small class="text-muted">رنگ‌ها</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-4 col-6 mb-3">
+                        <div class="text-center">
+                            <div class="h4 text-secondary">{{ model_stats.warranties }}</div>
+                            <small class="text-muted">گارانتی‌ها</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- آمار بر اساس نوع فایل -->
+{% if file_type_stats %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    آمار بر اساس نوع فایل
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for label, count in file_type_stats.items %}
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="d-flex align-items-center p-3 border rounded">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-file-excel text-primary fs-4"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="h6 mb-0">{{ count }}</div>
+                                <small class="text-muted">{{ label }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- عملیات سریع -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    عملیات سریع
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'excel_file_handling:upload_excel' %}" class="btn btn-primary w-100">
+                            <i class="fas fa-upload me-2"></i>
+                            آپلود فایل جدید
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'excel_file_handling:file_list' %}" class="btn btn-info w-100">
+                            <i class="fas fa-list me-2"></i>
+                            مشاهده همه فایل‌ها
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'excel_file_handling:download_template' 'products' %}" class="btn btn-success w-100">
+                            <i class="fas fa-download me-2"></i>
+                            دانلود قالب محصولات
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'admin:excel_file_handling_excelfile_changelist' %}" class="btn btn-secondary w-100">
+                            <i class="fas fa-cog me-2"></i>
+                            مدیریت پیشرفته
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- آخرین فایل‌ها -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    آخرین فایل‌های آپلود شده
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_files %}
+                    <div class="list-group list-group-flush">
+                        {% for file in recent_files %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ file.title }}</h6>
+                                <small class="text-muted">
+                                    <i class="fas fa-file-excel me-1"></i>
+                                    {{ file.get_file_type_display }}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <span class="status-badge status-{{ file.status }}">
+                                    {{ file.get_status_display }}
+                                </span>
+                                <br>
+                                <small class="text-muted">{{ file.uploaded_at|date:"Y/m/d H:i" }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-3">
+                        <a href="{% url 'excel_file_handling:file_list' %}" class="btn btn-outline-primary btn-sm">
+                            مشاهده همه
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-3">
+                        <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                        هنوز فایلی آپلود نشده است
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list-alt me-2"></i>
+                    آخرین لاگ‌های سیستم
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_logs %}
+                    <div class="list-group list-group-flush">
+                        {% for log in recent_logs %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fas fa-{% if log.level == 'success' %}check-circle text-success{% elif log.level == 'error' %}exclamation-triangle text-danger{% elif log.level == 'warning' %}exclamation-circle text-warning{% else %}info-circle text-info{% endif %} me-2"></i>
+                                        <small class="text-muted">{{ log.created_at|date:"Y/m/d H:i" }}</small>
+                                    </div>
+                                    <p class="mb-1 small">{{ log.message|truncatechars:80 }}</p>
+                                    {% if log.row_number %}
+                                    <small class="text-muted">ردیف: {{ log.row_number }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-3">
+                        <i class="fas fa-clipboard-list fa-2x mb-2"></i><br>
+                        لاگی برای نمایش وجود ندارد
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- راهنمای استفاده -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-question-circle me-2"></i>
+                    راهنمای استفاده
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-upload fa-2x text-primary mb-2"></i>
+                            <h6>1. آپلود فایل</h6>
+                            <p class="small text-muted">فایل Excel خود را انتخاب کرده و نوع آن را مشخص کنید</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-cogs fa-2x text-warning mb-2"></i>
+                            <h6>2. پردازش خودکار</h6>
+                            <p class="small text-muted">سیستم به طور خودکار داده‌ها را پردازش و اعتبارسنجی می‌کند</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                            <h6>3. نتیجه</h6>
+                            <p class="small text-muted">نتایج پردازش و لاگ‌های کامل را مشاهده کنید</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-lightbulb me-2"></i>نکته مهم:</h6>
+                    <p class="mb-0">
+                        برای بهترین نتیجه، ابتدا مدل‌های پایه (برندها، دسته‌بندی‌ها، مشخصات) را آپلود کنید، 
+                        سپس محصولات و سایر مدل‌های وابسته را اضافه کنید.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // به‌روزرسانی خودکار آمار
+    function updateStats() {
+        // اینجا می‌توانید AJAX call برای به‌روزرسانی آمار اضافه کنید
+    }
+    
+    // به‌روزرسانی هر 30 ثانیه
+    setInterval(updateStats, 30000);
+    
+    // انیمیشن برای کارت‌های آمار
+    document.addEventListener('DOMContentLoaded', function() {
+        const statsCards = document.querySelectorAll('.stats-card');
+        statsCards.forEach((card, index) => {
+            setTimeout(() => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'all 0.5s ease';
+                
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 100);
+            }, index * 100);
+        });
+    });
+</script>
+{% endblock %} 

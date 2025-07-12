@@ -11,8 +11,14 @@ class ExcelFile(models.Model):
         ('categories', 'دسته‌بندی‌ها'),
         ('brands', 'برندها'),
         ('specifications', 'مشخصات'),
+        ('specification_groups', 'گروه‌های مشخصات'),
         ('colors', 'رنگ‌ها'),
         ('warranties', 'گارانتی‌ها'),
+        ('tags', 'تگ‌ها'),
+        ('product_options', 'ویژگی‌های محصول'),
+        ('product_specifications', 'مقادیر مشخصات محصول'),
+        ('articles', 'مقالات'),
+        ('article_categories', 'دسته‌بندی‌های مقاله'),
     ]
     
     STATUS_CHOICES = [
@@ -29,7 +35,7 @@ class ExcelFile(models.Model):
         verbose_name='فایل Excel'
     )
     file_type = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=FILE_TYPE_CHOICES,
         verbose_name='نوع فایل'
     )

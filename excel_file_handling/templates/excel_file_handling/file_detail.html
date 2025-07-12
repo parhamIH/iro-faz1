@@ -1,157 +1,266 @@
 {% extends 'excel_file_handling/base.html' %}
-{% load excel_filters %}
 
-{% block title %}جزئیات فایل {{ excel_file.title }}{% endblock %}
+{% block title %}جزئیات فایل - {{ excel_file.title }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>
-        <i class="fas fa-file-excel me-2"></i>
-        {{ excel_file.title }}
-    </h2>
-    <div>
-        <a href="{% url 'excel_file_handling:root' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-right me-1"></i>بازگشت
-        </a>
-        {% if excel_file.status != 'processing' %}
-            <a href="{% url 'excel_file_handling:process_file' excel_file.id %}" class="btn btn-success">
-                <i class="fas fa-play me-1"></i>پردازش
-            </a>
-        {% endif %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-file-excel me-2"></i>
+                        {{ excel_file.title }}
+                    </h4>
+                    <div class="btn-group">
+                        <a href="{% url 'excel_file_handling:file_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-right me-1"></i>
+                            بازگشت
+                        </a>
+                        {% if excel_file.status == 'pending' %}
+                        <a href="{% url 'excel_file_handling:process_file' excel_file.id %}" class="btn btn-success">
+                            <i class="fas fa-play me-1"></i>
+                            پردازش فایل
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'excel_file_handling:preview_file' excel_file.id %}" class="btn btn-info">
+                            <i class="fas fa-search me-1"></i>
+                            پیش‌نمایش
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- اطلاعات فایل -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            اطلاعات فایل
+                        </h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td width="150"><strong>عنوان:</strong></td>
+                                <td>{{ excel_file.title }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>نام فایل:</strong></td>
+                                <td>{{ excel_file.get_file_name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>نوع فایل:</strong></td>
+                                <td><span class="badge bg-info">{{ excel_file.get_file_type_display }}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>وضعیت:</strong></td>
+                                <td><span class="status-badge status-{{ excel_file.status }}">{{ excel_file.get_status_display }}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>حجم فایل:</strong></td>
+                                <td>{{ excel_file.get_file_size }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            آمار پردازش
+                        </h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td width="150"><strong>تاریخ آپلود:</strong></td>
+                                <td>{{ excel_file.uploaded_at|date:"Y/m/d H:i" }}</td>
+                            </tr>
+                            {% if excel_file.processed_at %}
+                            <tr>
+                                <td><strong>تاریخ پردازش:</strong></td>
+                                <td>{{ excel_file.processed_at|date:"Y/m/d H:i" }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td><strong>تعداد کل ردیف‌ها:</strong></td>
+                                <td>{{ excel_file.total_rows }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ردیف‌های پردازش شده:</strong></td>
+                                <td>
+                                    <span class="text-success">{{ excel_file.processed_rows }}</span>
+                                    {% if excel_file.total_rows > 0 %}
+                                    <small class="text-muted">
+                                        ({{ excel_file.processed_rows|floatformat:1 }}%)
+                                    </small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>ردیف‌های دارای خطا:</strong></td>
+                                <td>
+                                    <span class="text-danger">{{ excel_file.error_rows }}</span>
+                                    {% if excel_file.total_rows > 0 %}
+                                    <small class="text-muted">
+                                        ({{ excel_file.error_rows|floatformat:1 }}%)
+                                    </small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- نوار پیشرفت -->
+                {% if excel_file.total_rows > 0 %}
+                <div class="mt-4">
+                    <h6 class="text-primary mb-2">
+                        <i class="fas fa-tasks me-2"></i>
+                        پیشرفت پردازش
+                    </h6>
+                    <div class="progress mb-2" style="height: 20px;">
+                        {% if excel_file.status == 'completed' %}
+                        <div class="progress-bar bg-success" style="width: 100%">
+                            <span class="small">100% تکمیل شده</span>
+                        </div>
+                        {% elif excel_file.status == 'failed' %}
+                        <div class="progress-bar bg-danger" style="width: 100%">
+                            <span class="small">پردازش ناموفق</span>
+                        </div>
+                        {% else %}
+                        <div class="progress-bar bg-warning" style="width: {{ excel_file.processed_rows|floatformat:1 }}%">
+                            <span class="small">{{ excel_file.processed_rows|floatformat:1 }}%</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>پردازش شده: {{ excel_file.processed_rows }}</span>
+                        <span>خطا: {{ excel_file.error_rows }}</span>
+                        <span>کل: {{ excel_file.total_rows }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="row">
-    <!-- اطلاعات فایل -->
-    <div class="col-md-4">
+<!-- آمار لاگ‌ها -->
+{% if log_stats %}
+<div class="row mt-4">
+    <div class="col-12">
         <div class="card">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-info-circle me-2"></i>
-                    اطلاعات فایل
+                    <i class="fas fa-list-alt me-2"></i>
+                    آمار لاگ‌ها
                 </h5>
             </div>
             <div class="card-body">
-                <table class="table table-borderless">
-                    <tr>
-                        <td><strong>عنوان:</strong></td>
-                        <td>{{ excel_file.title }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>نوع:</strong></td>
-                        <td>{{ excel_file.get_file_type_display }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>وضعیت:</strong></td>
-                        <td>
-                            <span class="badge 
-                                {% if excel_file.status == 'pending' %}bg-secondary
-                                {% elif excel_file.status == 'processing' %}bg-warning
-                                {% elif excel_file.status == 'completed' %}bg-success
-                                {% elif excel_file.status == 'failed' %}bg-danger
-                                {% endif %}">
-                                {{ excel_file.get_status_display }}
-                            </span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><strong>نام فایل:</strong></td>
-                        <td>{{ excel_file.get_file_name }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>حجم:</strong></td>
-                        <td>{{ excel_file.get_file_size }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>تاریخ آپلود:</strong></td>
-                        <td>{{ excel_file.uploaded_at|date:"Y/m/d H:i:s" }}</td>
-                    </tr>
-                    {% if excel_file.processed_at %}
-                        <tr>
-                            <td><strong>تاریخ پردازش:</strong></td>
-                            <td>{{ excel_file.processed_at|date:"Y/m/d H:i:s" }}</td>
-                        </tr>
-                    {% endif %}
-                </table>
-            </div>
-        </div>
-
-        <!-- آمار پردازش -->
-        {% if excel_file.total_rows > 0 %}
-            <div class="card mt-3">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-chart-bar me-2"></i>
-                        آمار پردازش
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-4">
-                            <h4 class="text-primary">{{ excel_file.total_rows }}</h4>
-                            <small class="text-muted">کل ردیف‌ها</small>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h3 text-primary">{{ log_stats.total }}</div>
+                            <small class="text-muted">کل لاگ‌ها</small>
                         </div>
-                        <div class="col-4">
-                            <h4 class="text-success">{{ excel_file.processed_rows }}</h4>
-                            <small class="text-muted">پردازش شده</small>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h3 text-success">{{ log_stats.success }}</div>
+                            <small class="text-muted">موفق</small>
                         </div>
-                        <div class="col-4">
-                            <h4 class="text-danger">{{ excel_file.error_rows }}</h4>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h3 text-warning">{{ log_stats.warning }}</div>
+                            <small class="text-muted">هشدار</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h3 text-danger">{{ log_stats.error }}</div>
                             <small class="text-muted">خطا</small>
                         </div>
                     </div>
-                    
-                    {% if excel_file.total_rows > 0 %}
-                        <div class="progress mt-3">
-                            <div class="progress-bar bg-success" style="width: {{ excel_file.processed_rows|percentage:excel_file.total_rows }}%">
-                                {{ excel_file.processed_rows|percentage:excel_file.total_rows }}%
-                            </div>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
-        {% endif %}
+        </div>
     </div>
+</div>
+{% endif %}
 
-    <!-- لاگ‌های پردازش -->
-    <div class="col-md-8">
+<!-- لاگ‌های پردازش -->
+<div class="row mt-4">
+    <div class="col-12">
         <div class="card">
-            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="fas fa-list-alt me-2"></i>
-                    لاگ‌های پردازش
-                </h5>
-                <span class="badge bg-light text-dark">{{ logs.count }} پیام</span>
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>
+                        لاگ‌های پردازش
+                    </h5>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" id="filterAll">همه</button>
+                        <button class="btn btn-outline-success" id="filterSuccess">موفق</button>
+                        <button class="btn btn-outline-warning" id="filterWarning">هشدار</button>
+                        <button class="btn btn-outline-danger" id="filterError">خطا</button>
+                    </div>
+                </div>
             </div>
-            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+            <div class="card-body">
                 {% if logs %}
-                    {% for log in logs %}
-                        <div class="log-item log-{{ log.level }}">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center mb-1">
-                                        <span class="badge 
-                                            {% if log.level == 'info' %}bg-info
-                                            {% elif log.level == 'success' %}bg-success
-                                            {% elif log.level == 'warning' %}bg-warning
-                                            {% elif log.level == 'error' %}bg-danger
-                                            {% endif %} me-2">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="logsTable">
+                            <thead>
+                                <tr>
+                                    <th>سطح</th>
+                                    <th>پیام</th>
+                                    <th>ردیف</th>
+                                    <th>تاریخ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs %}
+                                <tr class="log-row log-{{ log.level }}">
+                                    <td>
+                                        <span class="badge bg-{% if log.level == 'success' %}success{% elif log.level == 'error' %}danger{% elif log.level == 'warning' %}warning{% else %}info{% endif %}">
                                             {{ log.get_level_display }}
                                         </span>
+                                    </td>
+                                    <td>
+                                        <div class="log-message">
+                                            {{ log.message }}
+                                        </div>
+                                    </td>
+                                    <td>
                                         {% if log.row_number %}
-                                            <small class="text-muted">ردیف {{ log.row_number }}</small>
+                                        <span class="badge bg-secondary">{{ log.row_number }}</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
                                         {% endif %}
-                                    </div>
-                                    <p class="mb-1">{{ log.message }}</p>
-                                    <small class="text-muted">{{ log.created_at|date:"Y/m/d H:i:s" }}</small>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ log.created_at|date:"Y/m/d H:i:s" }}</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if logs|length >= 100 %}
+                    <div class="text-center mt-3">
+                        <p class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            فقط 100 لاگ آخر نمایش داده شده است
+                        </p>
+                        <a href="{% url 'admin:excel_file_handling_excelimportlog_changelist' %}?excel_file__id__exact={{ excel_file.id }}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-external-link-alt me-1"></i>
+                            مشاهده همه لاگ‌ها
+                        </a>
+                    </div>
+                    {% endif %}
                 {% else %}
                     <div class="text-center py-4">
-                        <i class="fas fa-info-circle fa-2x text-muted mb-3"></i>
-                        <p class="text-muted">هنوز لاگی ثبت نشده است.</p>
+                        <i class="fas fa-clipboard-list fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">هنوز لاگی برای این فایل ثبت نشده است</p>
                     </div>
                 {% endif %}
             </div>
@@ -159,35 +268,41 @@
     </div>
 </div>
 
-<!-- دکمه‌های عملیات -->
+<!-- عملیات -->
 <div class="row mt-4">
     <div class="col-12">
         <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>
+                    عملیات
+                </h5>
+            </div>
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <a href="{% url 'excel_file_handling:delete_file' excel_file.id %}" class="btn btn-outline-danger">
-                            <i class="fas fa-trash me-1"></i>حذف فایل
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'excel_file_handling:file_list' %}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-arrow-right me-2"></i>
+                            بازگشت به لیست
                         </a>
                     </div>
-                    <div>
-                        {% if excel_file.status == 'pending' %}
-                            <button class="btn btn-success process-btn" data-file-id="{{ excel_file.id }}">
-                                <i class="fas fa-play me-1"></i>شروع پردازش
-                            </button>
-                        {% elif excel_file.status == 'processing' %}
-                            <button class="btn btn-warning" disabled>
-                                <i class="fas fa-spinner fa-spin me-1"></i>در حال پردازش
-                            </button>
-                        {% elif excel_file.status == 'completed' %}
-                            <button class="btn btn-info process-btn" data-file-id="{{ excel_file.id }}">
-                                <i class="fas fa-redo me-1"></i>پردازش مجدد
-                            </button>
-                        {% elif excel_file.status == 'failed' %}
-                            <button class="btn btn-warning process-btn" data-file-id="{{ excel_file.id }}">
-                                <i class="fas fa-redo me-1"></i>تلاش مجدد
-                            </button>
-                        {% endif %}
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'excel_file_handling:upload_excel' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-upload me-2"></i>
+                            آپلود فایل جدید
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'excel_file_handling:preview_file' excel_file.id %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-search me-2"></i>
+                            پیش‌نمایش فایل
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'excel_file_handling:delete_file' excel_file.id %}" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-trash me-2"></i>
+                            حذف فایل
+                        </a>
                     </div>
                 </div>
             </div>
@@ -198,66 +313,78 @@
 
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    // تنظیم CSRF token برای تمام درخواست‌های AJAX
-    $.ajaxSetup({
-        beforeSend: function(xhr, settings) {
-            if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
-                // فقط برای درخواست‌های نسبی CSRF token اضافه کن
-                xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
-            }
-        }
+    // فیلتر کردن لاگ‌ها
+    document.getElementById('filterAll').addEventListener('click', function() {
+        showAllLogs();
+        updateFilterButtons(this);
     });
-
-    $('.process-btn').click(function() {
-        var fileId = $(this).data('file-id');
-        var btn = $(this);
-        
-        // تغییر وضعیت دکمه
-        btn.prop('disabled', true);
-        btn.html('<i class="fas fa-spinner fa-spin me-1"></i>در حال پردازش...');
-        
-        // ارسال درخواست AJAX
-        $.ajax({
-            url: '/excel/file/' + fileId + '/process-ajax/',
-            method: 'POST',
-            success: function(response) {
-                if (response.status === 'success') {
-                    // بروزرسانی صفحه بعد از 2 ثانیه
-                    setTimeout(function() {
-                        location.reload();
-                    }, 2000);
-                } else {
-                    alert(response.message);
-                    btn.prop('disabled', false);
-                    btn.html('<i class="fas fa-play me-1"></i>شروع پردازش');
-                }
-            },
-            error: function() {
-                alert('خطا در ارتباط با سرور');
-                btn.prop('disabled', false);
-                btn.html('<i class="fas fa-play me-1"></i>شروع پردازش');
+    
+    document.getElementById('filterSuccess').addEventListener('click', function() {
+        filterLogs('success');
+        updateFilterButtons(this);
+    });
+    
+    document.getElementById('filterWarning').addEventListener('click', function() {
+        filterLogs('warning');
+        updateFilterButtons(this);
+    });
+    
+    document.getElementById('filterError').addEventListener('click', function() {
+        filterLogs('error');
+        updateFilterButtons(this);
+    });
+    
+    function filterLogs(level) {
+        const rows = document.querySelectorAll('.log-row');
+        rows.forEach(row => {
+            if (row.classList.contains(`log-${level}`)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
             }
         });
-    });
-
-    // بروزرسانی خودکار وضعیت اگر در حال پردازش است
-    {% if excel_file.status == 'processing' %}
-        function updateStatus() {
-            $.ajax({
-                url: '/excel/file/{{ excel_file.id }}/status/',
-                method: 'GET',
-                success: function(response) {
-                    if (response.status !== 'processing') {
-                        location.reload();
-                    }
-                }
-            });
-        }
+    }
+    
+    function showAllLogs() {
+        const rows = document.querySelectorAll('.log-row');
+        rows.forEach(row => {
+            row.style.display = '';
+        });
+    }
+    
+    function updateFilterButtons(activeButton) {
+        // حذف کلاس active از همه دکمه‌ها
+        document.querySelectorAll('#filterAll, #filterSuccess, #filterWarning, #filterError').forEach(btn => {
+            btn.classList.remove('active');
+        });
         
-        // بروزرسانی هر 5 ثانیه
-        setInterval(updateStatus, 5000);
-    {% endif %}
-});
+        // اضافه کردن کلاس active به دکمه فعال
+        activeButton.classList.add('active');
+    }
+    
+    // نمایش tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+    
+    // انیمیشن برای کارت‌ها
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.card');
+        cards.forEach((card, index) => {
+            setTimeout(() => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'all 0.5s ease';
+                
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 100);
+            }, index * 100);
+        });
+    });
 </script>
 {% endblock %} 

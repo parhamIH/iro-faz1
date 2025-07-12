@@ -82,12 +82,12 @@ class CategoryAdmin(DraggableMPTTAdmin):
     get_specifications_count.short_description = 'تعداد مشخصات'
 @admin.register(ProductOption)
 class ProductOptionAdmin(admin.ModelAdmin):
-    list_display = ['product', 'color', 'option_price', 'is_active_discount', 'discount', 'quantity']
+    list_display = ['product', 'color', 'option_price', 'is_active_discount', 'discount', 'quantity', 'is_active']
     search_fields = ['product__title', 'color__name']
     list_filter = ['is_active', 'is_active_discount', 'color']
     autocomplete_fields = ['product', 'color']
     inlines = [GalleryInline]
-    list_editable = ['is_active_discount', 'discount', 'quantity']
+    list_editable = ['is_active_discount', 'discount', 'quantity', 'is_active']
 
 @admin.register(Gallery)
 class GalleryAdmin(admin.ModelAdmin):
@@ -133,16 +133,25 @@ class BrandAdmin(admin.ModelAdmin):
 
 @admin.register(Specification)
 class SpecificationAdmin(admin.ModelAdmin):
-    list_display = ['name', 'category', 'data_type', 'unit', 'get_usage_count']
-    list_filter = ['category', 'data_type']
-    search_fields = ['name', 'category__name']
+    list_display = ['name', 'get_categories', 'data_type', 'unit', 'get_usage_count']
+    list_filter = ['categories', 'data_type']
+    search_fields = ['name', 'categories__name']
     prepopulated_fields = {'slug': ('name',)}
-    autocomplete_fields = ['category']
-    list_select_related = ['category']
+    autocomplete_fields = ['categories']
+
+    def get_categories(self, obj):
+        return ", ".join([cat.name for cat in obj.categories.all()])
+    get_categories.short_description = 'دسته‌بندی‌ها'
 
     def get_usage_count(self, obj):
         return obj.values.count()
     get_usage_count.short_description = 'تعداد استفاده'
+
+    
+@admin.register(SpecificationGroup)
+class SpecificationGroupAdmin(admin.ModelAdmin):
+    list_display = ['name']  # یا هر فیلد مهمی که دارید
+    search_fields = ['name']    
 
 @admin.register(ProductSpecification)
 class ProductSpecificationAdmin(admin.ModelAdmin):
@@ -189,7 +198,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ['categories', 'brand', 'is_active']
     filter_horizontal = ['categories']
     prepopulated_fields = {'slug': ('title',)}
-    inlines = [ProductSpecificationInline, ProductOptionInline]
+    inlines = [ProductSpecificationInline, ProductOptionInline , SpecificationInline]
     list_editable = ['is_active']
 
     def get_urls(self):

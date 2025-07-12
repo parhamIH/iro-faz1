@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Product, Category, ProductOption, Brand, Gallery,
-    Specification, ProductSpecification , Color , Tag , Warranty
+    Specification, ProductSpecification , Color , Tag , Warranty,SpecificationGroup
 )
 from .filters import ProductFilter
 from .models import Product
@@ -107,12 +107,23 @@ class WarrantySerializer(serializers.ModelSerializer):
         model = Warranty
         fields = ['id', 'name',  'is_active', 'product_options']
 
-
+class SpecificationGroupSerializer(serializers.ModelSerializer):
+    specifications = serializers.SerializerMethodField()
+    
+    def get_specifications(self, obj):
+        product = self.context.get('product')
+        spec_values = ProductSpecification.objects.filter(
+            product=product,
+            specification__group=obj
+        ).select_related('specification')
+        return ProductSpecificationSerializer(spec_values, many=True).data
 class ProductSerializer(serializers.ModelSerializer):
     categories = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     brand = serializers.StringRelatedField()
     options = ProductOptionSerializer(many=True, read_only=True)
     spec_values = ProductSpecificationSerializer(many=True, read_only=True)
+    spec_groups = serializers.SerializerMethodField()
+
     tags = TagSerializer(many=True , read_only=True)
 
     class Meta:
@@ -122,6 +133,12 @@ class ProductSerializer(serializers.ModelSerializer):
             'image', 'brand', 'options', 'spec_values',
             'is_active', 'tags'
         ]
+    def get_spec_groups(self,obj):
+        groups = SpecificationGroup.objects.filter(
+            specifications__values__product=obj
+        ).distinct()
+        serializer = SpecificationGroupSerializer(groups, many=True, context={'product': obj})
+        return serializer.data
 
 class SpecificationWithValuesSerializer(serializers.ModelSerializer):
     values = serializers.SerializerMethodField()

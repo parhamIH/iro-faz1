@@ -128,7 +128,17 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
+#__________________________________________ ------specification group  ------ _______________________________________   
 
+class SpecificationGroup(models.Model):
+    name = models.CharField(max_length=100, verbose_name='نام گروه مشخصات')
+    
+    class Meta:
+        verbose_name = 'گروه مشخصات'
+        verbose_name_plural = 'گروه‌های مشخصات'
+
+    def __str__(self):
+        return self.name
 
 #__________________________________________ ------specification------ _______________________________________   
 class Specification(models.Model):
@@ -140,6 +150,9 @@ class Specification(models.Model):
     ]
 
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='spec_definitions', verbose_name='دسته‌بندی')
+
+    group = models.ForeignKey(SpecificationGroup,on_delete=models.SET_NULL,null=True,blank=True,related_name='specifications',verbose_name='گروه مشخصات')
+
     name = models.CharField(max_length=100, verbose_name='نام مشخصه')
     slug = models.SlugField(max_length=120, unique=True, allow_unicode=True, blank=True)
     data_type = models.CharField(max_length=20, choices=DATA_TYPE_CHOICES, verbose_name='نوع داده')
@@ -160,9 +173,9 @@ class Specification(models.Model):
                 counter += 1
         super().save(*args, **kwargs)
 
-    def __str__(self):
-        return f"{self.category.name} - {self.name} ({self.get_data_type_display()})"
-
+def __str__(self):
+    categories_names = ", ".join(cat.name for cat in self.categories.all())
+    return f"{categories_names} - {self.name} ({self.get_data_type_display()})"
 
 #__________________________________________ ------product specification------ _______________________________________
 class ProductSpecification(models.Model):
@@ -202,10 +215,10 @@ class ProductSpecification(models.Model):
 
 
 
-#add  add provider for product-option foreignkey for faz 2 
 
 
 #__________________________________________ ------product option------ _______________________________________
+#add  add provider for product-option foreignkey for faz 2 
 class ProductOption(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options', verbose_name='محصول')
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='options', blank=True, null=True, verbose_name='رنگ')
@@ -216,13 +229,7 @@ class ProductOption(models.Model):
     warranty = models.ForeignKey(Warranty, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='گارانتی', related_name='product_options')
 
     is_active_discount = models.BooleanField(default=False, verbose_name='تخفیف فعال است؟')
-    discount = models.PositiveIntegerField(
-        help_text="درصد تخفیف",
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
-        blank=True,
-        null=True,
-        verbose_name='درصد تخفیف'
-    )
+    discount = models.PositiveIntegerField(help_text="درصد تخفیف",validators=[MinValueValidator(0), MaxValueValidator(100)],blank=True,null=True,verbose_name='درصد تخفیف')
     discount_start_date = models.DateTimeField(null=True, blank=True, verbose_name='تاریخ شروع تخفیف')
     discount_end_date = models.DateTimeField(null=True, blank=True, verbose_name='تاریخ پایان تخفیف')
 
@@ -310,6 +317,7 @@ class Color(models.Model):
     def __str__(self):
         return self.name
 
+# __________________________________________ ------ArticleCategory------ _______________________________________
 
 class ArticleCategory(models.Model):
     name = models.CharField(max_length=100, verbose_name='نام دسته‌بندی')
@@ -331,6 +339,8 @@ class ArticleCategory(models.Model):
     def __str__(self):
         return self.name
 
+
+# __________________________________________ ------Article------ _______________________________________
 
 class Article(models.Model):
     title = models.CharField(max_length=255, verbose_name='عنوان')
@@ -360,4 +370,3 @@ class Article(models.Model):
 
     def __str__(self):
         return self.title
-

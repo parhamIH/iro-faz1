@@ -211,9 +211,8 @@ class GalleryViewSet(BaseModelViewSet):
 #     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
 #     filterset_fields = ['loan_condition']
 #     search_fields = ['loan_condition__title']
-
 class SpecificationViewSet(BaseModelViewSet):
-    queryset = Specification.objects.select_related('category').all()
+    queryset = Specification.objects.prefetch_related('categories').all()
     serializer_class = SpecificationSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = SpecificationFilter
@@ -221,22 +220,20 @@ class SpecificationViewSet(BaseModelViewSet):
     ordering_fields = ['name', 'data_type']
     ordering = ['name']
 
+
 class ProductSpecificationViewSet(BaseModelViewSet):
-    queryset = ProductSpecification.objects.all()
+    queryset = ProductSpecification.objects.select_related('product', 'specification').all()
     serializer_class = ProductSpecificationSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['product', 'specification']
     search_fields = ['specification__name', 'product__title']
 
-
-
 class WarrantyViewSet(BaseModelViewSet):
-    queryset = Warranty.objects.all()
+    queryset = Warranty.objects.prefetch_related('product_options').all()
     serializer_class = WarrantySerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['product_options']
-    search_fields = ['product_options__product__title']
-
+    filterset_fields = ['name', 'is_active']
+    search_fields = ['name']
 
 class TagViewSet(BaseModelViewSet):
     queryset = Tag.objects.all()
@@ -244,3 +241,9 @@ class TagViewSet(BaseModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
     filterset_fields = ['name']
+
+class SpecificationGroupViewSet(BaseModelViewSet):
+    queryset = SpecificationGroup.objects.prefetch_related('specifications').all()
+    serializer_class = SpecificationGroupSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ['name']

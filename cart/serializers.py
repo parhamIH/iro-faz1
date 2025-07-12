@@ -2,10 +2,6 @@ from rest_framework import serializers
 from .models import Cart, CartItem, Order
 from store.models import ProductOption
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 44326bdd00e41038f3f57ffbe53f1ba80f8e3880
 class ProductOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductOption

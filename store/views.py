@@ -118,20 +118,21 @@ class ProductViewSet(BaseModelViewSet):
     queryset = Product.objects.prefetch_related(
         'tags',
         'categories', 'brand', 'options',
-        'options__color', 'spec_values',
-        'spec_values__specification'
+        'options__color', 'options__warranty', 'spec_values',
+        'spec_values__specification', 'spec_values__specification__group'
     ).all()
     serializer_class = ProductSerializer
     filterset_class = ProductFilter
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     ordering_fields = ['options__option_price','options__quantity', "created_at" , "updated_at" , "is_active" , "options__is_active_discount"]
-    search_fields = ['title', 'description','options__color__name','options__option_price']
+    search_fields = ['title', 'description','options__color__name','options__option_price', 'spec_values__specification__name']
 
 class CategoryViewSet(BaseModelViewSet):
-    queryset = Category.objects.prefetch_related('products', 'spec_definitions', 'brand').select_related('parent').all()
+    queryset = Category.objects.prefetch_related('products', 'spec_definitions', 'spec_definitions__group', 'brand').select_related('parent').all()
     serializer_class = CategorySerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = CategoryFilter
-    search_fields = ['name', 'description']
+    search_fields = ['name', 'description', 'brand__name', 'spec_definitions__name']
     ordering_fields = ['name',]
     ordering = ['name']
 
@@ -171,12 +172,12 @@ class BrandViewSet(BaseModelViewSet):
     search_fields = ['name', 'description']
 
 class ProductOptionViewSet(BaseModelViewSet):
-    queryset = ProductOption.objects.select_related('product', 'color').all()
+    queryset = ProductOption.objects.select_related('product', 'color', 'warranty').all()
     serializer_class = ProductOptionSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['product', 'color', 'is_active', 'is_active_discount']
-    search_fields = ['product__title']
-    ordering_fields = ['option_price', 'quantity']
+    filterset_class = ProductOptionFilter
+    search_fields = ['product__title', 'color__name', 'warranty__name']
+    ordering_fields = ['option_price', 'quantity', 'discount' ]
     ordering = ['-is_active', 'option_price']
 
     def get_queryset(self):
@@ -212,12 +213,21 @@ class GalleryViewSet(BaseModelViewSet):
 #     filterset_fields = ['loan_condition']
 #     search_fields = ['loan_condition__title']
 class SpecificationViewSet(BaseModelViewSet):
-    queryset = Specification.objects.prefetch_related('categories').all()
+    queryset = Specification.objects.prefetch_related('categories', 'group').all()
     serializer_class = SpecificationSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = SpecificationFilter
-    search_fields = ['name', 'slug']
-    ordering_fields = ['name', 'data_type']
+    search_fields = ['name', 'slug', 'categories__name', 'group__name']
+    ordering_fields = ['name', 'data_type', 'group__name']
+    ordering = ['group__name', 'name']
+
+class SpecificationGroupViewSet(BaseModelViewSet):
+    queryset = SpecificationGroup.objects.prefetch_related('specifications').all()
+    serializer_class = SpecificationGroupSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = SpecificationGroupFilter
+    search_fields = ['name', 'specifications__name']
+    ordering_fields = ['name']
     ordering = ['name']
 
 
@@ -231,19 +241,14 @@ class ProductSpecificationViewSet(BaseModelViewSet):
 class WarrantyViewSet(BaseModelViewSet):
     queryset = Warranty.objects.prefetch_related('product_options').all()
     serializer_class = WarrantySerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['name', 'is_active']
-    search_fields = ['name']
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = WarrantyFilter
+    search_fields = ['name', 'company', 'description']
+    ordering_fields = ['name', 'duration', 'is_active']
+    ordering = ['-is_active', 'name']
 
 class TagViewSet(BaseModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
-    filterset_fields = ['name']
-
-class SpecificationGroupViewSet(BaseModelViewSet):
-    queryset = SpecificationGroup.objects.prefetch_related('specifications').all()
-    serializer_class = SpecificationGroupSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = ['name']

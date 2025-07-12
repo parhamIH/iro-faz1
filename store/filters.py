@@ -1,6 +1,6 @@
 from django_filters import FilterSet, RangeFilter, CharFilter, BooleanFilter, ChoiceFilter, NumberFilter, ModelMultipleChoiceFilter, Filter
 from django.db.models import Q
-from .models import Category, Product, Brand, Color, Specification, Tag
+from .models import Category, Product, Brand, Color, Specification, Tag, SpecificationGroup, Warranty, ProductOption
 
 class CommaOrMultiValueFilter(Filter):
     def filter(self, qs, value):
@@ -22,6 +22,11 @@ class SpecificationFilter(FilterSet):
         label='دسته‌بندی‌ها',
         method='filter_categories'
     )
+    group = ModelMultipleChoiceFilter(
+        field_name='group',
+        queryset=SpecificationGroup.objects.all(),
+        label='گروه‌های مشخصات'
+    )
     
     def filter_search(self, queryset, name, value):
         return queryset.filter(
@@ -30,8 +35,7 @@ class SpecificationFilter(FilterSet):
             Q(unit__icontains=value) |
             Q(categories__name__icontains=value) |
             Q(categories__parent__name__icontains=value) |
-            Q(categories__brand__name__icontains=value) |
-            Q(categories__brand__parent__name__icontains=value)
+            Q(group__name__icontains=value)
         ).distinct()
     
     def filter_categories(self, queryset, name, value):
@@ -47,6 +51,7 @@ class SpecificationFilter(FilterSet):
         model = Specification
         fields = {
             'categories': ['exact'],
+            'group': ['exact'],
             'data_type': ['exact'],
             'name': ['exact', 'icontains'],
             "is_main": ['exact'],
@@ -54,11 +59,120 @@ class SpecificationFilter(FilterSet):
             "unit": ['exact', 'icontains'],
         }
 
+class SpecificationGroupFilter(FilterSet):
+    """
+    فیلتر گروه‌های مشخصات
+    """
+    search = CharFilter(method='filter_search', label='جستجو')
+    has_specifications = BooleanFilter(method='filter_has_specifications', label='دارای مشخصات')
+    
+    def filter_search(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(name__icontains=value) |
+            Q(specifications__name__icontains=value)
+        ).distinct()
+    
+    def filter_has_specifications(self, queryset, name, value):
+        if value is None:
+            return queryset
+        if value:
+            return queryset.filter(specifications__isnull=False).distinct()
+        return queryset.filter(specifications__isnull=True).distinct()
+
+    class Meta:
+        model = SpecificationGroup
+        fields = {
+            'name': ['exact', 'icontains'],
+        }
+
+class WarrantyFilter(FilterSet):
+    """
+    فیلتر گارانتی‌ها
+    """
+    search = CharFilter(method='filter_search', label='جستجو')
+    duration_range = RangeFilter(field_name='duration', label='محدوده مدت گارانتی')
+    has_product_options = BooleanFilter(method='filter_has_product_options', label='دارای محصول')
+    
+    def filter_search(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(name__icontains=value) |
+            Q(company__icontains=value) |
+            Q(description__icontains=value)
+        ).distinct()
+    
+    def filter_has_product_options(self, queryset, name, value):
+        if value is None:
+            return queryset
+        if value:
+            return queryset.filter(product_options__isnull=False).distinct()
+        return queryset.filter(product_options__isnull=True).distinct()
+
+    class Meta:
+        model = Warranty
+        fields = {
+            'name': ['exact', 'icontains'],
+            'company': ['exact', 'icontains'],
+            'is_active': ['exact'],
+            'duration': ['exact', 'gte', 'lte'],
+            'registration_required': ['exact'],
+        }
+
+class ProductOptionFilter(FilterSet):
+    """
+    فیلتر ویژگی‌های محصول
+    """
+    search = CharFilter(method='filter_search', label='جستجو')
+    price_range = RangeFilter(field_name='option_price', label='محدوده قیمت')
+    discount_range = RangeFilter(field_name='discount', label='محدوده تخفیف')
+    has_warranty = BooleanFilter(method='filter_has_warranty', label='دارای گارانتی')
+    has_discount = BooleanFilter(method='filter_has_discount', label='دارای تخفیف')
+    
+    def filter_search(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(product__title__icontains=value) |
+            Q(color__name__icontains=value) |
+            Q(warranty__name__icontains=value)
+        ).distinct()
+    
+    def filter_has_warranty(self, queryset, name, value):
+        if value is None:
+            return queryset
+        if value:
+            return queryset.filter(warranty__isnull=False).distinct()
+        return queryset.filter(warranty__isnull=True).distinct()
+    
+    def filter_has_discount(self, queryset, name, value):
+        if value is None:
+            return queryset
+        if value:
+            return queryset.filter(is_active_discount=True, discount__gt=0).distinct()
+        return queryset.filter(Q(is_active_discount=False) | Q(discount=0)).distinct()
+
+    class Meta:
+        model = ProductOption
+        fields = {
+            'product': ['exact'],
+            'color': ['exact'],
+            'warranty': ['exact'],
+            'is_active': ['exact'],
+            'is_active_discount': ['exact'],
+            'option_price': ['exact', 'gte', 'lte'],
+            'quantity': ['exact', 'gte', 'lte'],
+            'discount': ['exact', 'gte', 'lte'],
+        }
+
 class ProductFilter(FilterSet):
     search = CharFilter(method='filter_search', label='جستجو')
     in_stock = BooleanFilter(method='filter_in_stock', label='موجودی')
     price_range = RangeFilter(field_name='options__option_price', label='محدوده قیمت')
     has_discount = BooleanFilter(method='filter_has_discount', label='دارای تخفیف')
+    has_warranty = BooleanFilter(method='filter_has_warranty', label='دارای گارانتی')
     tags = ModelMultipleChoiceFilter(
         field_name='tags',
         queryset=Tag.objects.all(),
@@ -84,18 +198,27 @@ class ProductFilter(FilterSet):
         label='دسته‌بندی‌ها',
         method='filter_categories'
     )
+    warranties = ModelMultipleChoiceFilter(
+        field_name='options__warranty',
+        queryset=Warranty.objects.all(),
+        distinct=True,
+        label='گارانتی‌ها'
+    )
+    spec_groups = ModelMultipleChoiceFilter(
+        field_name='spec_values__specification__group',
+        queryset=SpecificationGroup.objects.all(),
+        distinct=True,
+        label='گروه‌های مشخصات'
+    )
 
     specification = CharFilter(method='filter_specification', label='مشخصات فنی')
     spec_value = CharFilter(method='filter_specification', label='مقدار مشخصه (نام:مقدار)')
     
 
-
     def filter_tags(self, queryset, name, value):
         if not value:
             return queryset
         return queryset.filter(tags__name__in=value).distinct()
-
-
 
     def filter_search(self, queryset, name, value):
         if not value:
@@ -104,7 +227,8 @@ class ProductFilter(FilterSet):
             Q(title__icontains=value) |
             Q(description__icontains=value) |
             Q(brand__name__icontains=value) |
-            Q(categories__name__icontains=value)
+            Q(categories__name__icontains=value) |
+            Q(spec_values__specification__name__icontains=value)
         ).distinct()
     
     def filter_in_stock(self, queryset, name, value):
@@ -125,7 +249,14 @@ class ProductFilter(FilterSet):
         return queryset.filter(
             Q(options__is_active_discount=False) |
             Q(options__discount=0)
-        ).distinct() 
+        ).distinct()
+    
+    def filter_has_warranty(self, queryset, name, value):
+        if value is None:
+            return queryset
+        if value:
+            return queryset.filter(options__warranty__isnull=False).distinct()
+        return queryset.filter(options__warranty__isnull=True).distinct()
 
     def filter_specification(self, queryset, name, value):
         """
@@ -203,12 +334,21 @@ class ProductFilter(FilterSet):
 
     class Meta:
         model = Product
-        fields = ['is_active']
-
+        fields = {
+            'is_active': ['exact'],
+        }
 
 class CategoryFilter(FilterSet):
     search = CharFilter(method='filter_search', label='جستجو')
     has_products = BooleanFilter(method='filter_has_products', label='دارای محصول')
+    has_specifications = BooleanFilter(method='filter_has_specifications', label='دارای مشخصات')
+    
+    # فیلترهای برند
+    brands = ModelMultipleChoiceFilter(
+        field_name='brand',
+        queryset=Brand.objects.all(),
+        label='برندها'
+    )
     
     # فیلترهای مشخصات فنی
     spec_name = CharFilter(field_name='spec_definitions__name', lookup_expr='icontains', label='نام مشخصه')
@@ -216,6 +356,11 @@ class CategoryFilter(FilterSet):
         field_name='spec_definitions__data_type',
         choices=Specification.DATA_TYPE_CHOICES,
         label='نوع داده مشخصه'
+    )
+    spec_group = ModelMultipleChoiceFilter(
+        field_name='spec_definitions__group',
+        queryset=SpecificationGroup.objects.all(),
+        label='گروه مشخصات'
     )
     
     # فیلتر برای مشخصات فنی با ID - قابل انتخاب
@@ -266,15 +411,24 @@ class CategoryFilter(FilterSet):
             return queryset
         return queryset.filter(
             Q(name__icontains=value) |
-            Q(description__icontains=value)
+            Q(description__icontains=value) |
+            Q(brand__name__icontains=value) |
+            Q(spec_definitions__name__icontains=value)
         ).distinct()
-    
+
     def filter_has_products(self, queryset, name, value):
         if value is None:
             return queryset
         if value:
             return queryset.filter(products__isnull=False).distinct()
         return queryset.filter(products__isnull=True).distinct()
+    
+    def filter_has_specifications(self, queryset, name, value):
+        if value is None:
+            return queryset
+        if value:
+            return queryset.filter(spec_definitions__isnull=False).distinct()
+        return queryset.filter(spec_definitions__isnull=True).distinct()
 
     def filter_spec_definitions(self, queryset, name, value):
         if not value:
@@ -288,46 +442,48 @@ class CategoryFilter(FilterSet):
         return queryset.filter(spec_definitions__name__in=spec_names).distinct()
 
     def filter_spec_value(self, queryset, name, value):
+        """
+        فیلتر بر اساس مقدار مشخصه فنی
+        فرمت: "نام_مشخصه:مقدار" یا "نام_مشخصه:حداقل:حداکثر"
+        مثال: "RAM:8", "Storage:128:512", "Color:قرمز"
+        """
         if not value or ':' not in value:
             return queryset
-        
+
         parts = value.split(':')
         spec_name = parts[0].strip()
-        
+
         if len(parts) == 2:
-            values = [v.strip() for v in parts[1].split(',')]
-            q = Q()
-            for val in values:
-                # تلاش برای int
-                try:
-                    num_val = int(val)
-                    q |= Q(products__spec_values__specification__name__iexact=spec_name,
-                           products__spec_values__int_value=num_val)
-                    continue
-                except ValueError:
-                        pass
-                # تلاش برای float
-                try:
-                    num_val = float(val)
-                    q |= Q(products__spec_values__specification__name__iexact=spec_name,
-                           products__spec_values__decimal_value=num_val)
-                    continue
-                except ValueError:
-                    pass
-                # تلاش برای bool
-                if val.lower() in ['true', 'false']:
-                    q |= Q(products__spec_values__specification__name__iexact=spec_name,
-                           products__spec_values__bool_value=(val.lower() == 'true'))
-                else:
-                    # متن
-                    q |= Q(products__spec_values__specification__name__iexact=spec_name,
-                           products__spec_values__str_value__icontains=val)
-            return queryset.filter(q).distinct()
+            # مقدار دقیق
+            spec_value = parts[1].strip()
+            return queryset.filter(
+                spec_definitions__name__iexact=spec_name,
+                products__spec_values__specification__name__iexact=spec_name,
+                products__spec_values__int_value=spec_value
+            ).distinct()
+        elif len(parts) == 3:
+            # محدوده
+            try:
+                min_val = float(parts[1]) if parts[1] else None
+                max_val = float(parts[2]) if parts[2] else None
+                q = Q(
+                    spec_definitions__name__iexact=spec_name,
+                    products__spec_values__specification__name__iexact=spec_name
+                )
+                if min_val is not None:
+                    q &= Q(products__spec_values__int_value__gte=min_val)
+                if max_val is not None:
+                    q &= Q(products__spec_values__int_value__lte=max_val)
+                return queryset.filter(q).distinct()
+            except ValueError:
+                return queryset
+
         return queryset
 
     class Meta:
         model = Category
         fields = {
+            'name': ['exact', 'icontains'],
             'parent': ['exact', 'isnull'],
             'brand': ['exact'],
         }

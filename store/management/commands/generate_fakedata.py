@@ -3,7 +3,7 @@ from django.utils import timezone
 from faker import Faker
 from store.models import (
     Category, Brand, Product, Specification, ProductSpecification,
-    ProductOption, Warranty, Tag, Color, Gallery
+    ProductOption, Warranty, Tag, Color, Gallery, SpecificationGroup
 )
 from django.db import transaction
 import random
@@ -27,8 +27,17 @@ class Command(BaseCommand):
         Warranty.objects.all().delete()
         Tag.objects.all().delete()
         Color.objects.all().delete()
+        SpecificationGroup.objects.all().delete()
 
         self.stdout.write('Generating new data...')
+
+        # گروه‌های مشخصات
+        spec_groups = {
+            'مشخصات فنی': SpecificationGroup.objects.create(name='مشخصات فنی'),
+            'مشخصات ظاهری': SpecificationGroup.objects.create(name='مشخصات ظاهری'),
+            'مشخصات عملکرد': SpecificationGroup.objects.create(name='مشخصات عملکرد'),
+            'مشخصات امنیتی': SpecificationGroup.objects.create(name='مشخصات امنیتی'),
+        }
 
         # رنگ‌ها
         color_data = [
@@ -77,55 +86,69 @@ class Command(BaseCommand):
         # دسته‌بندی فرزند برای موبایل
         categories['قاب موبایل'] = Category.objects.create(name='قاب موبایل', description='انواع قاب و کاور برای موبایل', parent=categories['موبایل'])
 
-        # مشخصات هر دسته‌بندی
+        # اضافه کردن برندها به دسته‌بندی‌ها
+        digital_brands = [brands['اپل'], brands['سامسونگ'], brands['شیائومی'], brands['هواوی'], brands['ال‌جی'], brands['سونی']]
+        vehicle_brands = [brands['تویوتا'], brands['هیوندای'], brands['کیا']]
+        
+        for category in [categories['موبایل'], categories['تبلت'], categories['لپ‌تاپ'], categories['هدفون']]:
+            category.brand.add(*digital_brands)
+        
+        for category in [categories['ماشین']]:
+            category.brand.add(*vehicle_brands)
+        
+        categories['لوازم خانه'].brand.add(brands['سامسونگ'], brands['ال‌جی'])
+        categories['قاب موبایل'].brand.add(brands['اپل'], brands['سامسونگ'])
+
+        # مشخصات هر دسته‌بندی با گروه‌بندی
         specs_by_category = {
             'موبایل': [
-                ('حافظه داخلی', 'int', 'GB'),
-                ('RAM', 'int', 'GB'),
-                ('اندازه صفحه', 'decimal', 'اینچ'),
-                ('دوربین اصلی', 'int', 'MP'),
-                ('باتری', 'int', 'mAh'),
+                ('حافظه داخلی', 'int', 'GB', 'مشخصات فنی'),
+                ('RAM', 'int', 'GB', 'مشخصات فنی'),
+                ('اندازه صفحه', 'decimal', 'اینچ', 'مشخصات ظاهری'),
+                ('دوربین اصلی', 'int', 'MP', 'مشخصات عملکرد'),
+                ('باتری', 'int', 'mAh', 'مشخصات عملکرد'),
+                ('مقاومت در برابر آب', 'bool', None, 'مشخصات امنیتی'),
             ],
             'تبلت': [
-                ('حافظه داخلی', 'int', 'GB'),
-                ('RAM', 'int', 'GB'),
-                ('اندازه صفحه', 'decimal', 'اینچ'),
-                ('باتری', 'int', 'mAh'),
-                ('وزن', 'decimal', 'گرم'),
+                ('حافظه داخلی', 'int', 'GB', 'مشخصات فنی'),
+                ('RAM', 'int', 'GB', 'مشخصات فنی'),
+                ('اندازه صفحه', 'decimal', 'اینچ', 'مشخصات ظاهری'),
+                ('باتری', 'int', 'mAh', 'مشخصات عملکرد'),
+                ('وزن', 'decimal', 'گرم', 'مشخصات ظاهری'),
             ],
             'لپ‌تاپ': [
-                ('پردازنده', 'str', None),
-                ('حافظه داخلی', 'int', 'GB'),
-                ('RAM', 'int', 'GB'),
-                ('اندازه صفحه', 'decimal', 'اینچ'),
-                ('وزن', 'decimal', 'کیلوگرم'),
+                ('پردازنده', 'str', None, 'مشخصات فنی'),
+                ('حافظه داخلی', 'int', 'GB', 'مشخصات فنی'),
+                ('RAM', 'int', 'GB', 'مشخصات فنی'),
+                ('اندازه صفحه', 'decimal', 'اینچ', 'مشخصات ظاهری'),
+                ('وزن', 'decimal', 'کیلوگرم', 'مشخصات ظاهری'),
             ],
             'ماشین': [
-                ('حجم موتور', 'int', 'cc'),
-                ('قدرت موتور', 'int', 'hp'),
-                ('مصرف سوخت', 'decimal', 'L/100km'),
-                ('گیربکس', 'str', None),
-                ('تعداد سرنشین', 'int', 'نفر'),
+                ('حجم موتور', 'int', 'cc', 'مشخصات فنی'),
+                ('قدرت موتور', 'int', 'hp', 'مشخصات عملکرد'),
+                ('مصرف سوخت', 'decimal', 'L/100km', 'مشخصات عملکرد'),
+                ('گیربکس', 'str', None, 'مشخصات فنی'),
+                ('تعداد سرنشین', 'int', 'نفر', 'مشخصات ظاهری'),
             ],
             'لوازم خانه': [
-                ('ظرفیت', 'int', 'لیتر'),
-                ('مصرف انرژی', 'str', None),
-                ('وزن', 'decimal', 'کیلوگرم'),
-                ('رنگ', 'str', None),
-                ('نوع', 'str', None),
+                ('ظرفیت', 'int', 'لیتر', 'مشخصات فنی'),
+                ('مصرف انرژی', 'str', None, 'مشخصات عملکرد'),
+                ('وزن', 'decimal', 'کیلوگرم', 'مشخصات ظاهری'),
+                ('رنگ', 'str', None, 'مشخصات ظاهری'),
+                ('نوع', 'str', None, 'مشخصات فنی'),
             ],
             'هدفون': [
-                ('نوع اتصال', 'str', None),
-                ('عمر باتری', 'int', 'ساعت'),
-                ('وزن', 'decimal', 'گرم'),
-                ('میکروفون', 'bool', None),
-                ('مقاومت در برابر آب', 'bool', None),
+                ('نوع اتصال', 'str', None, 'مشخصات فنی'),
+                ('عمر باتری', 'int', 'ساعت', 'مشخصات عملکرد'),
+                ('وزن', 'decimal', 'گرم', 'مشخصات ظاهری'),
+                ('میکروفون', 'bool', None, 'مشخصات عملکرد'),
+                ('مقاومت در برابر آب', 'bool', None, 'مشخصات امنیتی'),
             ],
             'قاب موبایل': [
-                ('جنس', 'str', None),
-                ('رنگ', 'str', None),
-                ('ضد ضربه', 'bool', None),
-                ('مناسب برای مدل', 'str', None),
+                ('جنس', 'str', None, 'مشخصات ظاهری'),
+                ('رنگ', 'str', None, 'مشخصات ظاهری'),
+                ('ضد ضربه', 'bool', None, 'مشخصات امنیتی'),
+                ('مناسب برای مدل', 'str', None, 'مشخصات فنی'),
             ],
         }
 
@@ -133,14 +156,15 @@ class Command(BaseCommand):
         spec_objs = {}
         for cat_name, spec_list in specs_by_category.items():
             spec_objs[cat_name] = []
-            for name, dtype, unit in spec_list:
+            for name, dtype, unit, group_name in spec_list:
                 spec = Specification.objects.create(
-                    category=categories[cat_name],
                     name=name,
                     data_type=dtype,
                     unit=unit,
+                    group=spec_groups[group_name],
                     is_main=True if name in ['حافظه داخلی', 'حجم موتور', 'ظرفیت', 'نوع اتصال', 'جنس'] else False
                 )
+                spec.categories.add(categories[cat_name])
                 spec_objs[cat_name].append(spec)
 
         # محصولات واقعی برای هر دسته‌بندی
@@ -149,12 +173,12 @@ class Command(BaseCommand):
                 {
                     'title': 'iPhone 15 Pro',
                     'brand': brands['اپل'],
-                    'specs': [256, 8, Decimal('6.1'), 48, 3274],
+                    'specs': [256, 8, Decimal('6.1'), 48, 3274, True],
                 },
                 {
                     'title': 'Samsung Galaxy S24 Ultra',
                     'brand': brands['سامسونگ'],
-                    'specs': [512, 12, Decimal('6.8'), 200, 5000],
+                    'specs': [512, 12, Decimal('6.8'), 200, 5000, True],
                 },
             ],
             'قاب موبایل': [
@@ -248,16 +272,28 @@ class Command(BaseCommand):
         for product in Product.objects.all():
             product.tags.add(*random.sample(tags, random.randint(1, 3)))
 
-        # افزودن برند به دسته‌بندی‌ها در generate_fakedata.py
-        categories['موبایل'].brand.add(brands['اپل'], brands['سامسونگ'], brands['شیائومی'])
-        categories['تبلت'].brand.add(brands['اپل'], brands['سامسونگ'])
-        categories['لپ‌تاپ'].brand.add(brands['اپل'], brands['سامسونگ'], brands['هواوی'])
-        categories['ماشین'].brand.add(brands['تویوتا'], brands['هیوندای'], brands['کیا'])
-        categories['لوازم خانه'].brand.add(brands['ال‌جی'], brands['سامسونگ'], brands['سونی'])
-        categories['هدفون'].brand.add(brands['سونی'], brands['اپل'], brands['سامسونگ'])
-        categories['قاب موبایل'].brand.add(brands['اپل'], brands['سامسونگ'])
-        # اگر خواستی به والدها هم برند بدهی:
-        # digital_parent.brand.add(brands['اپل'], brands['سامسونگ'])
-        # vehicle_parent.brand.add(brands['تویوتا'], brands['هیوندای'])
+        # گالری تصاویر
+        for product_option in ProductOption.objects.all():
+            for i in range(random.randint(1, 3)):
+                Gallery.objects.create(
+                    product=product_option,
+                    image=None,  # در محیط واقعی فایل تصویر اضافه کنید
+                    alt_text=f"تصویر {i+1} برای {product_option.product.title}"
+                )
 
-        self.stdout.write(self.style.SUCCESS('Successfully generated realistic fake data!')) 
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'Successfully generated:\n'
+                f'- {len(colors)} colors\n'
+                f'- {len(warranties)} warranties\n'
+                f'- {len(brands)} brands\n'
+                f'- {len(categories)} categories\n'
+                f'- {len(spec_groups)} specification groups\n'
+                f'- {Specification.objects.count()} specifications\n'
+                f'- {Product.objects.count()} products\n'
+                f'- {ProductOption.objects.count()} product options\n'
+                f'- {ProductSpecification.objects.count()} product specifications\n'
+                f'- {len(tags)} tags\n'
+                f'- {Gallery.objects.count()} gallery images'
+            )
+        ) 

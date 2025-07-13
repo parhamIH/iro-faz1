@@ -213,11 +213,9 @@ class ProductFilter(FilterSet):
         queryset=Warranty.objects.all(),
         label='گارانتی‌ها',
     )
-    spec_groups = CommaSeparatedModelMultipleChoiceFilter(
-        field_name='spec_values__specification__group',
-        queryset=SpecificationGroup.objects.all(),
-        label='گروه‌های مشخصات',
-    )
+    spec_groups = CharFilter(method='filter_spec_groups', label='گروه‌های مشخصات')
+    spec_group_filter = CharFilter(method='filter_by_spec_group', label='فیلتر بر اساس گروه مشخصات')
+    spec_group_only = CharFilter(method='filter_by_spec_group_only', label='فیلتر فقط بر اساس گروه مشخصات')
     specification = CharFilter(method='filter_specification', label='مشخصات فنی')
     spec_value = CharFilter(method='filter_specification', label='مقدار مشخصه (نام:مقدار)')
     spec_by_id = CharFilter(method='filter_specification_by_id', label='مشخصات فنی (آیدی:مقدار)')
@@ -322,6 +320,82 @@ class ProductFilter(FilterSet):
                 return queryset
         # Invalid format
         return queryset
+    
+    def filter_by_spec_group(self, queryset, name, value):
+        """
+        فیلتر محصولات بر اساس گروه مشخصات
+        فرمت ورودی: "group_id:spec_id:value" یا "group_id:spec_id:min:max"
+        مثال: "1:5:قرمز", "2:10:8GB"
+        """
+        if not value or ':' not in value:
+            return queryset
+        
+        parts = value.split(':')
+        if len(parts) < 3:
+            return queryset
+        
+        try:
+            group_id = int(parts[0].strip())
+            spec_id = int(parts[1].strip())
+            spec_value = parts[2].strip()
+            
+            if not spec_value:  # اگر مقدار خالی باشد، فقط بر اساس گروه و مشخصه فیلتر کن
+                return queryset.filter(
+                    spec_values__specification__group__id=group_id,
+                    spec_values__specification__id=spec_id
+                ).distinct()
+            
+            # فیلتر بر اساس گروه، مشخصه و مقدار
+            return queryset.filter(
+                spec_values__specification__group__id=group_id,
+                spec_values__specification__id=spec_id
+            ).filter(
+                Q(spec_values__int_value=spec_value) |
+                Q(spec_values__decimal_value=spec_value) |
+                Q(spec_values__str_value__iexact=spec_value) |
+                Q(spec_values__bool_value=spec_value.lower() in ['true', '1', 'yes', 'بله'])
+            ).distinct()
+        except (ValueError, TypeError):
+            return queryset
+    
+    def filter_by_spec_group_only(self, queryset, name, value):
+        """
+        فیلتر محصولات فقط بر اساس گروه مشخصات
+        فرمت ورودی: "group_id" (فقط آیدی گروه)
+        مثال: "1", "2"
+        """
+        if not value:
+            return queryset
+        
+        try:
+            group_id = int(value.strip())
+            return queryset.filter(
+                spec_values__specification__group__id=group_id
+            ).distinct()
+        except (ValueError, TypeError):
+            return queryset
+    
+    def filter_spec_groups(self, queryset, name, value):
+        """
+        فیلتر محصولات بر اساس گروه‌های مشخصات
+        فرمت ورودی: "id1,id2,id3" (آیدی گروه‌های مشخصات)
+        مثال: "1,2,3"
+        """
+        if not value:
+            return queryset
+        
+        try:
+            # تبدیل رشته به لیست آیدی‌ها
+            group_ids = [int(id.strip()) for id in value.split(',') if id.strip()]
+            if not group_ids:
+                return queryset
+            
+            # فیلتر محصولاتی که حداقل یکی از گروه‌های مشخصات را دارند
+            return queryset.filter(
+                spec_values__specification__group__id__in=group_ids
+            ).distinct()
+        except (ValueError, TypeError):
+            return queryset
 
     def _filter_spec_values(self, queryset, name, values):
         """Filters queryset for a specification by a list of exact values (OR logic)."""
@@ -440,6 +514,15 @@ class ProductFilter(FilterSet):
     class Meta:
         model = Product
         fields = {
+            'categories': ['exact'],
+            'brand': ['exact'],
+            'tags': ['exact'],
+            'options__color': ['exact'],
+            'options__warranty': ['exact'],
+            'options__option_price': ['exact', 'gte', 'lte'],
+            'options__quantity': ['exact', 'gte', 'lte'],
+            'options__is_active_discount': ['exact'],
+            'options__discount': ['exact', 'gte', 'lte'],
             'is_active': ['exact'],
         }
 

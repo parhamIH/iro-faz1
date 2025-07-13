@@ -202,11 +202,11 @@ class SpecificationGroupAdmin(admin.ModelAdmin):
 
 @admin.register(ProductSpecification)
 class ProductSpecificationAdmin(admin.ModelAdmin):
-    list_display = ['product', 'specification', 'get_value', 'get_unit', 'get_data_type', 'is_main']
-    list_filter = ['specification__categories', 'specification__data_type', 'is_main']
-    search_fields = ['product__title', 'specification__name']
+    list_display = ['product', 'specification', 'get_group', 'get_value', 'get_unit', 'get_data_type', 'is_main']
+    list_filter = ['specification__categories', 'specification__group', 'specification__data_type', 'is_main']
+    search_fields = ['product__title', 'specification__name', 'specification__group__name']
     autocomplete_fields = ['product', 'specification']
-    list_select_related = ['product', 'specification']
+    list_select_related = ['product', 'specification', 'specification__group']
 
     def get_value(self, obj):
         value = obj.value()
@@ -222,6 +222,10 @@ class ProductSpecificationAdmin(admin.ModelAdmin):
     def get_data_type(self, obj):
         return obj.specification.get_data_type_display()
     get_data_type.short_description = 'نوع داده'
+    
+    def get_group(self, obj):
+        return obj.specification.group.name if obj.specification.group else '-'
+    get_group.short_description = 'گروه مشخصات'
 
 @admin.register(Warranty)
 class WarrantyAdmin(admin.ModelAdmin):

@@ -42,13 +42,22 @@ class SpecificationSerializer(serializers.ModelSerializer):
 class ProductSpecificationSerializer(serializers.ModelSerializer):
     specification = SpecificationSerializer(read_only=True)
     value = serializers.SerializerMethodField()
+    group = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductSpecification
-        fields = ['id', 'product', 'specification', 'value' , "is_main"]
+        fields = ['id', 'product', 'specification', 'value', 'is_main', 'group']
 
     def get_value(self, obj):
         return obj.value()
+    
+    def get_group(self, obj):
+        if obj.specification.group:
+            return {
+                'id': obj.specification.group.id,
+                'name': obj.specification.group.name
+            }
+        return None
 
 class CategorySerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()

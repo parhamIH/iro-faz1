@@ -132,6 +132,7 @@ class Product(models.Model):
 #__________________________________________ ------specification group  ------ _______________________________________   
 
 class SpecificationGroup(models.Model):
+
     name = models.CharField(max_length=100, verbose_name='نام گروه مشخصات')
     
     class Meta:
@@ -186,7 +187,6 @@ class ProductSpecification(models.Model):
     str_value = models.CharField(max_length=255, blank=True, null=True, verbose_name='مقدار متنی')
     bool_value = models.BooleanField(blank=True, null=True, verbose_name='مقدار بله/خیر')
     is_main = models.BooleanField(default=False, verbose_name='مشخصه اصلی', help_text='مشخصه اصلی برای محصول است')
-
     class Meta:
         verbose_name = 'مقدار مشخصه محصول'
         verbose_name_plural = 'مقادیر مشخصات محصول'

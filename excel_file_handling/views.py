@@ -391,3 +391,8 @@ def api_process_file(request, file_id):
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def sample_files(request):
+    """نمایش صفحه فایل‌های نمونه"""
+    return render(request, 'excel_file_handling/sample_files.html')

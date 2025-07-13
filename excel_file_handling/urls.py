@@ -17,6 +17,7 @@ urlpatterns = [
     
     # دانلود قالب‌ها
     path('templates/<str:file_type>/download/', views.download_template, name='download_template'),
+    path('sample-files/', views.sample_files, name='sample_files'),
     
     # API endpoints
     path('api/upload/', views.api_upload_file, name='api_upload_file'),

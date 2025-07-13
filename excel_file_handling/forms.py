@@ -41,17 +41,8 @@ class ExcelFileUploadForm(forms.ModelForm):
         file = cleaned_data.get('file')
         file_type = cleaned_data.get('file_type')
         
-        if file and file_type:
-            # بررسی سازگاری نوع فایل با نام فایل
-            file_name = file.name.lower()
-            
-            # بررسی اینکه آیا فایل حاوی داده‌های مناسب برای نوع انتخاب شده است
-            if file_type == 'products' and 'product' not in file_name:
-                self.add_warning('file', 'نام فایل با نوع انتخاب شده مطابقت ندارد')
-            elif file_type == 'categories' and 'category' not in file_name:
-                self.add_warning('file', 'نام فایل با نوع انتخاب شده مطابقت ندارد')
-            elif file_type == 'brands' and 'brand' not in file_name:
-                self.add_warning('file', 'نام فایل با نوع انتخاب شده مطابقت ندارد')
+        # حذف validation نام فایل - کاربر می‌تواند هر نام فایلی را آپلود کند
+        # فقط validation‌های ضروری باقی می‌مانند
         
         return cleaned_data
 

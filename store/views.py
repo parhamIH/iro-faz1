@@ -57,7 +57,13 @@ class BaseModelViewSet(ModelViewSet):
                     parent_data = None
                 queryset = self.filter_queryset(self.get_queryset())
                 page = self.paginate_queryset(queryset)
-                filter_instance = CategoryFilter(request.GET, queryset=Category.objects.all(), request=request)
+                
+                # استفاده از فیلتر مناسب برای هر viewset
+                if hasattr(self, 'filterset_class'):
+                    filter_instance = self.filterset_class(request.GET, queryset=self.get_queryset(), request=request)
+                else:
+                    filter_instance = CategoryFilter(request.GET, queryset=Category.objects.all(), request=request)
+                
                 filters_data = {}
                 for name, f in filter_instance.filters.items():
                     filters_data[name] = {
@@ -65,7 +71,10 @@ class BaseModelViewSet(ModelViewSet):
                         'help_text': getattr(f, 'help_text', ''),
                         'choices': getattr(f, 'choices', None),
                     }
-                filters_data['spec_value_choices'] = filter_instance.spec_value_choices
+                
+                # اضافه کردن spec_value_choices فقط برای CategoryFilter
+                if hasattr(filter_instance, 'spec_value_choices'):
+                    filters_data['spec_value_choices'] = filter_instance.spec_value_choices
                 if page is not None:
                     serializer = self.get_serializer(page, many=True)
                     data = list(serializer.data)
@@ -87,7 +96,13 @@ class BaseModelViewSet(ModelViewSet):
             # حالت عادی (بدون parent)
             queryset = self.filter_queryset(self.get_queryset())
             page = self.paginate_queryset(queryset)
-            filter_instance = CategoryFilter(request.GET, queryset=Category.objects.all(), request=request)
+            
+            # استفاده از فیلتر مناسب برای هر viewset
+            if hasattr(self, 'filterset_class'):
+                filter_instance = self.filterset_class(request.GET, queryset=self.get_queryset(), request=request)
+            else:
+                filter_instance = CategoryFilter(request.GET, queryset=Category.objects.all(), request=request)
+            
             filters_data = {}
             for name, f in filter_instance.filters.items():
                 filters_data[name] = {
@@ -95,7 +110,10 @@ class BaseModelViewSet(ModelViewSet):
                     'help_text': getattr(f, 'help_text', ''),
                     'choices': getattr(f, 'choices', None),
                 }
-            filters_data['spec_value_choices'] = filter_instance.spec_value_choices
+            
+            # اضافه کردن spec_value_choices فقط برای CategoryFilter
+            if hasattr(filter_instance, 'spec_value_choices'):
+                filters_data['spec_value_choices'] = filter_instance.spec_value_choices
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
                 response = self.get_paginated_response(serializer.data)

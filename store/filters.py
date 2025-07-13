@@ -226,6 +226,12 @@ class ProductFilter(FilterSet):
         queryset=Specification.objects.all(),
         label='مشخصات فنی (آیدی)',
     )
+    spec_value_ids = CommaSeparatedModelMultipleChoiceFilter(
+        field_name='spec_values',
+        queryset=None,
+        label='مقادیر مشخصات فنی (آیدی)',
+        method='filter_spec_value_ids',
+    )
     
 
     def filter_search(self, queryset, name, value):
@@ -413,6 +419,23 @@ class ProductFilter(FilterSet):
         if max_val is not None:
             q &= Q(spec_values__int_value__lte=max_val) | Q(spec_values__decimal_value__lte=max_val)
         return queryset.filter(q).distinct()
+
+    def filter_spec_value_ids(self, queryset, field_name, value):
+        """فیلتر کردن محصولات بر اساس آیدی مقادیر مشخصات فنی"""
+        if not value:
+            return queryset
+        
+        # تبدیل رشته به لیست آیدی‌ها
+        if isinstance(value, str):
+            value = [v.strip() for v in value.split(',') if v.strip()]
+        
+        try:
+            value_ids = [int(v) for v in value]
+        except (ValueError, TypeError):
+            return queryset.none()
+        
+        # فیلتر کردن محصولاتی که دارای این مقادیر مشخصات فنی هستند
+        return queryset.filter(spec_values__id__in=value_ids).distinct()
 
     class Meta:
         model = Product

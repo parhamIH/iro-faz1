@@ -51,6 +51,8 @@
   `/api/products/?spec_by_id=10:128:512`
 - **مشخصات فنی (آیدی)**:  
   `/api/products/?spec_ids=5,10,15`
+- **مقادیر مشخصات فنی (آیدی)**:  
+  `/api/products/?spec_value_ids=12,14,15`
 
 ---
 
@@ -197,6 +199,11 @@ GET /api/products/?categories=1&specification=RAM:8&price_range_min=2000000&pric
 GET /api/products/?categories=1&spec_by_id=5:8&price_range_min=2000000&price_range_max=5000000
 ```
 
+#### 1.2. محصولات با مقادیر مشخصات فنی خاص (با آیدی):
+```
+GET /api/products/?spec_value_ids=12,14,15
+```
+
 #### 2. محصولات دارای تخفیف در گروه مشخصات ظاهری:
 ```
 GET /api/products/?has_discount=true&spec_groups=1
@@ -241,6 +248,10 @@ GET /api/products/?is_active=true&has_warranty=true
 5. **فیلتر آیدی مشخصات**: مقادیر را با کاما جدا کنید
    ```
    ?spec_ids=5,10,15
+   ```
+6. **فیلتر آیدی مقادیر مشخصات فنی**: مقادیر را با کاما جدا کنید
+   ```
+   ?spec_value_ids=12,14,15
    ```
 
 4. **فیلترهای بولی**: از `true` یا `false` استفاده کنید

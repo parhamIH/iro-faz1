@@ -220,6 +220,12 @@ class ProductFilter(FilterSet):
     )
     specification = CharFilter(method='filter_specification', label='مشخصات فنی')
     spec_value = CharFilter(method='filter_specification', label='مقدار مشخصه (نام:مقدار)')
+    spec_by_id = CharFilter(method='filter_specification_by_id', label='مشخصات فنی (آیدی:مقدار)')
+    spec_ids = CommaSeparatedModelMultipleChoiceFilter(
+        field_name='spec_values__specification',
+        queryset=Specification.objects.all(),
+        label='مشخصات فنی (آیدی)',
+    )
     
 
     def filter_search(self, queryset, name, value):
@@ -338,6 +344,70 @@ class ProductFilter(FilterSet):
     def _filter_spec_range(self, queryset, name, min_val, max_val):
         """Filters queryset for a specification by a numeric range."""
         q = Q(spec_values__specification__name__iexact=name)
+        if min_val is not None:
+            q &= Q(spec_values__int_value__gte=min_val) | Q(spec_values__decimal_value__gte=min_val)
+        if max_val is not None:
+            q &= Q(spec_values__int_value__lte=max_val) | Q(spec_values__decimal_value__lte=max_val)
+        return queryset.filter(q).distinct()
+    
+    def filter_specification_by_id(self, queryset, name, value):
+        """
+        فیلتر محصولات بر اساس آیدی مشخصات فنی
+        فرمت ورودی: "spec_id:value" یا "spec_id:min:max" یا "spec_id:value1,value2,value3"
+        مثال: "5:8GB", "10:128:512", "15:قرمز,آبی,سبز"
+        """
+        if not value or ':' not in value:
+            return queryset
+
+        parts = value.split(':')
+        try:
+            spec_id = int(parts[0].strip())
+        except (ValueError, TypeError):
+            return queryset
+
+        if len(parts) == 2:
+            # Handle exact match or multiple exact values
+            values = parts[1].split(',')
+            return self._filter_spec_values_by_id(queryset, spec_id, values)
+        elif len(parts) == 3:
+            # Handle range filter
+            try:
+                min_val = float(parts[1]) if parts[1] else None
+                max_val = float(parts[2]) if parts[2] else None
+                return self._filter_spec_range_by_id(queryset, spec_id, min_val, max_val)
+            except ValueError:
+                # Invalid range values
+                return queryset
+        # Invalid format
+        return queryset
+    
+    def _filter_spec_values_by_id(self, queryset, spec_id, values):
+        """Filters queryset for a specification by ID and a list of exact values (OR logic)."""
+        if not values:
+            return queryset
+
+        spec_q = Q(spec_values__specification__id=spec_id)
+        value_q = Q()
+
+        for value in values:
+            value = value.strip()
+            try:
+                # Try filtering as number (int or decimal)
+                num_val = float(value)
+                value_q |= (Q(spec_values__int_value=num_val) | Q(spec_values__decimal_value=num_val))
+            except ValueError:
+                # Try filtering as boolean
+                if value.lower() in ['true', 'false']:
+                    value_q |= Q(spec_values__bool_value=(value.lower() == 'true'))
+                else:
+                    # Filter as string (case-insensitive contains)
+                    value_q |= Q(spec_values__str_value__icontains=value)
+
+        return queryset.filter(spec_q & value_q).distinct()
+
+    def _filter_spec_range_by_id(self, queryset, spec_id, min_val, max_val):
+        """Filters queryset for a specification by ID and numeric range."""
+        q = Q(spec_values__specification__id=spec_id)
         if min_val is not None:
             q &= Q(spec_values__int_value__gte=min_val) | Q(spec_values__decimal_value__gte=min_val)
         if max_val is not None:

@@ -4,152 +4,275 @@
 
 ---
 
-## فیلترهای قدیمی (قبل از توسعه جدید)
+## فیلترهای محصولات (Product)
 
-### محصولات (Product)
-- جستجو:  
-  `/api/products/?search=کلمه`
-- دسته‌بندی:  
-  `/api/products/?categories=1` (آیدی دسته)
-- برند:  
-  `/api/products/?brand=1`
-- تگ:  
-  `/api/products/?tags=1`
-- رنگ:  
-  `/api/products/?options__color=1`
-- فعال بودن:  
+### فیلترهای پایه
+- **جستجو**:  
+  `/api/products/?search=لپ‌تاپ`
+- **فعال بودن**:  
   `/api/products/?is_active=true`
+- **موجودی**:  
+  `/api/products/?in_stock=true`
 
-### دسته‌بندی (Category)
-- جستجو:  
-  `/api/categories/?search=کلمه`
-- والد:  
-  `/api/categories/?parent=1`
-- برند:  
-  `/api/categories/?brand=1`
+### فیلترهای چندتایی (Multiple Choice)
+- **دسته‌بندی‌ها**:  
+  `/api/products/?categories=1,2,3`
+- **برندها**:  
+  `/api/products/?brands=1,2`
+- **تگ‌ها**:  
+  `/api/products/?tags=1,2,3`
+- **رنگ‌ها**:  
+  `/api/products/?colors=1,2`
+- **گارانتی‌ها**:  
+  `/api/products/?warranties=1,2`
+- **گروه‌های مشخصات**:  
+  `/api/products/?spec_groups=1,2,3`
 
-### ویژگی محصول (ProductOption)
-- محصول:  
-  `/api/product-options/?product=1`
-- رنگ:  
-  `/api/product-options/?color=1`
-- فعال بودن:  
-  `/api/product-options/?is_active=true`
-  
+### فیلترهای محدوده‌ای (Range)
+- **محدوده قیمت**:  
+  `/api/products/?price_range_min=1000000&price_range_max=5000000`
+
+### فیلترهای بولی (Boolean)
+- **دارای تخفیف**:  
+  `/api/products/?has_discount=true`
+- **دارای گارانتی**:  
+  `/api/products/?has_warranty=true`
+
+### فیلترهای مشخصات فنی
+- **مشخصات فنی (نام:مقدار)**:  
+  `/api/products/?specification=RAM:8GB`  
+  `/api/products/?specification=رنگ:قرمز`
+- **مشخصات فنی (نام:حداقل:حداکثر)**:  
+  `/api/products/?specification=Storage:128:512`
+- **مشخصات فنی چندتایی**:  
+  `/api/products/?specification=رنگ:قرمز,آبی,سبز`
+- **مشخصات فنی (آیدی:مقدار)**:  
+  `/api/products/?spec_by_id=5:8GB`  
+  `/api/products/?spec_by_id=10:128:512`
+- **مشخصات فنی (آیدی)**:  
+  `/api/products/?spec_ids=5,10,15`
+
 ---
 
-## فیلترهای جدید (پس از توسعه)
+## فیلترهای دسته‌بندی (Category)
 
-### محصولات (Product)
-- جستجو:  
-  `/api/products/?search=کلمه`
-- دسته‌بندی (چندتایی):  
-  `/api/products/?categories=1,2,3`
-- برند (چندتایی):  
-  `/api/products/?brands=1,2`
-- تگ (چندتایی):  
-  `/api/products/?tags=1,2`
-- رنگ (چندتایی):  
-  `/api/products/?colors=1,2`
-- فعال بودن:  
-  `/api/products/?is_active=true`
-- موجودی:  
-  `/api/products/?in_stock=true`
-- محدوده قیمت:  
-  `/api/products/?price_range_min=1000&price_range_max=5000`
-- دارای تخفیف:  
-  `/api/products/?has_discount=true`
-- دارای گارانتی:  
-  `/api/products/?has_warranty=true`
-- گارانتی (چندتایی):  
-  `/api/products/?warranties=1,2`
-- گروه مشخصات (چندتایی):  
-  `/api/products/?spec_groups=1,2`
-- فیلتر مشخصات فنی:  
-  `/api/products/?specification=RAM:8GB`  
-  یا  
-  `/api/products/?specification=Storage:128:512`
-
-### دسته‌بندی (Category)
-- جستجو:  
-  `/api/categories/?search=کلمه`
-- والد:  
+### فیلترهای پایه
+- **جستجو**:  
+  `/api/categories/?search=الکترونیک`
+- **والد**:  
   `/api/categories/?parent=1`
-- برند (چندتایی):  
+- **فعال بودن**:  
+  `/api/categories/?is_active=true`
+
+### فیلترهای چندتایی
+- **برندها**:  
   `/api/categories/?brands=1,2`
-- دارای محصول:  
-  `/api/categories/?has_products=true`
-- دارای مشخصات:  
-  `/api/categories/?has_specifications=true`
-- نام مشخصه:  
-  `/api/categories/?spec_name=RAM`
-- نوع داده مشخصه:  
-  `/api/categories/?spec_data_type=int`
-- گروه مشخصات:  
+- **گروه مشخصات**:  
   `/api/categories/?spec_group=1,2`
-- فیلتر مشخصات فنی با مقدار:  
+- **مشخصات فنی**:  
+  `/api/categories/?spec_definitions=1,2,3`
+
+### فیلترهای بولی
+- **دارای محصول**:  
+  `/api/categories/?has_products=true`
+- **دارای مشخصات**:  
+  `/api/categories/?has_specifications=true`
+
+### فیلترهای مشخصات فنی
+- **نام مشخصه**:  
+  `/api/categories/?spec_names=RAM`
+- **مقدار عددی**:  
+  `/api/categories/?spec_int_value=8`
+- **مقدار اعشاری**:  
+  `/api/categories/?spec_decimal_value=128.5`
+- **مقدار متنی**:  
+  `/api/categories/?spec_str_value=قرمز`
+- **مقدار بولی**:  
+  `/api/categories/?spec_bool_value=true`
+- **مقدار مشخصه (نام:مقدار)**:  
   `/api/categories/?spec_value=RAM:8`
 
-### ویژگی محصول (ProductOption)
-- جستجو:  
-  `/api/product-options/?search=کلمه`
-- محصول:  
-  `/api/product-options/?product=1`
-- رنگ:  
-  `/api/product-options/?color=1`
-- گارانتی:  
-  `/api/product-options/?warranty=1`
-- فعال بودن:  
-  `/api/product-options/?is_active=true`
-- محدوده قیمت:  
-  `/api/product-options/?price_range_min=1000&price_range_max=5000`
-- محدوده تخفیف:  
-  `/api/product-options/?discount_range_min=10&discount_range_max=50`
-- دارای گارانتی:  
-  `/api/product-options/?has_warranty=true`
-- دارای تخفیف:  
-  `/api/product-options/?has_discount=true`
+---
 
-### گارانتی (Warranty)
-- جستجو:  
-  `/api/warranties/?search=کلمه`
-- نام شرکت:  
-  `/api/warranties/?company=شرکت`
-- فعال بودن:  
+## فیلترهای ویژگی محصول (ProductOption)
+
+### فیلترهای پایه
+- **جستجو**:  
+  `/api/product-options/?search=لپ‌تاپ`
+- **محصول**:  
+  `/api/product-options/?product=1`
+- **رنگ**:  
+  `/api/product-options/?color=1`
+- **گارانتی**:  
+  `/api/product-options/?warranty=1`
+- **فعال بودن**:  
+  `/api/product-options/?is_active=true`
+
+### فیلترهای محدوده‌ای
+- **محدوده قیمت**:  
+  `/api/product-options/?price_range_min=1000000&price_range_max=5000000`
+- **محدوده تخفیف**:  
+  `/api/product-options/?discount_range_min=10&discount_range_max=50`
+
+### فیلترهای بولی
+- **دارای گارانتی**:  
+  `/api/product-options/?has_warranty=true`
+- **دارای تخفیف**:  
+  `/api/product-options/?has_discount=true`
+- **تخفیف فعال**:  
+  `/api/product-options/?is_active_discount=true`
+
+---
+
+## فیلترهای گارانتی (Warranty)
+
+### فیلترهای پایه
+- **جستجو**:  
+  `/api/warranties/?search=شرکت`
+- **نام شرکت**:  
+  `/api/warranties/?company=شرکت گارانتی`
+- **فعال بودن**:  
   `/api/warranties/?is_active=true`
-- محدوده مدت:  
-  `/api/warranties/?duration_range_min=12&duration_range_max=36`
-- نیاز به ثبت:  
+- **نیاز به ثبت**:  
   `/api/warranties/?registration_required=true`
-- دارای محصول:  
+
+### فیلترهای محدوده‌ای
+- **محدوده مدت**:  
+  `/api/warranties/?duration_range_min=12&duration_range_max=36`
+
+### فیلترهای بولی
+- **دارای محصول**:  
   `/api/warranties/?has_product_options=true`
 
-### گروه مشخصات (SpecificationGroup)
-- جستجو:  
-  `/api/specification-groups/?search=کلمه`
-- دارای مشخصات:  
+---
+
+## فیلترهای گروه مشخصات (SpecificationGroup)
+
+### فیلترهای پایه
+- **جستجو**:  
+  `/api/specification-groups/?search=ظاهری`
+
+### فیلترهای بولی
+- **دارای مشخصات**:  
   `/api/specification-groups/?has_specifications=true`
 
-### مشخصات فنی (Specification)
-- جستجو:  
-  `/api/specifications/?search=کلمه`
-- دسته‌بندی (چندتایی):  
-  `/api/specifications/?categories=1,2`
-- گروه:  
-  `/api/specifications/?group=1`
-- نوع داده:  
+---
+
+## فیلترهای مشخصات فنی (Specification)
+
+### فیلترهای پایه
+- **جستجو**:  
+  `/api/specifications/?search=RAM`
+- **نوع داده**:  
   `/api/specifications/?data_type=int`
-- نام:  
+- **نام**:  
   `/api/specifications/?name=RAM`
-- اصلی بودن:  
+- **اصلی بودن**:  
   `/api/specifications/?is_main=true`
+
+### فیلترهای چندتایی
+- **دسته‌بندی‌ها**:  
+  `/api/specifications/?categories=1,2`
+- **گروه**:  
+  `/api/specifications/?group=1`
+
+---
+
+## نحوه ترکیب فیلترها
+
+شما می‌توانید چندین فیلتر را همزمان استفاده کنید:
+
+```
+GET /api/products/?categories=1,2&brands=1&price_range_min=1000000&has_discount=true&spec_groups=1,2&specification=RAM:8GB
+```
+
+### مثال‌های کاربردی
+
+#### 1. محصولات لپ‌تاپ با RAM 8GB و قیمت بین 2 تا 5 میلیون:
+```
+GET /api/products/?categories=1&specification=RAM:8&price_range_min=2000000&price_range_max=5000000
+```
+#### 1.1. محصولات لپ‌تاپ با RAM 8GB (با آیدی):
+```
+GET /api/products/?categories=1&spec_by_id=5:8&price_range_min=2000000&price_range_max=5000000
+```
+
+#### 2. محصولات دارای تخفیف در گروه مشخصات ظاهری:
+```
+GET /api/products/?has_discount=true&spec_groups=1
+```
+
+#### 3. محصولات برند خاص با رنگ‌های مختلف:
+```
+GET /api/products/?brands=1&colors=1,2,3
+```
+
+#### 4. محصولات فعال با گارانتی:
+```
+GET /api/products/?is_active=true&has_warranty=true
+```
 
 ---
 
 ## نکات مهم
-- برای فیلترهای چندتایی (مثل categories, brands, tags) مقدارها را با کاما جدا کنید:  
-  `?categories=1,2,3`
-- برای فیلترهای محدوده‌ای (مثل price_range) از دو پارامتر min و max استفاده کنید:  
-  `?price_range_min=1000&price_range_max=5000`
-- برای فیلتر مشخصات فنی (specification) فرمت `نام:مقدار` یا `نام:حداقل:حداکثر` را رعایت کنید.
-- همه فیلترها را می‌توانید همزمان ترکیب کنید. 
+
+### فرمت‌های فیلتر
+
+1. **فیلترهای چندتایی**: مقادیر را با کاما جدا کنید
+   ```
+   ?categories=1,2,3
+   ```
+
+2. **فیلترهای محدوده‌ای**: از دو پارامتر min و max استفاده کنید
+   ```
+   ?price_range_min=1000000&price_range_max=5000000
+   ```
+
+3. **فیلتر مشخصات فنی**: فرمت `نام:مقدار` یا `نام:حداقل:حداکثر`
+   ```
+   ?specification=RAM:8GB
+   ?specification=Storage:128:512
+   ```
+4. **فیلتر مشخصات فنی با آیدی**: فرمت `آیدی:مقدار` یا `آیدی:حداقل:حداکثر`
+   ```
+   ?spec_by_id=5:8GB
+   ?spec_by_id=10:128:512
+   ```
+5. **فیلتر آیدی مشخصات**: مقادیر را با کاما جدا کنید
+   ```
+   ?spec_ids=5,10,15
+   ```
+
+4. **فیلترهای بولی**: از `true` یا `false` استفاده کنید
+   ```
+   ?is_active=true
+   ?has_discount=false
+   ```
+
+### کدهای خطا
+
+- **400 Bad Request**: پارامترهای فیلتر نامعتبر
+- **404 Not Found**: آیدی‌های ارسالی وجود ندارند
+- **500 Internal Server Error**: خطای سرور
+
+### محدودیت‌ها
+
+- حداکثر 100 محصول در هر درخواست
+- حداکثر 10 فیلتر همزمان
+- فیلترهای متنی حساس به حروف کوچک و بزرگ نیستند
+- فیلترهای عددی فقط اعداد صحیح و اعشاری را می‌پذیرند
+
+---
+
+## تست فیلترها
+
+برای تست فیلترها می‌توانید از ابزارهای زیر استفاده کنید:
+
+1. **Postman**: برای تست API
+2. **cURL**: برای تست از خط فرمان
+3. **مرورگر**: برای تست فیلترهای ساده
+
+### مثال cURL:
+```bash
+curl "http://localhost:8000/api/products/?categories=1,2&brands=1&has_discount=true"
+``` 

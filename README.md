@@ -46,9 +46,8 @@
   `/api/products/?specification=Storage:128:512`
 - **مشخصات فنی چندتایی**:  
   `/api/products/?specification=رنگ:قرمز,آبی,سبز`
-- **مشخصات فنی (آیدی:مقدار)**:  
-  `/api/products/?spec_by_id=5:8GB`  
-  `/api/products/?spec_by_id=10:128:512`
+- **مشخصات فنی (آیدی مقدار)**:  
+  `/api/products/?spec_by_id=128,512`
 - **مشخصات فنی (آیدی)**:  
   `/api/products/?spec_ids=5,10,15`
 - **مقادیر مشخصات فنی (آیدی)**:  
@@ -71,13 +70,13 @@
 | مقدار اعشاری مشخصه      | `/api/categories/?spec_decimal_value=12.9`        | مقدار اعشاری                         |
 | مقدار متنی مشخصه        | `/api/categories/?spec_str_value=قرمز`            | مقدار متنی                            |
 | مقدار بله/خیر مشخصه     | `/api/categories/?spec_bool_value=true`           | مقدار بولی                            |
-| مقدار مشخصه (پیشرفته)   | `/api/categories/?spec_value=110:151_109:150`     | فیلتر بر اساس آیدی مشخصه و آیدی مقدار ProductSpecification |
+| مقدار مشخصه (پیشرفته)   | `/api/categories/?spec_value=151,150`     | فیلتر بر اساس آیدی مقدار ProductSpecification |
 
 > ⚠️ **نکته مهم:**
-> برای استفاده از فیلتر `spec_value` باید آیدی مشخصه (Specification) و آیدی مقدار مشخصه محصول (ProductSpecification) را از داده‌های واقعی یا دیتابیس پیدا کنی. مثال بالا:
-> - 110:151 یعنی RAM (id=110) با مقدار ProductSpecification id=151 (که مقدارش 8 است)
-> - 109:150 یعنی حافظه داخلی (id=109) با مقدار ProductSpecification id=150 (که مقدارش 512 است)
-> اگر چند مقدار داری، همه آیدی‌ها را با ویرگول جدا کن: `/api/categories/?spec_value=110:151,152_109:150,153`
+> برای استفاده از فیلتر `spec_value` یا `spec_by_id` فقط کافی است آیدی مقدار مشخصه محصول (ProductSpecification) را از داده‌های واقعی یا دیتابیس پیدا کنی. مثال:
+> - 151 یعنی مقدار ProductSpecification id=151 (مثلاً مقدارش 8 است)
+> - 150 یعنی مقدار ProductSpecification id=150 (مثلاً مقدارش 512 است)
+> اگر چند مقدار داری، همه آیدی‌ها را با ویرگول جدا کن: `/api/categories/?spec_value=151,152,150,153` یا `/api/products/?spec_by_id=128,512,700`
 
 ---
 
@@ -179,12 +178,12 @@ GET /api/products/?categories=1,2&brands=1&price_range_min=1000000&has_discount=
 ```
 GET /api/products/?categories=1&specification=RAM:8&price_range_min=2000000&price_range_max=5000000
 ```
-#### 1.1. محصولات لپ‌تاپ با RAM 8GB (با آیدی):
+#### 1.1. محصولات لپ‌تاپ با RAM 8GB (با آیدی مقدار):
 ```
-GET /api/products/?categories=1&spec_by_id=5:8&price_range_min=2000000&price_range_max=5000000
+GET /api/products/?categories=1&spec_by_id=128&price_range_min=2000000&price_range_max=5000000
 ```
 
-#### 1.2. محصولات با مقادیر مشخصات فنی خاص (با آیدی):
+#### 1.2. محصولات با مقادیر مشخصات فنی خاص (با آیدی مقدار):
 ```
 GET /api/products/?spec_value_ids=12,14,15
 ```

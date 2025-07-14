@@ -133,6 +133,20 @@ class ProductSerializer(serializers.ModelSerializer):
     spec_values = ProductSpecificationSerializer(many=True, read_only=True)
     spec_groups = serializers.SerializerMethodField()
 
+class ProductCompactSerializer(serializers.ModelSerializer):
+    brand = serializers.StringRelatedField()
+    min_price = serializers.SerializerMethodField()
+    image = serializers.ImageField()
+    options = ProductOptionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Product
+        fields = ['id', 'title', 'slug', 'brand', 'min_price', 'image', 'options']
+
+    def get_min_price(self, obj):
+        return obj.options.aggregate(min=Min('option_price'))['min']
+
+
     tags = TagSerializer(many=True , read_only=True)
 
     class Meta:

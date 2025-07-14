@@ -58,41 +58,26 @@
 
 ## فیلترهای دسته‌بندی (Category)
 
-### فیلترهای پایه
-- **جستجو**:  
-  `/api/categories/?search=الکترونیک`
-- **والد**:  
-  `/api/categories/?parent=1`
-- **فعال بودن**:  
-  `/api/categories/?is_active=true`
+| نام فیلتر                | فرمت/مثال                                         | توضیحات کوتاه                        |
+|-------------------------|---------------------------------------------------|--------------------------------------|
+| جستجو                   | `/api/categories/?search=تبلت`                    | جستجو بر اساس نام یا توضیحات         |
+| والد                    | `/api/categories/?parent=30`                      | فیلتر بر اساس آیدی والد              |
+| فعال بودن               | `/api/categories/?is_active=true`                  | فقط دسته‌های فعال                    |
+| برندها                  | `/api/categories/?brands=30,31`                   | چند برند با ویرگول                   |
+| گروه مشخصات             | `/api/categories/?spec_group=1,2`                 | چند گروه مشخصات                      |
+| مشخصات فنی (آیدی)       | `/api/categories/?spec_definitions=109,110`       | چند مشخصه فنی                        |
+| نام مشخصه               | `/api/categories/?spec_names=RAM`                 | جستجو در نام مشخصه                   |
+| مقدار عددی مشخصه        | `/api/categories/?spec_int_value=8`               | مقدار عددی                           |
+| مقدار اعشاری مشخصه      | `/api/categories/?spec_decimal_value=12.9`        | مقدار اعشاری                         |
+| مقدار متنی مشخصه        | `/api/categories/?spec_str_value=قرمز`            | مقدار متنی                            |
+| مقدار بله/خیر مشخصه     | `/api/categories/?spec_bool_value=true`           | مقدار بولی                            |
+| مقدار مشخصه (پیشرفته)   | `/api/categories/?spec_value=110:151_109:150`     | فیلتر بر اساس آیدی مشخصه و آیدی مقدار ProductSpecification |
 
-### فیلترهای چندتایی
-- **برندها**:  
-  `/api/categories/?brands=1,2`
-- **گروه مشخصات**:  
-  `/api/categories/?spec_group=1,2`
-- **مشخصات فنی**:  
-  `/api/categories/?spec_definitions=1,2,3`
-
-### فیلترهای بولی
-- **دارای محصول**:  
-  `/api/categories/?has_products=true`
-- **دارای مشخصات**:  
-  `/api/categories/?has_specifications=true`
-
-### فیلترهای مشخصات فنی
-- **نام مشخصه**:  
-  `/api/categories/?spec_names=RAM`
-- **مقدار عددی**:  
-  `/api/categories/?spec_int_value=8`
-- **مقدار اعشاری**:  
-  `/api/categories/?spec_decimal_value=128.5`
-- **مقدار متنی**:  
-  `/api/categories/?spec_str_value=قرمز`
-- **مقدار بولی**:  
-  `/api/categories/?spec_bool_value=true`
-- **مقدار مشخصه (نام:مقدار)**:  
-  `/api/categories/?spec_value=RAM:8`
+> ⚠️ **نکته مهم:**
+> برای استفاده از فیلتر `spec_value` باید آیدی مشخصه (Specification) و آیدی مقدار مشخصه محصول (ProductSpecification) را از داده‌های واقعی یا دیتابیس پیدا کنی. مثال بالا:
+> - 110:151 یعنی RAM (id=110) با مقدار ProductSpecification id=151 (که مقدارش 8 است)
+> - 109:150 یعنی حافظه داخلی (id=109) با مقدار ProductSpecification id=150 (که مقدارش 512 است)
+> اگر چند مقدار داری، همه آیدی‌ها را با ویرگول جدا کن: `/api/categories/?spec_value=110:151,152_109:150,153`
 
 ---
 

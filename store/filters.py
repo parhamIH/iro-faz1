@@ -490,8 +490,8 @@ class CategoryFilter(FilterSet):
         label='مقدار بله/خیر مشخصه'
     )
     
-    # فیلتر ترکیبی برای مقدار مشخصه با نام مشخصه
-    spec_value = CharFilter(method='filter_spec_value', label='مقدار مشخصه (نام:مقدار)')
+    # فیلتر ترکیبی برای مقدار مشخصه فقط با آیدی مشخصه و مقدار هم آیدی مقدار مشخصه محصول (پشتیبانی از چند کلید و چند مقدار با جداکننده _)
+    spec_value = CharFilter(method='filter_spec_value', label='مقدار مشخصه (آیدی:آیدی مقدار)', help_text='فرمت: spec_id:spec_value_id1,spec_value_id2_spec_id2:spec_value_id1,spec_value_id2 ...')
     
     def filter_search(self, queryset, name, value):
         if not value:
@@ -519,42 +519,36 @@ class CategoryFilter(FilterSet):
 
     def filter_spec_value(self, queryset, name, value):
         """
-        فیلتر بر اساس مقدار مشخصه فنی
-        فرمت: "نام_مشخصه:مقدار" یا "نام_مشخصه:حداقل:حداکثر"
-        مثال: "RAM:8", "Storage:128:512", "Color:قرمز"
+        فیلتر بر اساس مقدار مشخصه فنی فقط با آیدی مشخصه و آیدی مقدار مشخصه محصول
+        فرمت:
+        - "spec_id:spec_value_id"
+        - "spec_id:spec_value_id1,spec_value_id2"
+        - "spec_id:spec_value_id1,spec_value_id2_spec_id2:spec_value_id1,spec_value_id2"
+        مثال: "5:123,124_6:125,126"
+        هر گروه با _ جدا می‌شود و همه فیلترها با AND ترکیب می‌شوند.
         """
-        if not value or ':' not in value:
+        if not value:
             return queryset
-
-        parts = value.split(':')
-        spec_name = parts[0].strip()
-
-        if len(parts) == 2:
-            # مقدار دقیق
-            spec_value = parts[1].strip()
-            return queryset.filter(
-                spec_definitions__name__iexact=spec_name,
-                products__spec_values__specification__name__iexact=spec_name,
-                products__spec_values__int_value=spec_value
-            ).distinct()
-        elif len(parts) == 3:
-            # محدوده
+        groups = value.split('_')
+        for group in groups:
+            if ':' not in group:
+                continue
+            key, values = group.split(':', 1)
             try:
-                min_val = float(parts[1]) if parts[1] else None
-                max_val = float(parts[2]) if parts[2] else None
-                q = Q(
-                    spec_definitions__name__iexact=spec_name,
-                    products__spec_values__specification__name__iexact=spec_name
-                )
-                if min_val is not None:
-                    q &= Q(products__spec_values__int_value__gte=min_val)
-                if max_val is not None:
-                    q &= Q(products__spec_values__int_value__lte=max_val)
-                return queryset.filter(q).distinct()
-            except ValueError:
-                return queryset
-
-        return queryset
+                spec_id = int(key.strip())
+            except (ValueError, TypeError):
+                continue
+            value_ids = [v.strip() for v in values.split(',') if v.strip()]
+            try:
+                value_ids = [int(v) for v in value_ids]
+            except Exception:
+                continue
+            queryset = queryset.filter(
+                spec_definitions__id=spec_id,
+                products__spec_values__specification__id=spec_id,
+                products__spec_values__id__in=value_ids
+            )
+        return queryset.distinct()
 
     class Meta:
         model = Category

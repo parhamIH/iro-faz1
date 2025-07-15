@@ -10,7 +10,7 @@ from mptt.models import MPTTModel, TreeForeignKey
 from . import models as installments 
 
 
-#__________________________________________ ------warranty------ _______________________________________
+#public__________________________________________ ------warranty------ _______________________________________
 
 class Warranty(models.Model):
     name = models.CharField(max_length=100, verbose_name='نام گارانتی')
@@ -32,6 +32,8 @@ class Warranty(models.Model):
     def __str__(self):
         return f"{self.company} - {self.name} - {self.duration} ماه"
 
+#public__________________________________________ ------tag------ _______________________________________
+
 class Tag(models.Model):
     name = models.CharField(max_length=100, verbose_name='نام تگ')
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True, verbose_name='شناسه URL')
@@ -44,7 +46,7 @@ class Tag(models.Model):
         return self.name
 
 
-#__________________________________________ ------brand------ _______________________________________
+#public__________________________________________ ------brand------ _______________________________________
 class Brand(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
@@ -69,7 +71,7 @@ class Brand(models.Model):
 
 
 
-#__________________________________________ ------category------ _______________________________________
+#Category__________________________________________ ------category------ _______________________________________
 
 class Category(MPTTModel):
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
@@ -100,7 +102,7 @@ class Category(MPTTModel):
 
 
 
-#__________________________________________ ------product------ _______________________________________
+#product__________________________________________ ------product------ _______________________________________
 class Product(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
@@ -129,7 +131,7 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
-#__________________________________________ ------specification group  ------ _______________________________________   
+#Specification__________________________________________ ------specification group  ------ _______________________________________   
 
 class SpecificationGroup(models.Model):
     name = models.CharField(max_length=100, verbose_name='نام گروه مشخصات')
@@ -141,7 +143,7 @@ class SpecificationGroup(models.Model):
     def __str__(self):
         return self.name
 
-#__________________________________________ ------specification------ _______________________________________   
+#Specification__________________________________________ ------specification------ _______________________________________   
 class Specification(models.Model):
     DATA_TYPE_CHOICES = [
         ('int', 'عدد صحیح'),
@@ -177,7 +179,7 @@ class Specification(models.Model):
         categories_names = ", ".join(cat.name for cat in self.categories.all())
         return f"{categories_names} - {self.name} ({self.get_data_type_display()})"
 
-#__________________________________________ ------product specification------ _______________________________________
+#product__________________________________________ ------product specification------ _______________________________________
 class ProductSpecification(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='spec_values', verbose_name='محصول')
     specification = models.ForeignKey(Specification, on_delete=models.CASCADE, related_name='values', verbose_name='مشخصه')
@@ -213,12 +215,8 @@ class ProductSpecification(models.Model):
             return self.bool_value
         return None
 
-
-
-
-
-#__________________________________________ ------product option------ _______________________________________
 #add  add provider for product-option foreignkey for faz 2 
+#product__________________________________________ ------product option------ _______________________________________
 class ProductOption(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='options', verbose_name='محصول')
     color = models.ForeignKey('Color', on_delete=models.CASCADE, related_name='options', blank=True, null=True, verbose_name='رنگ')
@@ -283,6 +281,7 @@ class ProductOption(models.Model):
             return f"{base_str} (تخفیف: {self.discount}%)"
         return base_str
 
+#product__________________________________________ ------Gallery------ _______________________________________
 
 class Gallery(models.Model):
     product = models.ForeignKey(ProductOption, on_delete=models.CASCADE, related_name='gallery', verbose_name='ویژگی محصول')
@@ -298,7 +297,7 @@ class Gallery(models.Model):
         return f"عکس برای {self.product.product.title} - {color_name}"
 
 
-#__________________________________________ ------color------ _______________________________________
+#public__________________________________________ ------color------ _______________________________________
 class Color(models.Model):
     COLOR_PALETTE = [
         ("#FFFFFF", "white"),
@@ -317,7 +316,7 @@ class Color(models.Model):
     def __str__(self):
         return self.name
 
-# __________________________________________ ------ArticleCategory------ _______________________________________
+# Articles__________________________________________ ------ArticleCategory------ _______________________________________
 
 class ArticleCategory(models.Model):
     name = models.CharField(max_length=100, verbose_name='نام دسته‌بندی')
@@ -340,7 +339,7 @@ class ArticleCategory(models.Model):
         return self.name
 
 
-# __________________________________________ ------Article------ _______________________________________
+#Articles __________________________________________ ------Article------ _______________________________________
 
 class Article(models.Model):
     title = models.CharField(max_length=255, verbose_name='عنوان')

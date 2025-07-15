@@ -80,7 +80,7 @@ class Category(MPTTModel):
     brand = models.ManyToManyField('Brand', blank=True, related_name='categories')
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
     image = models.ImageField(upload_to='categories/', blank=True, null=True)
-
+    icon = models.ImageField(upload_to='categories/icons/', blank=True, null=True)
     class MPTTMeta:
         order_insertion_by = ["parent", "name"]
 

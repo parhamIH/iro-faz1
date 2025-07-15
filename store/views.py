@@ -14,7 +14,6 @@ from rest_framework.decorators import action
 from django.db.models import Min,Count, Q
 from django.utils import timezone
 
-from django.db.models import 
 from mptt.models import MPTTModel
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10

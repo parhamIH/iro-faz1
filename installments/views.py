@@ -5,7 +5,6 @@ from django.shortcuts import get_object_or_404
 from datetime import timedelta, date
 from decimal import Decimal, ROUND_HALF_UP
 import jdatetime
-
 from .models import InstallmentParameter, CompanyInstallmentParameter
 from store.models import Category
 from .serializers import (
@@ -149,6 +148,20 @@ class CompanyInstallmentCalculationAPIView(APIView):
             "repayment_period": convert_to_persian_digits(result['repayment_period']),
             "checks": checks,
         })
+
+    def get(self, request):
+        params = CompanyInstallmentParameter.objects.all()
+        result = []
+        for param in params:
+            categories = param.applicable_categories.values('id', 'name') if hasattr(param, 'applicable_categories') else []
+            result.append({
+                'id': param.id,
+                'repayment_period': param.repayment_period,
+                'monthly_interest_percent': str(param.monthly_interest_percent),
+                'guarantee_method': param.guarantee_method,
+                'categories': list(categories),
+            })
+        return Response(result)
 
 
 class CategoryInstallmentOptionsAPIView(APIView):

@@ -133,6 +133,21 @@ class ProductSerializer(serializers.ModelSerializer):
     spec_values = ProductSpecificationSerializer(many=True, read_only=True)
     spec_groups = serializers.SerializerMethodField()
 
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'title', 'slug', 'categories', 'description',
+            'image', 'brand', 'options', 'spec_values',
+            'is_active', 'tags', 'spec_groups',
+        ]
+
+    def get_spec_groups(self, obj):
+        groups = SpecificationGroup.objects.filter(
+            specifications__values__product=obj
+        ).distinct()
+        serializer = SpecificationGroupSerializer(groups, many=True, context={'product': obj})
+        return serializer.data
+
 class ProductCompactSerializer(serializers.ModelSerializer):
     brand = serializers.StringRelatedField()
     min_price = serializers.SerializerMethodField()
@@ -156,12 +171,6 @@ class ProductCompactSerializer(serializers.ModelSerializer):
             'image', 'brand', 'options', 'spec_values',
             'is_active', 'tags','spec_groups',
         ]
-    def get_spec_groups(self,obj):
-        groups = SpecificationGroup.objects.filter(
-            specifications__values__product=obj
-        ).distinct()
-        serializer = SpecificationGroupSerializer(groups, many=True, context={'product': obj})
-        return serializer.data
 
 class SpecificationWithValuesSerializer(serializers.ModelSerializer):
     values = serializers.SerializerMethodField()

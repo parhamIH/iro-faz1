@@ -180,11 +180,10 @@ class ProductCompactSerializer(serializers.ModelSerializer):
         ]
 
 class SpecificationWithValuesSerializer(serializers.ModelSerializer):
-    values = serializers.SerializerMethodField()
 
     class Meta:
         model = Specification
-        fields = ['id', 'name', 'data_type', 'unit', 'values']
+        fields = ['id', 'name', 'data_type', 'unit']
 
     def get_values(self, obj):
         # context باید category را داشته باشد
@@ -198,17 +197,7 @@ class SpecificationWithValuesSerializer(serializers.ModelSerializer):
             specification=obj,
             product__categories=category
         )
-        values = set()
-        for spec in qs:
-            if obj.data_type == 'int' and spec.int_value is not None:
-                values.add(str(spec.int_value))
-            elif obj.data_type == 'decimal' and spec.decimal_value is not None:
-                values.add(str(spec.decimal_value))
-            elif obj.data_type == 'str' and spec.str_value:
-                values.add(spec.str_value)
-            elif obj.data_type == 'bool' and spec.bool_value is not None:
-                values.add(str(spec.bool_value))
-        return list(values)
+
 
 class CategorySpecificationWithValuesSerializer(serializers.ModelSerializer):
     specifications = serializers.SerializerMethodField()

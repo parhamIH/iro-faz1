@@ -100,6 +100,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     "corsheaders",
     'jdatetime',
+    'jalali_date',
+    
     #####apps####
     'cart',
     'store',

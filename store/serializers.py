@@ -151,10 +151,8 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
 
     def get_spec_groups(self, obj):
-        groups = SpecificationGroup.objects.filter(
-            specifications__values__product=obj
-        ).distinct()
-        serializer = SpecificationGroupSerializer(groups, many=True, context={'product': obj})
+
+        serializer = SpecificationGroupSerializer( many=True, context={'product': obj})
         return serializer.data
 
 class ProductCompactSerializer(serializers.ModelSerializer):

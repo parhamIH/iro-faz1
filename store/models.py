@@ -146,12 +146,6 @@ class SpecificationGroup(models.Model):
 
 #Specification__________________________________________ ------specification------ _______________________________________   
 class Specification(models.Model):
-    DATA_TYPE_CHOICES = [
-        ('int', 'عدد صحیح'),
-        ('decimal', 'عدد اعشاری'),
-        ('str', 'متن'),
-        ('bool', 'بله/خیر'),
-    ]
 
     categories = models.ManyToManyField(Category, related_name='spec_definitions', verbose_name='دسته‌بندی‌ها')
 
@@ -159,7 +153,7 @@ class Specification(models.Model):
 
     name = models.CharField(max_length=100, verbose_name='نام مشخصه')
     slug = models.SlugField(max_length=120, unique=True, allow_unicode=True, blank=True)
-    data_type = models.CharField(max_length=20, choices=DATA_TYPE_CHOICES, verbose_name='نوع داده')
+    data_type = models.CharField(max_length=50, verbose_name='نوع داده')
     unit = models.CharField(max_length=30, blank=True, null=True, verbose_name='واحد')
     is_main = models.BooleanField(default=False, verbose_name='مشخصه اصلی', help_text='مشخصه اصلی برای محصولات است')
 
@@ -184,10 +178,7 @@ class Specification(models.Model):
 class ProductSpecification(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='spec_values', verbose_name='محصول')
     specification = models.ForeignKey(Specification, on_delete=models.CASCADE, related_name='values', verbose_name='مشخصه')
-    int_value = models.IntegerField(blank=True, null=True, verbose_name='مقدار عددی')
-    decimal_value = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name='مقدار اعشاری')
-    str_value = models.CharField(max_length=255, blank=True, null=True, verbose_name='مقدار متنی')
-    bool_value = models.BooleanField(blank=True, null=True, verbose_name='مقدار بله/خیر')
+    specification_value = models.BooleanField(blank=True, null=True, verbose_name='مقدار  برای ویژگی ')
     is_main = models.BooleanField(default=False, verbose_name='مشخصه اصلی', help_text='مشخصه اصلی برای محصول است')
 
     class Meta:
@@ -195,26 +186,6 @@ class ProductSpecification(models.Model):
         verbose_name_plural = 'مقادیر مشخصات محصول'
         unique_together = ['product', 'specification']
 
-    def clean(self):
-        if self.specification.data_type == 'int' and self.int_value is None:
-            raise ValidationError('برای مشخصه عددی صحیح باید مقدار عددی وارد شود')
-        elif self.specification.data_type == 'decimal' and self.decimal_value is None:
-            raise ValidationError('برای مشخصه اعشاری باید مقدار اعشاری وارد شود')
-        elif self.specification.data_type == 'str' and not self.str_value:
-            raise ValidationError('برای مشخصه متنی باید مقدار متنی وارد شود')
-        elif self.specification.data_type == 'bool' and self.bool_value is None:
-            raise ValidationError('برای مشخصه بله/خیر باید مقدار بله/خیر وارد شود')
-
-    def value(self):
-        if self.specification.data_type == 'int':
-            return self.int_value
-        elif self.specification.data_type == 'decimal':
-            return self.decimal_value
-        elif self.specification.data_type == 'str':
-            return self.str_value
-        elif self.specification.data_type == 'bool':
-            return self.bool_value
-        return None
 
 #add  add provider for product-option foreignkey for faz 2 
 #product__________________________________________ ------product option------ _______________________________________

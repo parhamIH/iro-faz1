@@ -178,7 +178,7 @@ class Specification(models.Model):
 class ProductSpecification(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='spec_values', verbose_name='محصول')
     specification = models.ForeignKey(Specification, on_delete=models.CASCADE, related_name='values', verbose_name='مشخصه')
-    specification_value = models.BooleanField(blank=True, null=True, verbose_name='مقدار  برای ویژگی ')
+    specification_value = models.CharField(max_length=255, blank=True, null=True, verbose_name='مقدار  برای ویژگی ')
     is_main = models.BooleanField(default=False, verbose_name='مشخصه اصلی', help_text='مشخصه اصلی برای محصول است')
 
     class Meta:
@@ -186,6 +186,8 @@ class ProductSpecification(models.Model):
         verbose_name_plural = 'مقادیر مشخصات محصول'
         unique_together = ['product', 'specification']
 
+    def value(self):
+        return self.specification_value
 
 #add  add provider for product-option foreignkey for faz 2 
 #product__________________________________________ ------product option------ _______________________________________

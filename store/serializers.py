@@ -6,7 +6,7 @@ from .models import (
 from .filters import ProductFilter
 from .models import Product
 from django.utils import timezone
-from django.db.models import Q, Avg
+from django.db.models import Q, Avg,Min
 
 
 

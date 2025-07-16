@@ -510,9 +510,16 @@ class ExcelImportService:
                     
                     # پیدا کردن محصول
                     try:
-                        product = Product.objects.get(title=product_title)
-                    except Product.DoesNotExist:
-                        self.log_message('warning', f'محصول "{product_title}" یافت نشد', index + 2)
+                        products = Product.objects.filter(title=product_title)
+                        if products.count() > 1:
+                            self.log_message('warning', f'چندین محصول با عنوان "{product_title}" یافت شد. اولین مورد انتخاب می‌شود.', index + 2)
+                        product = products.first()
+                        if not product:
+                            self.log_message('warning', f'محصول "{product_title}" یافت نشد', index + 2)
+                            errors += 1
+                            continue
+                    except Exception as e:
+                        self.log_message('error', f'خطا در پیدا کردن محصول "{product_title}": {str(e)}', index + 2)
                         errors += 1
                         continue
                     
@@ -588,17 +595,31 @@ class ExcelImportService:
                     
                     # پیدا کردن محصول
                     try:
-                        product = Product.objects.get(title=product_title)
-                    except Product.DoesNotExist:
-                        self.log_message('warning', f'محصول "{product_title}" یافت نشد', index + 2)
+                        products = Product.objects.filter(title=product_title)
+                        if products.count() > 1:
+                            self.log_message('warning', f'چندین محصول با عنوان "{product_title}" یافت شد. اولین مورد انتخاب می‌شود.', index + 2)
+                        product = products.first()
+                        if not product:
+                            self.log_message('warning', f'محصول "{product_title}" یافت نشد', index + 2)
+                            errors += 1
+                            continue
+                    except Exception as e:
+                        self.log_message('error', f'خطا در پیدا کردن محصول "{product_title}": {str(e)}', index + 2)
                         errors += 1
                         continue
                     
                     # پیدا کردن مشخصه
                     try:
-                        specification = Specification.objects.get(name=spec_name)
-                    except Specification.DoesNotExist:
-                        self.log_message('warning', f'مشخصه "{spec_name}" یافت نشد', index + 2)
+                        specifications = Specification.objects.filter(name=spec_name)
+                        if specifications.count() > 1:
+                            self.log_message('warning', f'چندین مشخصه با نام "{spec_name}" یافت شد. اولین مورد انتخاب می‌شود.', index + 2)
+                        specification = specifications.first()
+                        if not specification:
+                            self.log_message('warning', f'مشخصه "{spec_name}" یافت نشد', index + 2)
+                            errors += 1
+                            continue
+                    except Exception as e:
+                        self.log_message('error', f'خطا در پیدا کردن مشخصه "{spec_name}": {str(e)}', index + 2)
                         errors += 1
                         continue
                     

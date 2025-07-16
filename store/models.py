@@ -152,7 +152,6 @@ class Specification(models.Model):
     group = models.ForeignKey(SpecificationGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='specifications', verbose_name='گروه مشخصات')
 
     name = models.CharField(max_length=100, verbose_name='نام مشخصه')
-    slug = models.SlugField(max_length=120, unique=True, allow_unicode=True, blank=True)
     data_type = models.CharField(max_length=50, verbose_name='نوع داده')
     unit = models.CharField(max_length=30, blank=True, null=True, verbose_name='واحد')
     is_main = models.BooleanField(default=False, verbose_name='مشخصه اصلی', help_text='مشخصه اصلی برای محصولات است')
@@ -161,18 +160,10 @@ class Specification(models.Model):
         verbose_name = 'مشخصه'
         verbose_name_plural = 'مشخصات'
 
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name, allow_unicode=True)
-            counter = 1
-            while Specification.objects.filter(slug=self.slug).exists():
-                self.slug = f"{slugify(self.name, allow_unicode=True)}-{counter}"
-                counter += 1
-        super().save(*args, **kwargs)
 
     def __str__(self):
         categories_names = ", ".join(cat.name for cat in self.categories.all())
-        return f"{categories_names} - {self.name} ({self.get_data_type_display()})"
+        return f"{categories_names} - {self.name} "
 
 #product__________________________________________ ------product specification------ _______________________________________
 class ProductSpecification(models.Model):

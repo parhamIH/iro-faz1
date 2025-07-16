@@ -46,7 +46,6 @@ class SpecificationFilter(FilterSet):
     def filter_search(self, queryset, name, value):
         return queryset.filter(
             Q(name__icontains=value) |
-            Q(slug__icontains=value) |
             Q(unit__icontains=value) |
             Q(categories__name__icontains=value) |
             Q(categories__parent__name__icontains=value) |
@@ -70,7 +69,6 @@ class SpecificationFilter(FilterSet):
             'data_type': ['exact'],
             'name': ['exact', 'icontains'],
             "is_main": ['exact'],
-            "slug": ['exact', 'icontains'],
             "unit": ['exact', 'icontains'],
         }
 

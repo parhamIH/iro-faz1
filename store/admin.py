@@ -200,7 +200,6 @@ class SpecificationAdmin(admin.ModelAdmin):
     list_display = ['name', 'get_categories', 'group', 'data_type', 'unit', 'get_usage_count']
     list_filter = ['categories', 'group', 'data_type']
     search_fields = ['name', 'categories__name']
-    prepopulated_fields = {'slug': ('name',)}
     autocomplete_fields = ['categories', 'group']
     filter_horizontal = ['categories']
 
@@ -223,7 +222,7 @@ class SpecificationGroupAdmin(admin.ModelAdmin):
 
 @admin.register(ProductSpecification)
 class ProductSpecificationAdmin(admin.ModelAdmin):
-    list_display = ['product', 'specification', 'get_value', 'get_unit', 'get_data_type', 'is_main']
+    list_display = ['product', 'specification', 'get_value', 'get_unit', 'is_main']
     list_filter = ['specification__categories', 'specification__data_type', 'is_main']
     search_fields = ['product__title', 'specification__name']
     autocomplete_fields = ['product', 'specification']
@@ -240,9 +239,6 @@ class ProductSpecificationAdmin(admin.ModelAdmin):
         return obj.specification.unit if obj.specification.unit else '-'
     get_unit.short_description = 'واحد'
 
-    def get_data_type(self, obj):
-        return obj.specification.get_data_type_display()
-    get_data_type.short_description = 'نوع داده'
 
 @admin.register(Warranty)
 class WarrantyAdmin(admin.ModelAdmin):

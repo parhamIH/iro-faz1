@@ -34,10 +34,10 @@ class SpecificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Specification
-        fields = ['id', 'categories', 'name', 'slug', 'data_type', 'data_type_display', 'unit']
+        fields = ['id', 'categories', 'name', 'data_type', 'data_type_display', 'unit']
 
     def get_categories(self, obj):
-        return [{'id': cat.id, 'name': cat.name, 'slug': cat.slug} for cat in obj.categories.all()]
+        return [{'id': cat.id, 'name': cat.name,} for cat in obj.categories.all()]
 
 class ProductSpecificationSerializer(serializers.ModelSerializer):
     specification = SpecificationSerializer(read_only=True)

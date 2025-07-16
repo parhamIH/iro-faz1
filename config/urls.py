@@ -25,7 +25,6 @@ urlpatterns = [
     path('api/', include('store.urls')),
     path('api/installments/', include('installments.urls')),
     path("api/account/",include("accounts.urls")),
-    path('api/installments/', include('installments.urls')),  
     path('api/cart/', include('cart.urls')),
     path('excel/', include('excel_file_handling.urls')),
 

@@ -2,8 +2,10 @@ from django.contrib import admin
 from django.utils.html import format_html
 from .models import *
 from mptt.admin import DraggableMPTTAdmin
+from jalali_date import datetime2jalali
+from jalali_date.admin import ModelAdminJalaliMixin, TabularInlineJalaliMixin
 
-class ProductOptionInline(admin.TabularInline):
+class ProductOptionInline(TabularInlineJalaliMixin, admin.TabularInline):
     model = ProductOption
     extra = 1
     autocomplete_fields = ['color', 'warranty']
@@ -124,13 +126,28 @@ class CategoryAdmin(DraggableMPTTAdmin):
     get_specifications_count.short_description = 'تعداد مشخصات'
 
 @admin.register(ProductOption)
-class ProductOptionAdmin(admin.ModelAdmin):
-    list_display = ['product', 'color', 'option_price', 'is_active_discount', 'discount', 'quantity', 'is_active']
+class ProductOptionAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
+    list_display = [
+        'product', 'color', 'option_price', 'is_active_discount', 'discount', 'quantity', 'is_active',
+        'discount_start_jalali', 'discount_end_jalali'
+    ]
     search_fields = ['product__title', 'color__name']
     list_filter = ['is_active', 'is_active_discount', 'color', 'warranty']
     autocomplete_fields = ['product', 'color', 'warranty']
     inlines = [GalleryInline]
     list_editable = ['is_active_discount', 'discount', 'quantity', 'is_active']
+
+    def discount_start_jalali(self, obj):
+        if obj.discount_start_date:
+            return datetime2jalali(obj.discount_start_date).strftime('%Y/%m/%d _ %H:%M')
+        return '-'
+    discount_start_jalali.short_description = 'شروع تخفیف (جلالی)'
+
+    def discount_end_jalali(self, obj):
+        if obj.discount_end_date:
+            return datetime2jalali(obj.discount_end_date).strftime('%Y/%m/%d _ %H:%M')
+        return '-'
+    discount_end_jalali.short_description = 'پایان تخفیف (جلالی)'
 
 @admin.register(Gallery)
 class GalleryAdmin(admin.ModelAdmin):

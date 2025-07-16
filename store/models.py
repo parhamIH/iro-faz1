@@ -8,6 +8,7 @@ from django.utils.text import slugify
 import random
 from mptt.models import MPTTModel, TreeForeignKey
 from . import models as installments 
+from jalali_date import datetime2jalali
 
 
 #public__________________________________________ ------warranty------ _______________________________________
@@ -280,6 +281,19 @@ class ProductOption(models.Model):
         if self.is_discount_active:
             return f"{base_str} (تخفیف: {self.discount}%)"
         return base_str
+
+    @property
+    def discount_start_jalali(self):
+        if self.discount_start_date:
+            return datetime2jalali(self.discount_start_date).strftime('%Y/%m/%d _ %H:%M')
+        return None
+
+    @property
+    def discount_end_jalali(self):
+        if self.discount_end_date:
+            return datetime2jalali(self.discount_end_date).strftime('%Y/%m/%d _ %H:%M')
+        return None
+
 
 #product__________________________________________ ------Gallery------ _______________________________________
 

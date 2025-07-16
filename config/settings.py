@@ -295,3 +295,11 @@ if DEBUG:
         ],
         'RELOAD_DELAY': 1.0,
     }
+
+JALALI_DATE_DEFAULTS = {
+    'LIST_DISPLAY_AUTO_CONVERT': True,
+    'Strftime': {
+        'date': '%Y/%m/%d',
+        'datetime': '%H:%M:%S _ %Y/%m/%d',
+    },
+}

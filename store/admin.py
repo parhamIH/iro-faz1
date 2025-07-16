@@ -4,6 +4,10 @@ from .models import *
 from mptt.admin import DraggableMPTTAdmin
 from jalali_date import datetime2jalali
 from jalali_date.admin import ModelAdminJalaliMixin, TabularInlineJalaliMixin
+from django.urls import path
+from django.shortcuts import render, redirect
+import pandas as pd
+from django.utils.text import slugify
 
 class ProductOptionInline(TabularInlineJalaliMixin, admin.TabularInline):
     model = ProductOption
@@ -252,7 +256,3 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ['name']
     prepopulated_fields = {'slug': ('name',)}
 
-from django.urls import path
-from django.shortcuts import render, redirect
-import pandas as pd
-from django.utils.text import slugify

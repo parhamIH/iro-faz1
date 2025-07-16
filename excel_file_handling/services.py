@@ -623,21 +623,15 @@ class ExcelImportService:
                         errors += 1
                         continue
                     
-                    # مقدار مشخصه بر اساس نوع داده
-                    int_value = row.get('int_value', None)
-                    decimal_value = row.get('decimal_value', None)
-                    str_value = str(row.get('str_value', '')).strip() if row.get('str_value') else None
-                    bool_value = row.get('bool_value', None)
+                    # مقدار مشخصه
+                    specification_value = str(row.get('specification_value', '')).strip() if row.get('specification_value') else None
                     is_main = bool(row.get('is_main', False))
                     
                     product_spec, created = ProductSpecification.objects.get_or_create(
                         product=product,
                         specification=specification,
                         defaults={
-                            'int_value': int_value,
-                            'decimal_value': decimal_value,
-                            'str_value': str_value,
-                            'bool_value': bool_value,
+                            'specification_value': specification_value,
                             'is_main': is_main
                         }
                     )

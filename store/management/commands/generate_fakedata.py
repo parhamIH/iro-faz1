@@ -247,10 +247,7 @@ class Command(BaseCommand):
                     ProductSpecification.objects.create(
                         product=product,
                         specification=spec,
-                        int_value=value if spec.data_type == 'int' else None,
-                        decimal_value=value if spec.data_type == 'decimal' else None,
-                        str_value=value if spec.data_type == 'str' else None,
-                        bool_value=value if spec.data_type == 'bool' else None,
+                        specification_value=str(value),
                         is_main=spec.is_main
                     )
                 # آپشن (رنگ و قیمت و گارانتی)

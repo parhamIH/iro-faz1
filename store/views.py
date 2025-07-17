@@ -145,39 +145,7 @@ class ProductViewSet(BaseModelViewSet):
     ordering_fields = ['options__option_price','options__quantity', "created_at" , "updated_at" , "is_active" , "options__is_active_discount"]
     search_fields = ['title', 'description','options__color__name','options__option_price', 'spec_values__specification__name']
     
-    
-    @action(detail=True, methods=['get'])
-    def similar(self, request, pk=None):
-        try:
-            product = self.get_object()
-        except Http404:
-            return Response({'status': 'error', 'message': 'محصول یافت نشد.'}, status=status.HTTP_404_NOT_FOUND)
-
-        product_categories = product.categories.all()
-        leaf_categories = [cat for cat in product_categories if cat.is_leaf_node()]
-
-        if not leaf_categories:
-            return Response({
-                'status': 'error',
-                'message': 'این محصول در هیچ دسته‌بندی نهایی (leaf) قرار ندارد.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        base_price = product.options.aggregate(min_price=Min('option_price'))['min_price'] or 0
-        price_lower = base_price * 0.8
-        price_upper = base_price * 1.2
-
-        similar_products = Product.objects.filter(
-            categories__in=leaf_categories,
-            options__option_price__gte=price_lower,
-            options__option_price__lte=price_upper,
-            is_active=True
-        ).exclude(id=product.id).distinct()[:10]
-
-        serializer = self.get_serializer(similar_products, many=True, context=self.get_serializer_context())
-        return Response({
-            'status': 'success',
-            'similar_products': serializer.data
-        })
+   
 
 class CategoryViewSet(BaseModelViewSet):
     queryset = Category.objects.prefetch_related('products', 'spec_definitions', 'spec_definitions__group', 'brand').select_related('parent').all()

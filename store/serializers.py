@@ -61,7 +61,7 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = [
             'id', 'name', 'description', 'parent', 'children', 'brand',
-            'spec_definitions', 'slug', 'image', 'products', 'spec_value_choices'
+            'spec_definitions', 'slug', 'image','icon', 'products', 'spec_value_choices'
         ]
 
     def get_children(self, obj):
@@ -74,7 +74,9 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def get_spec_value_choices(self, obj):
         from .serializers import SpecificationWithValuesSerializer
-        return SpecificationWithValuesSerializer(obj.spec_definitions.all(), many=True, context={'category': obj}).data
+        specs = obj.spec_definitions.all()
+        serializer = SpecificationWithValuesSerializer(specs, many=True, context={'category': obj})
+        return serializer.data
 
 class ProductOptionSerializer(serializers.ModelSerializer):
     color = ColorSerializer(read_only=True)
@@ -109,7 +111,6 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ['id', 'name', 'slug']
-
 
 
 
@@ -181,22 +182,26 @@ class ProductCompactSerializer(serializers.ModelSerializer):
 
 class SpecificationWithValuesSerializer(serializers.ModelSerializer):
 
+    value = serializers.SerializerMethodField()
+
     class Meta:
         model = Specification
-        fields = ['id', 'name', 'data_type', 'unit']
+        fields = ['id', 'name', 'data_type', 'unit' , 'value']
 
-    def get_values(self, obj):
-        # context باید category را داشته باشد
+    def get_value(self, obj):
         category = self.context.get('category')
         if not category:
             return []
-        # تمام محصولات این دسته‌بندی که این مشخصه را دارند
-        from .models import ProductSpecification, Product
-        # پیدا کردن تمام مقادیر یکتا برای این مشخصه در محصولات این دسته‌بندی
+        from .models import ProductSpecification
         qs = ProductSpecification.objects.filter(
             specification=obj,
             product__categories=category
         )
+        # اگر می‌خواهید value لیست دیکشنری باشد:
+        return [
+            {"id": ps.id, "value": ps.specification_value}
+            for ps in qs.distinct('specification_value')
+        ]
 
 
 class CategorySpecificationWithValuesSerializer(serializers.ModelSerializer):
@@ -209,3 +214,6 @@ class CategorySpecificationWithValuesSerializer(serializers.ModelSerializer):
     def get_specifications(self, obj):
         specs = obj.spec_definitions.all()
         return SpecificationWithValuesSerializer(specs, many=True, context={'category': obj}).data
+
+
+

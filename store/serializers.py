@@ -7,6 +7,7 @@ from .filters import ProductFilter
 from .models import Product
 from django.utils import timezone
 from django.db.models import Q, Avg,Min
+import logging
 
 
 
@@ -136,55 +137,63 @@ class SpecificationGroupSerializer(serializers.ModelSerializer):
         ).select_related('specification')
         return ProductSpecificationSerializer(spec_values, many=True).data
 
+
+
+class SimilarProductSerializer(serializers.ModelSerializer):
+    """
+    Serializer for products that are similar to a given product, based on shared categories, price range, and active status.
+    """
+    brand = serializers.StringRelatedField()
+    min_price = serializers.SerializerMethodField()
+    image = serializers.ImageField()
+    options = ProductOptionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Product
+        fields = ['id', 'title', 'slug', 'brand', 'min_price', 'image', 'options']
+
+    def get_min_price(self, obj):
+        return obj.options.aggregate(min=Min('option_price'))['min']
+
+
+
+
 class ProductSerializer(serializers.ModelSerializer):
     categories = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     brand = serializers.StringRelatedField()
     options = ProductOptionSerializer(many=True, read_only=True)
     spec_values = ProductSpecificationSerializer(many=True, read_only=True)
     spec_groups = serializers.SerializerMethodField()
-    similar_products = serializers.SerializerMethodField()
+    similar_products = serializers.SerializerMethodField()  # اصلاح شد
 
     class Meta:
         model = Product
         fields = [
             'id', 'title', 'slug', 'categories', 'description',
             'image', 'brand', 'options', 'spec_values',
-            'is_active', 'tags', 'spec_groups', 'similar_products',
+            'is_active', 'tags', 'spec_groups', "similar_products",
         ]
 
     def get_spec_groups(self, obj):
-        serializer = SpecificationGroupSerializer( many=True, context={'product': obj})
+        serializer = SpecificationGroupSerializer(many=True, context={'product': obj})
         return serializer.data
 
     def get_similar_products(self, obj):
-        # پیدا کردن دسته‌بندی‌های برگ
-        leaf_categories = [cat for cat in obj.categories.all() if hasattr(cat, 'is_leaf_node') and cat.is_leaf_node()]
-        if not leaf_categories:
+        categories = obj.categories.all()
+        min_price = obj.options.aggregate(min=Min('option_price'))['min']
+        if min_price is None:
             return []
-        # ویژگی‌های اصلی محصول فعلی
-        from store.models import ProductSpecification, Product
-        main_specs = ProductSpecification.objects.filter(product=obj, is_main=True)
-        main_spec_dict = {ps.specification_id: ps.specification_value for ps in main_specs}
-        # رنج قیمت
-        base_price = obj.options.aggregate(min_price=Min('option_price'))['min_price'] or 0
-        price_lower = base_price * 0.8
-        price_upper = base_price * 1.2
-        # محصولات مشابه
+        price_range = (int(min_price * 0.7), int(min_price * 1.3))
         similar_products = Product.objects.filter(
-            categories__in=leaf_categories,
             is_active=True,
-            options__option_price__gte=price_lower,
-            options__option_price__lte=price_upper,
-        ).exclude(id=obj.id)
-        # فیلتر بر اساس ویژگی‌های اصلی
-        for spec_id, value in main_spec_dict.items():
-            similar_products = similar_products.filter(
-                spec_values__specification_id=spec_id,
-                spec_values__specification_value=value,
-                spec_values__is_main=True
-            )
-        similar_products = similar_products.distinct()[:10]
-        return ProductCompactSerializer(similar_products, many=True).data
+            categories__in=categories
+        ).exclude(id=obj.id).distinct()
+        similar_products = similar_products.filter(
+            options__option_price__gte=price_range[0],
+            options__option_price__lte=price_range[1]
+        ).distinct()
+        serializer = SimilarProductSerializer(similar_products, many=True)
+        return serializer.data
 
 class ProductCompactSerializer(serializers.ModelSerializer):
     brand = serializers.StringRelatedField()

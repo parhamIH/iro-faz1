@@ -263,6 +263,39 @@ class Command(BaseCommand):
                         discount=random.choice([0, 5, 10, 15, 20])
                     )
 
+        # اضافه کردن محصولات موبایل مشابه با قیمت نزدیک
+        mobile_category = categories['موبایل']
+        mobile_specs = spec_objs['موبایل']
+        base_prices = [80_000_000, 85_000_000, 90_000_000]
+        for i, base_price in enumerate(base_prices):
+            product = Product.objects.create(
+                title=f'گوشی تستی {i+1}',
+                brand=random.choice(digital_brands),
+                description=fake.text(),
+                is_active=True
+            )
+            product.categories.add(mobile_category)
+            # ویژگی‌ها (مقادیر تصادفی اما معتبر)
+            for spec, value in zip(mobile_specs, [128, 6, Decimal('6.5'), 48, 4000, True]):
+                ProductSpecification.objects.create(
+                    product=product,
+                    specification=spec,
+                    specification_value=str(value),
+                    is_main=spec.is_main
+                )
+            # آپشن با قیمت نزدیک به هم
+            for color in random.sample(colors, 2):
+                ProductOption.objects.create(
+                    product=product,
+                    color=color,
+                    option_price=random.randint(base_price-2_000_000, base_price+2_000_000),
+                    quantity=random.randint(1, 20),
+                    warranty=random.choice(warranties),
+                    is_active=True,
+                    is_active_discount=random.choice([True, False]),
+                    discount=random.choice([0, 5, 10, 15, 20])
+                )
+
         # تگ‌ها
         tag_names = ['جدید', 'پرفروش', 'تخفیف‌دار', 'گارانتی دار', 'اصل', 'اورجینال']
         tags = [Tag.objects.create(name=name) for name in tag_names]

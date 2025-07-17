@@ -16,9 +16,9 @@ from django.utils import timezone
 
 from mptt.models import MPTTModel
 class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 10
+    page_size = 1000000  # عدد خیلی بزرگ
     page_size_query_param = 'page_size'
-    max_page_size = 100
+    max_page_size = 1000000
 
 class BaseModelViewSet(ModelViewSet):
     pagination_class = StandardResultsSetPagination

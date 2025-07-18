@@ -1,3 +1,5 @@
+import boto3
+import os
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -9,6 +11,10 @@ import random
 from mptt.models import MPTTModel, TreeForeignKey
 from . import models as installments 
 from jalali_date import datetime2jalali
+from dotenv import load_dotenv
+from store.utils import ArvanImageUploadMixin
+
+load_dotenv()  # اگر مطمئن نیستی که قبلاً لود شده، این خط را بگذار
 
 
 #public__________________________________________ ------warranty------ _______________________________________
@@ -48,7 +54,7 @@ class Tag(models.Model):
 
 
 #public__________________________________________ ------brand------ _______________________________________
-class Brand(models.Model):
+class Brand(models.Model, ArvanImageUploadMixin):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     logo = models.ImageField(upload_to='brands/', blank=True, null=True)
@@ -59,22 +65,20 @@ class Brand(models.Model):
         verbose_name_plural = 'برندها'
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name, allow_unicode=True)
-            counter = 1
-            while Brand.objects.filter(slug=self.slug).exists():
-                self.slug = f"{slugify(self.name, allow_unicode=True)}-{counter}"
-                counter += 1
         super().save(*args, **kwargs)
+        if self.logo:
+            self.upload_logo_to_arvan()
 
     def __str__(self):
         return self.name
 
+    def upload_logo_to_arvan(self):
+        return self.upload_image_to_arvan(self.logo, 'brands')
 
 
 #Category__________________________________________ ------category------ _______________________________________
 
-class Category(MPTTModel):
+class Category(MPTTModel, ArvanImageUploadMixin):
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
@@ -90,26 +94,29 @@ class Category(MPTTModel):
         verbose_name_plural = 'دسته‌بندی‌ها'
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name, allow_unicode=True)
-            counter = 1
-            while Category.objects.filter(slug=self.slug).exists():
-                self.slug = f"{slugify(self.name, allow_unicode=True)}-{counter}"
-                counter += 1
         super().save(*args, **kwargs)
+        if self.image:
+            self.upload_category_image_to_arvan()
+        if self.icon:
+            self.upload_icon_to_arvan()
 
     def __str__(self):
         return self.name
 
+    def upload_category_image_to_arvan(self):
+        return self.upload_image_to_arvan(self.image, 'categories')
+
+    def upload_icon_to_arvan(self):
+        return self.upload_image_to_arvan(self.icon, 'categories/icons')
 
 
 #product__________________________________________ ------product------ _______________________________________
-class Product(models.Model):
+class Product(models.Model, ArvanImageUploadMixin):
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
     categories = models.ManyToManyField(Category, related_name='products')
     specifications = models.ManyToManyField("Specification", through='ProductSpecification', verbose_name="مشخصات")
-    tags = models.ManyToManyField('Tag', related_name='products')
+    tags = models.ManyToManyField('Tag', related_name='products' , blank=True , null=True)
     brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='products')
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
@@ -120,18 +127,16 @@ class Product(models.Model):
         verbose_name_plural = 'محصولات'
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            base_slug = slugify(self.title, allow_unicode=True)
-            counter = 1
-            new_slug = base_slug
-            while Product.objects.filter(slug=new_slug).exists():
-                new_slug = f"{base_slug}-{counter}"
-                counter += 1
-            self.slug = new_slug
         super().save(*args, **kwargs)
+        if self.image:
+            self.upload_product_image_to_arvan()
 
     def __str__(self):
         return self.title
+
+    def upload_product_image_to_arvan(self):
+        return self.upload_image_to_arvan(self.image, 'products')
+
 #Specification__________________________________________ ------specification group  ------ _______________________________________   
 
 class SpecificationGroup(models.Model):
@@ -261,7 +266,7 @@ class ProductOption(models.Model):
 
 #product__________________________________________ ------Gallery------ _______________________________________
 
-class Gallery(models.Model):
+class Gallery(models.Model, ArvanImageUploadMixin):
     product = models.ForeignKey(ProductOption, on_delete=models.CASCADE, related_name='gallery', verbose_name='ویژگی محصول')
     image = models.ImageField(upload_to='product_gallery/', verbose_name='تصویر')
     alt_text = models.CharField(max_length=255, blank=True, verbose_name='متن جایگزین')
@@ -273,6 +278,14 @@ class Gallery(models.Model):
     def __str__(self):
         color_name = self.product.color.name if self.product.color else 'بدون رنگ'
         return f"عکس برای {self.product.product.title} - {color_name}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.image:
+            self.upload_gallery_image_to_arvan()
+
+    def upload_gallery_image_to_arvan(self):
+        return self.upload_image_to_arvan(self.image, 'product_gallery')
 
 
 #public__________________________________________ ------color------ _______________________________________
@@ -319,7 +332,7 @@ class ArticleCategory(models.Model):
 
 #Articles __________________________________________ ------Article------ _______________________________________
 
-class Article(models.Model):
+class Article(models.Model, ArvanImageUploadMixin):
     title = models.CharField(max_length=255, verbose_name='عنوان')
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
     tags = models.ManyToManyField('Tag', blank=True, verbose_name='تگ‌ها')
@@ -335,15 +348,12 @@ class Article(models.Model):
         verbose_name_plural = 'مقالات'
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            base_slug = slugify(self.title, allow_unicode=True)
-            counter = 1
-            new_slug = base_slug
-            while Article.objects.filter(slug=new_slug).exists():
-                new_slug = f"{base_slug}-{counter}"
-                counter += 1
-            self.slug = new_slug
         super().save(*args, **kwargs)
+        if self.image:
+            self.upload_article_image_to_arvan()
 
     def __str__(self):
         return self.title
+
+    def upload_article_image_to_arvan(self):
+        return self.upload_image_to_arvan(self.image, 'articles')

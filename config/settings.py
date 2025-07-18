@@ -101,13 +101,13 @@ INSTALLED_APPS = [
     "corsheaders",
     'jdatetime',
     'jalali_date',
-    
+    "storages",
     #####apps####
     'cart',
     'store',
     "accounts",
     'installments',
-    "excel_file_handling"
+    "excel_file_handling",
 ]
 
 MIDDLEWARE = [
@@ -211,9 +211,6 @@ STATICFILES_DIRS = [
     Path(BASE_DIR, "static"),
 ]
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = Path(BASE_DIR, 'media')
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -301,3 +298,31 @@ JALALI_DATE_DEFAULTS = {
         'datetime': '%H:%M:%S _ %Y/%m/%d',
     },
 }
+
+
+
+
+
+
+
+
+ARVAN_ENDPOINT = os.getenv('ARVAN_ENDPOINT')
+ARVAN_ACCESS_KEY = os.getenv('ARVAN_ACCESS_KEY')
+ARVAN_SECRET_KEY = os.getenv('ARVAN_SECRET_KEY')
+ARVAN_BUCKET = os.getenv('ARVAN_BUCKET')
+MEDIA_URL = f'https://s3.ir-thr-at1.arvanstorage.com/{ARVAN_BUCKET}/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
+ExtraArgs={'ACL': 'public-read'}
+
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+AWS_S3_ENDPOINT_URL = os.getenv('ARVAN_ENDPOINT')
+AWS_ACCESS_KEY_ID = os.getenv('ARVAN_ACCESS_KEY')
+AWS_SECRET_ACCESS_KEY = os.getenv('ARVAN_SECRET_KEY')
+AWS_STORAGE_BUCKET_NAME = os.getenv('ARVAN_BUCKET')
+AWS_S3_OBJECT_PARAMETERS = {
+    'ACL': 'public-read',
+}
+AWS_DEFAULT_ACL = 'public-read'
+AWS_S3_CUSTOM_DOMAIN = f's3.ir-thr-at1.arvanstorage.com/{os.getenv("ARVAN_BUCKET")}'
+AWS_LOCATION = ''

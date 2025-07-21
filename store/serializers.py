@@ -171,7 +171,7 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title','title_farsi', 'slug', 'categories', 'description',
             'image', 'brand', 'options', 'spec_values',
-            'is_active', 'tags', 'spec_groups', "similar_products",
+            'is_active', 'tags', 'spec_groups', "similar_products",  
         ]
 
     def get_spec_groups(self, obj):

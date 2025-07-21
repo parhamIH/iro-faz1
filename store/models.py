@@ -112,7 +112,8 @@ class Category(MPTTModel, ArvanImageUploadMixin):
 
 #product__________________________________________ ------product------ _______________________________________
 class Product(models.Model, ArvanImageUploadMixin):
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, verbose_name='عنوان ')
+    title_farsi = models.CharField(max_length=255, verbose_name='عنوان فارسی', blank=True, null=True)
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
     categories = models.ManyToManyField(Category, related_name='products')
     specifications = models.ManyToManyField("Specification", through='ProductSpecification', verbose_name="مشخصات")

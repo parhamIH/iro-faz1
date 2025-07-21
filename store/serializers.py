@@ -164,12 +164,12 @@ class ProductSerializer(serializers.ModelSerializer):
     options = ProductOptionSerializer(many=True, read_only=True)
     spec_values = ProductSpecificationSerializer(many=True, read_only=True)
     spec_groups = serializers.SerializerMethodField()
-    similar_products = serializers.SerializerMethodField()  # اصلاح شد
+    similar_products = serializers.SerializerMethodField()  
 
     class Meta:
         model = Product
         fields = [
-            'id', 'title', 'slug', 'categories', 'description',
+            'id', 'title','title_farsi', 'slug', 'categories', 'description',
             'image', 'brand', 'options', 'spec_values',
             'is_active', 'tags', 'spec_groups', "similar_products",
         ]

@@ -8,6 +8,7 @@ from store.models import Product
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 import uuid
+from ckeditor.fields import RichTextField
 
 def validate_iranian_national_id(national_id):
     """

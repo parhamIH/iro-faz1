@@ -329,3 +329,24 @@ AWS_S3_OBJECT_PARAMETERS = {
 AWS_DEFAULT_ACL = 'public-read'
 AWS_S3_CUSTOM_DOMAIN = f's3.ir-thr-at1.arvanstorage.com/{os.getenv("ARVAN_BUCKET")}'
 AWS_LOCATION = ''
+
+CKEDITOR_UPLOAD_PATH = "uploads/"
+CKEDITOR_IMAGE_BACKEND = None  # Disable image backend
+
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': [
+            ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'RemoveFormat'],
+            ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote'],
+            ['Link', 'Unlink'],
+            ['Undo', 'Redo'],
+            ['Format', 'Font', 'FontSize'],
+            ['TextColor', 'BGColor'],
+            ['Maximize'],
+        ],
+        'removePlugins': 'image,uploadimage,uploadfile,filebrowser',
+        'extraPlugins': '',
+        'height': 300,
+        'width': '100%',
+    }
+}

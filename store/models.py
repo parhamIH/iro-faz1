@@ -13,6 +13,7 @@ from . import models as installments
 from jalali_date import datetime2jalali
 from dotenv import load_dotenv
 from store.utils import ArvanImageUploadMixin
+from ckeditor.fields import RichTextField
 
 load_dotenv()  # اگر مطمئن نیستی که قبلاً لود شده، این خط را بگذار
 
@@ -24,8 +25,8 @@ class Warranty(models.Model):
     company = models.CharField(max_length=100, verbose_name='شرکت ارائه دهنده', blank=True, null=True)
     duration = models.PositiveIntegerField(verbose_name='مدت گارانتی (ماه)', help_text='مدت زمان گارانتی به ماه')
     is_active = models.BooleanField(default=True, verbose_name='فعال')
-    description = models.TextField(blank=True, verbose_name='توضیحات')
-    terms_conditions = models.TextField(verbose_name='شرایط و ضوابط', blank=True)
+    description = RichTextField(blank=True, verbose_name='توضیحات')
+    terms_conditions = RichTextField(verbose_name='شرایط و ضوابط', blank=True)
     support_phone = models.CharField(max_length=20, verbose_name='شماره تماس پشتیبانی', blank=True)
     registration_required = models.BooleanField(default=False, verbose_name='نیاز به ثبت گارانتی')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاریخ ایجاد')
@@ -56,7 +57,7 @@ class Tag(models.Model):
 #public__________________________________________ ------brand------ _______________________________________
 class Brand(models.Model, ArvanImageUploadMixin):
     name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
+    description = RichTextField(blank=True, null=True)
     logo = models.ImageField(upload_to='brands/', blank=True, null=True)
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
 
@@ -81,7 +82,7 @@ class Brand(models.Model, ArvanImageUploadMixin):
 class Category(MPTTModel, ArvanImageUploadMixin):
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
+    description = RichTextField(blank=True, null=True)
     brand = models.ManyToManyField('Brand', blank=True, related_name='categories')
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
     image = models.ImageField(upload_to='categories/', blank=True, null=True)
@@ -119,7 +120,7 @@ class Product(models.Model, ArvanImageUploadMixin):
     specifications = models.ManyToManyField("Specification", through='ProductSpecification', verbose_name="مشخصات")
     tags = models.ManyToManyField('Tag', related_name='products' , blank=True , null=True)
     brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True, related_name='products')
-    description = models.TextField(blank=True, null=True)
+    description = RichTextField(blank=True, null=True)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
@@ -337,7 +338,7 @@ class Article(models.Model, ArvanImageUploadMixin):
     title = models.CharField(max_length=255, verbose_name='عنوان')
     slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, blank=True, null=True)
     tags = models.ManyToManyField('Tag', blank=True, verbose_name='تگ‌ها')
-    content = models.TextField(verbose_name='محتوا')
+    content = RichTextField(verbose_name='محتوا')
     image = models.ImageField(upload_to='articles/', blank=True, null=True, verbose_name='تصویر')
     category = models.ForeignKey(ArticleCategory, on_delete=models.CASCADE, related_name='articles', verbose_name='دسته‌بندی')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='تاریخ ایجاد')

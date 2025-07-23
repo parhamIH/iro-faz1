@@ -4,7 +4,8 @@ from .models import *
 from mptt.admin import DraggableMPTTAdmin
 from jalali_date import datetime2jalali
 from jalali_date.admin import ModelAdminJalaliMixin, TabularInlineJalaliMixin
-from django.urls import path
+from django.urls import path , reverse
+import copy
 from django.shortcuts import render, redirect , get_object_or_404
 from django.contrib import messages
 import pandas as pd
@@ -55,6 +56,7 @@ class ProductAdmin(admin.ModelAdmin):
     inlines = [ProductSpecificationInline, ProductOptionInline]
     list_editable = ['is_active']
 
+    change_form_template = 'admin/product_change_list_form.html'
 
 
     def get_urls(self):
@@ -102,7 +104,6 @@ class ProductAdmin(admin.ModelAdmin):
             from django.contrib import messages
             messages.error(request, f"خطا در کپی محصول: {e}")
             return redirect("..")
-
 
 
 

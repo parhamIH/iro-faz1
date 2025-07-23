@@ -83,13 +83,14 @@ class ProductOptionSerializer(serializers.ModelSerializer):
     color = ColorSerializer(read_only=True)
     final_price = serializers.SerializerMethodField()
     gallery = serializers.SerializerMethodField()
-    discount_time = serializers.SerializerMethodField()  # تغییر نام فیلد
+    discount_time_seconds = serializers.SerializerMethodField()  # اصلاح نام فیلد
 
     class Meta:
         model = ProductOption
         fields = [
             'id', 'color', 'option_price', 'quantity', 'is_active',
-            'is_active_discount', 'discount', 'final_price', 'gallery', 'discount_time'
+            'is_active_discount', 'discount', 'final_price', 'gallery', 'discount_time_seconds',
+            'discount_start_date', 'discount_end_date'
         ]
 
     def get_final_price(self, obj):
@@ -102,7 +103,7 @@ class ProductOptionSerializer(serializers.ModelSerializer):
     def get_tags(self, obj):
         return TagSerializer(obj.tags.all(), many=True).data
 
-    def get_discount_time(self, obj):
+    def get_discount_time_seconds(self, obj):
         if obj.discount_start_date and obj.discount_end_date:
             duration = obj.discount_end_date - obj.discount_start_date
             return duration.total_seconds()

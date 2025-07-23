@@ -108,6 +108,8 @@ INSTALLED_APPS = [
     "accounts",
     'installments',
     "excel_file_handling",
+    "ckeditor",
+    
 ]
     
 

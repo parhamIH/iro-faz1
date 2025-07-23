@@ -5,7 +5,8 @@ from mptt.admin import DraggableMPTTAdmin
 from jalali_date import datetime2jalali
 from jalali_date.admin import ModelAdminJalaliMixin, TabularInlineJalaliMixin
 from django.urls import path
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect , get_object_or_404
+from django.contrib import messages
 import pandas as pd
 from django.utils.text import slugify
 
@@ -54,12 +55,56 @@ class ProductAdmin(admin.ModelAdmin):
     inlines = [ProductSpecificationInline, ProductOptionInline]
     list_editable = ['is_active']
 
+
+
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
-            path('upload-excel/', self.upload_excel)
+            path('<int:product_id>/duplicate/', self.admin_site.admin_view(self.duplicate_product), name='product-duplicate'),
+            path('upload-excel/', self.upload_excel),
         ]
         return custom_urls + urls
+
+
+    def duplicate_product(self, request, product_id):
+        try:
+            original = get_object_or_404(Product, pk=product_id)
+            # نمونه جدید بساز (بدون pk و slug)
+            new_product = copy.copy(original)
+            new_product.pk = None
+            new_product.slug = None
+            new_product.title = original.title + " (کپی)"
+            new_product.save()
+            # کپی ManyToMany
+            new_product.categories.set(original.categories.all())
+            new_product.tags.set(original.tags.all())
+            # کپی مشخصات محصول
+            for spec_value in ProductSpecification.objects.filter(product_id=product_id):
+                new_spec = copy.copy(spec_value)
+                new_spec.pk = None
+                new_spec.product = new_product
+                new_spec.save()
+            # کپی گزینه‌ها و گالری‌ها
+            for option in ProductOption.objects.filter(product_id=product_id):
+                new_option = copy.copy(option)
+                new_option.pk = None
+                new_option.product = new_product
+                new_option.save()
+                for gallery_img in option.gallery.all():
+                    new_gallery = copy.copy(gallery_img)
+                    new_gallery.pk = None
+                    new_gallery.product = new_option
+                    new_gallery.save()
+            self.message_user(request, f"محصول با موفقیت کپی شد. pk جدید: {new_product.pk}")
+            url = reverse('admin:store_product_change', args=[new_product.pk])
+            return redirect(url)
+        except Exception as e:
+            from django.contrib import messages
+            messages.error(request, f"خطا در کپی محصول: {e}")
+            return redirect("..")
+
+
+
 
     def upload_excel(self, request):
         if request.method == 'POST':

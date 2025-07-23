@@ -109,6 +109,7 @@ INSTALLED_APPS = [
     'installments',
     "excel_file_handling",
 ]
+    
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

@@ -102,13 +102,13 @@ INSTALLED_APPS = [
     'jdatetime',
     'jalali_date',
     "storages",
+    "ckeditor",
     #####apps####
     'cart',
     'store',
     "accounts",
     'installments',
     "excel_file_handling",
-    "ckeditor",
     
 ]
     

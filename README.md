@@ -17,6 +17,8 @@
 ### فیلترهای چندتایی (Multiple Choice)
 - **دسته‌بندی‌ها**:  
   `/api/products/?categories=1,2,3`
+- **دسته‌بندی‌ها (با slug)**:  
+  `/api/products/?category_title=laptop,phone,tablet`
 - **برندها**:  
   `/api/products/?brands=1,2`
 - **تگ‌ها**:  
@@ -196,6 +198,11 @@ GET /api/products/?has_discount=true&spec_groups=1
 #### 3. محصولات برند خاص با رنگ‌های مختلف:
 ```
 GET /api/products/?brands=1&colors=1,2,3
+```
+
+#### 3.1. محصولات دسته‌بندی خاص با slug:
+```
+GET /api/products/?category_title=laptop,phone
 ```
 
 #### 4. محصولات فعال با گارانتی:

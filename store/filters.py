@@ -206,6 +206,7 @@ class ProductFilter(FilterSet):
         label='رنگ‌ها',
     )
     categories = CharFilter(method='filter_categories_with_children', label='دسته‌بندی‌ها')
+    category_title = CharFilter(method='filter_categories_by_slug', label='دسته‌بندی‌ها (با slug)')
     warranties = CommaSeparatedModelMultipleChoiceFilter(
         field_name='options__warranty',
         queryset=Warranty.objects.all(),
@@ -289,6 +290,36 @@ class ProductFilter(FilterSet):
                 all_category_ids.update(descendants.values_list('id', flat=True))
             except Category.DoesNotExist:
                 continue
+        return queryset.filter(categories__id__in=all_category_ids).distinct()
+
+    def filter_categories_by_slug(self, queryset, name, value):
+        """
+        فیلتر محصولات بر اساس slug دسته‌بندی‌ها
+        فرمت ورودی: "laptop,phone,tablet" یا "laptop"
+        مثال: "laptop,phone" - محصولاتی که در دسته‌بندی‌های laptop یا phone هستند
+        """
+        if not value:
+            return queryset
+        
+        # تبدیل رشته به لیست slug ها
+        if isinstance(value, str):
+            slugs = [slug.strip() for slug in value.split(',') if slug.strip()]
+        else:
+            slugs = value
+        
+        # پیدا کردن دسته‌بندی‌ها بر اساس slug
+        categories = Category.objects.filter(slug__in=slugs)
+        if not categories.exists():
+            return queryset.none()
+        
+        # جمع‌آوری همه آیدی‌های دسته‌بندی و زیرمجموعه‌های آن‌ها
+        all_category_ids = set()
+        for category in categories:
+            all_category_ids.add(category.id)
+            # اضافه کردن زیرمجموعه‌ها (descendants)
+            descendants = category.get_descendants()
+            all_category_ids.update(descendants.values_list('id', flat=True))
+        
         return queryset.filter(categories__id__in=all_category_ids).distinct()
 
     def filter_specification(self, queryset, name, value):
